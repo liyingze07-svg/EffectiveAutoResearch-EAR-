@@ -5,7 +5,7 @@ labels: documentation
 ---
 
 **被质疑的声明**
-（引用 README / CLAUDE.md 的原文）
+（引用 README 的原文）
 
 **代码里的实际情况**
 （文件 + 行号）

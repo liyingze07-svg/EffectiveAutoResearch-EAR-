@@ -193,7 +193,6 @@ refine-logs/
 
 | 文件 | 内容 |
 |---|---|
-| `DESIGN_RATIONALE.md` | 每个设计决策的原始疑惑与诊断过程 |
 | `docs/IDEA_NODE_SCHEMA.md` | idea 节点字段定义 |
 | `docs/SEARCH_DESIGN.md` | 搜索设计：UCT、mask 语义与 reward 各成分 |
 | `docs/WORKFLOW.md` | 全流程详解 |
@@ -255,7 +254,6 @@ claude mcp add codex -s user -- codex mcp-server
 - **"没查到相似工作"只说明当前检索范围内没发现碰撞。** 建议读 `SCREENING_REPORT.md` 里"与最接近工作的具体差异"，而不是只看 Novelty 分。
 - **可行性是静态估计。** `Theory-Experiment Alignment Matrix` 用领域先验估算每条理论 claim 的验证代价，是低成本近似，不等于跑过实验。
 
-设计取舍与诊断过程见 `DESIGN_RATIONALE.md`。
 
 ---
 

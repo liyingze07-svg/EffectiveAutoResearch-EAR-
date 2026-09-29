@@ -150,7 +150,7 @@ prepare_workspace() {
     rm -rf "$work_dir"
     mkdir -p "$work_dir/outputs" "$work_dir/refine-logs"
 
-    for file in CODEX_COMPAT.md README.md CLAUDE.md; do
+    for file in CODEX_COMPAT.md README.md; do
         if [[ -f "$PROJECT_ROOT/$file" ]]; then
             cp "$PROJECT_ROOT/$file" "$work_dir/"
         fi

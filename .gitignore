@@ -34,4 +34,10 @@ docs/REFINE_SCOPE_*
 autovibeidea/docs/REFINE_SCOPE_*
 # 内部工作目录残留
 release/
+# 内部任务清单（含真实在研方向）；发布版的示例清单单独放行
 batch_tasks/
+!autovibeidea/batch_tasks/
+!autovibeidea/batch_tasks/example.txt
+
+# 内部设计文档（不对外）
+DESIGN_RATIONALE.md

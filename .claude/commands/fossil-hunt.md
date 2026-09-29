@@ -1,0 +1,1 @@
+../../skills/fossil-hunt/SKILL.md

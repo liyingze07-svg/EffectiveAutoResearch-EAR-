@@ -1,0 +1,18 @@
+# 运行产出（含未发表的研究内容，不入库）
+outputs/
+outputs_*/
+refine-logs/
+archive/
+logx/
+*.log
+*.pid
+
+# 密钥与本地配置
+.openai_key
+.env
+.claude/settings.local.json
+
+# Python
+__pycache__/
+*.pyc
+.pytest_cache/

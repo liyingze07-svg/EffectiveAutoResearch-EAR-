@@ -1,0 +1,1 @@
+../../skills/idea-pipeline/SKILL.md

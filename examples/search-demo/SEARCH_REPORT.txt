@@ -1,0 +1,95 @@
+======================================================================
+搜索树
+======================================================================
+IDEA-04        visits=2   Q=0.753 UCT=1.80   Causal Disagreement Decomposition
+  └─ IDEA-04-c1     visits=1   Q=0.803 UCT=2.29   分歧成分的干预式识别（factorial 设计）
+    └─ IDEA-04-c3     visits=0   Q=0.000 UCT=∞      交互项的最小充分实验设计
+    └─ IDEA-04-c4     visits=0   Q=0.000 UCT=∞      交互项的弱化替代指标
+  └─ IDEA-04-c2     visits=1   Q=0.703 UCT=—      分歧分解的样本复杂度下界  ✂ not_feasible
+IDEA-05        visits=0   Q=0.000 UCT=∞      IIA Attacks
+  └─ IDEA-05-c1     visits=0   Q=0.000 UCT=∞      IIA 违反的构造性攻击
+  └─ IDEA-05-c2     visits=0   Q=0.000 UCT=∞      IIA 违反的统计检验
+IDEA-02        visits=0   Q=0.000 UCT=∞      Stochastic Social Choice
+IDEA-08        visits=0   Q=0.000 UCT=∞      Minority-Preserving Aggregation
+IDEA-01        visits=0   Q=0.000 UCT=—      Correlated Juries  ✂ collision
+IDEA-06        visits=0   Q=0.000 UCT=—      Selection-Aware Conformal Panels  ✂ collision
+
+扩展次数: 4 / 预算 6
+剪枝统计: collision=2, not_feasible=1
+  剪枝精度需人工复核：被剪节点里有多少确实该剪（见 docs/ABLATIONS.md 的 D 组）
+累计成本: tokens_total=113000, external_calls=6
+
+======================================================================
+reward 成分来源（逐节点）
+======================================================================
+
+  IDEA-04  reward=0.863
+    v_model      = 0.725   ← LLM 评分（scores.composite）
+    v_verifiable = 1.0
+        retrieval        =1.000  ← 外部检索结果（是否找到同机制已发表工作 / delta 是否写出）
+        falsifiability   =1.000  ← 结构完整性：是否写出否证条件
+        distinctness     =1.000  ← 与**非同血缘**候选的词法/概念重叠（计算值，非模型判断）
+
+  IDEA-05  reward=0.836
+    v_model      = 0.695   ← LLM 评分（scores.composite）
+    v_verifiable = 0.976
+        retrieval        =1.000  ← 外部检索结果（是否找到同机制已发表工作 / delta 是否写出）
+        falsifiability   =1.000  ← 结构完整性：是否写出否证条件
+        distinctness     =0.929  ← 与**非同血缘**候选的词法/概念重叠（计算值，非模型判断）
+
+  IDEA-02  reward=0.817
+    v_model      = 0.672   ← LLM 评分（scores.composite）
+    v_verifiable = 0.963
+        retrieval        =1.000  ← 外部检索结果（是否找到同机制已发表工作 / delta 是否写出）
+        falsifiability   =1.000  ← 结构完整性：是否写出否证条件
+        distinctness     =0.889  ← 与**非同血缘**候选的词法/概念重叠（计算值，非模型判断）
+
+  IDEA-08  reward=0.799
+    v_model      = 0.635   ← LLM 评分（scores.composite）
+    v_verifiable = 0.963
+        retrieval        =1.000  ← 外部检索结果（是否找到同机制已发表工作 / delta 是否写出）
+        falsifiability   =1.000  ← 结构完整性：是否写出否证条件
+        distinctness     =0.889  ← 与**非同血缘**候选的词法/概念重叠（计算值，非模型判断）
+
+  IDEA-04-c1  reward=0.803
+    v_model      = 0.78   ← LLM 评分（scores.composite）
+    v_verifiable = 0.826
+        retrieval        =1.000  ← 外部检索结果（是否找到同机制已发表工作 / delta 是否写出）
+        feasibility_rule =1.000  ← claim 类型 → 验证协议查表（规则，非模型评分）
+        falsifiability   =1.000  ← 结构完整性：是否写出否证条件
+        cost_efficiency  =0.148  ← 实测 token 用量（越省越高）
+        distinctness     =0.982  ← 与**非同血缘**候选的词法/概念重叠（计算值，非模型判断）
+
+  IDEA-04-c3  reward=0.778
+    v_model      = 0.6   ← LLM 评分（scores.composite）
+    v_verifiable = 0.957
+        retrieval        =1.000  ← 外部检索结果（是否找到同机制已发表工作 / delta 是否写出）
+        falsifiability   =1.000  ← 结构完整性：是否写出否证条件
+        distinctness     =0.871  ← 与**非同血缘**候选的词法/概念重叠（计算值，非模型判断）
+
+  IDEA-04-c4  reward=0.738
+    v_model      = 0.52   ← LLM 评分（scores.composite）
+    v_verifiable = 0.957
+        retrieval        =1.000  ← 外部检索结果（是否找到同机制已发表工作 / delta 是否写出）
+        falsifiability   =1.000  ← 结构完整性：是否写出否证条件
+        distinctness     =0.871  ← 与**非同血缘**候选的词法/概念重叠（计算值，非模型判断）
+
+  IDEA-05-c1  reward=0.687
+    v_model      = 0.45   ← LLM 评分（scores.composite）
+    v_verifiable = 0.924
+        retrieval        =1.000  ← 外部检索结果（是否找到同机制已发表工作 / delta 是否写出）
+        falsifiability   =1.000  ← 结构完整性：是否写出否证条件
+        distinctness     =0.771  ← 与**非同血缘**候选的词法/概念重叠（计算值，非模型判断）
+
+  IDEA-05-c2  reward=0.657
+    v_model      = 0.39   ← LLM 评分（scores.composite）
+    v_verifiable = 0.924
+        retrieval        =1.000  ← 外部检索结果（是否找到同机制已发表工作 / delta 是否写出）
+        falsifiability   =1.000  ← 结构完整性：是否写出否证条件
+        distinctness     =0.771  ← 与**非同血缘**候选的词法/概念重叠（计算值，非模型判断）
+⚠️ 1 个节点命中 mask（先验剪枝，在扩展之前执行）
+
+  IDEA-05-c2 IIA 违反的统计检验
+      [critique_saturated] 批判 CRITIQUE-02 已有 4 个候选叶子（上限 3），本节点 reward 排名第 4，超出上限
+
+（未写入。加 --apply 才会实际剪枝）

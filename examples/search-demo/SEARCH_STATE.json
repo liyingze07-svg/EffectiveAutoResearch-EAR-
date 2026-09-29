@@ -1,0 +1,5 @@
+{
+  "budget_expansions": 6,
+  "alpha": 0.5,
+  "uct_c": 1.414
+}

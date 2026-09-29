@@ -1,0 +1,1 @@
+../../skills/idea-filter/SKILL.md

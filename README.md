@@ -79,6 +79,21 @@ tail -f outputs/pipeline.log               # 实时日志
 
 ## Slash Commands
 
+本仓库不附带任何 agent 工具的私有配置目录。若你的 agent 支持把 markdown 挂成 slash command，
+在仓库根目录执行一次即可（以命令目录为 `<CMD_DIR>` 为例）：
+
+```bash
+mkdir -p <CMD_DIR>
+for d in skills/*/; do
+  n=$(basename "$d")
+  ln -sf "../../skills/$n/SKILL.md" "<CMD_DIR>/$n.md"
+done
+```
+
+用符号链接而非复制，改 `SKILL.md` 即时生效、不会失同步。
+不挂载也可以直接使用：所有 skill 都是自包含的 markdown，把对应文件内容交给模型即可。
+
+
 | 命令 | 用途 |
 |------|------|
 | `/start "方向" -- venue: ICML` | **后台启动完整 pipeline**（最常用） |

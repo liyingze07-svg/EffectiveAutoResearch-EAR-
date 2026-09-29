@@ -138,7 +138,7 @@ Locate the fetch script and search arXiv directly:
 # Try to find arxiv_fetch.py
 SCRIPT=$(find tools/ -name "arxiv_fetch.py" 2>/dev/null | head -1)
 # If not found, check common install locations
-[ -z "$SCRIPT" ] && SCRIPT=$(find ~/.claude/skills/arxiv/ -name "arxiv_fetch.py" 2>/dev/null | head -1)
+[ -z "$SCRIPT" ] && SCRIPT=$(command -v arxiv_fetch.py 2>/dev/null)
 
 # Search arXiv API for structured results (title, abstract, authors, categories)
 python3 "$SCRIPT" search "QUERY" --max 10

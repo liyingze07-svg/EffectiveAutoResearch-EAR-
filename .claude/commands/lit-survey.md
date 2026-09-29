@@ -1,1 +1,0 @@
-../../skills/lit-survey/SKILL.md

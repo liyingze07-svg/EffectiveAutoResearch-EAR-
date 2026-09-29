@@ -1,1 +1,0 @@
-../../skills/experiment-audit/SKILL.md

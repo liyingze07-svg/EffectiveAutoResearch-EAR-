@@ -1,1 +1,0 @@
-../../skills/idea-screen/SKILL.md

@@ -16,16 +16,6 @@ for s in skills/*/SKILL.md; do
   grep -q '^description:' "$s" || bad "缺少 description: $s"
 done
 
-echo "=== .claude/commands 链接 ==="
-for l in .claude/commands/*.md; do
-  [ -e "$l" ] || bad "断链: $l"
-  [ -L "$l" ] || bad "应为符号链接而非副本（副本会与 SKILL.md 失同步）: $l"
-done
-for s in skills/*/SKILL.md; do
-  n=$(basename "$(dirname "$s")")
-  [ -e ".claude/commands/$n.md" ] || bad "skill 未挂到 commands: $n"
-done
-
 echo "=== 运行产出不应入库 ==="
 for d in outputs refine-logs; do
   c=$(find "$d" -type f ! -name '.gitkeep' 2>/dev/null | wc -l)

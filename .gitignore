@@ -16,3 +16,22 @@ logx/
 __pycache__/
 *.pyc
 .pytest_cache/
+
+# ── 内部专有，绝不入库 ──
+# 含明文凭证 / 内网拓扑的 infra skill
+skills/*-infra/
+skills/bitex-bibtex-a6k/
+skills/domestic-gpu/
+autovibeidea/skills/*-infra/
+autovibeidea/skills/bitex-bibtex-a6k/
+autovibeidea/skills/domestic-gpu/
+# 具名方法论 / 未脱敏内容
+skills/he-rebuttal/
+autovibeidea/skills/he-rebuttal/
+skills/idea-filter/idea-filter.md
+autovibeidea/skills/idea-filter/idea-filter.md
+docs/REFINE_SCOPE_*
+autovibeidea/docs/REFINE_SCOPE_*
+# 内部工作目录残留
+release/
+batch_tasks/

@@ -1,0 +1,11 @@
+{
+  "note_id": "demo-001",
+  "title": "Invariant Graphon Networks",
+  "initial_rating": 5,
+  "confidence": 4,
+  "soundness": 3,
+  "presentation": 2,
+  "contribution": 3,
+  "review": "## Summary\nThe paper proposes a new architecture. \n\n## Weaknesses\n- The experiments lack baselines and ablations.\n- The claims about scalability are not supported by evidence.\n\n## Questions\n- Can you compare against method X?\n- What is the runtime cost?",
+  "rebuttal": "We thank the reviewer. We have added three strong baselines (including method X) and full ablations in the revised Table 4, which show our method outperforms all of them. We also added a runtime analysis in Appendix B addressing the scalability concern with concrete measurements. All raised weaknesses are now directly addressed with new experiments."
+}

@@ -1,0 +1,32 @@
+{
+  "$comment": "REBUTTAL_CARD.json 示例 + 必填约定(EMNLP/ARR)。每个 campaign 一张卡片,instantiate.py 从它渲染 CLAUDE/GOAL/SPEC/VERIFY/RESOURCE;缺卡片时 r0a 从 papers/<slug> 抽。paper-agnostic:换 case = 换卡片,不改 harness。★必填/约定:reviewers[].id、reviewers[].initial_overall(EMNLP overall assessment,整数 /5 —— 分区 bar 与 verify 都用它;旧 ICLR 的 initial_rating(/10) 已弃用,仅 legacy 卡片兼容读取)、target.require_raise_on(P0,攻)、target.maintain(OA>=4,守)、n_strategies(须与 strategies/MANIFEST.json enabled 数一致)、allow_new_experiments(false 则驱动硬跳过 r4)、max_iter。",
+  "title": "Learning to Rebut: A First-Principles Argument Compiler",
+  "venue": "EMNLP/ARR 2026",
+  "word_limit": "per-reviewer 一个评论框(~300–600 词)",
+  "allow_new_experiments": false,
+  "n_strategies": 3,
+  "max_iter": 4,
+  "paper_claims": [
+    "C1: 我们提出机制 M,把 A 和 B 的冲突解决,这是核心贡献",
+    "C2: 在 benchmark X 上相对最强 baseline 提升 13.6 分",
+    "C3: 理论分析给出 M 的收敛保证(Thm 1)"
+  ],
+  "reviewers": [
+    {"id": "R1", "initial_overall": 2, "confidence": 4,
+     "soundness": 2, "presentation": 3, "contribution": 2,
+     "review_ref": "review.md#R1"},
+    {"id": "R2", "initial_overall": 3, "confidence": 4,
+     "soundness": 2, "presentation": 2, "contribution": 2,
+     "review_ref": "review.md#R2"},
+    {"id": "R3", "initial_overall": 4, "confidence": 3,
+     "soundness": 3, "presentation": 3, "contribution": 3,
+     "review_ref": "review.md#R3"}
+  ],
+  "concern_seeds": [
+    "R2: 方法只是 A+B 的组合,创新有限",
+    "R1: 缺少和 SOTA 方法 Z 的比较",
+    "R1: 消融不充分,不知道 M 是否真的有用",
+    "R3: 表述可以更清楚,§3.2 难读"
+  ],
+  "target": {"require_raise_on": ["R1", "R2"], "maintain": ["R3"], "min_delta": 1}
+}

@@ -1,42 +1,49 @@
-# GOAL.md — 显式目标与停机判据(一等公民)
+# GOAL.md — Explicit goal and stopping criterion (first-class)
 
-> 引擎每轮读这个文件判"停没停"。**这是一个可检查的 predicate,不是叙事。**
+> The engine reads this file every round to decide whether it is done. **This is a checkable predicate, not a narrative.**
 >
-> ⚠️ **单一真相源 + 防漂移**:分区 bar 的**权威实现**是 `rebuttal_verifier/consensus_gate.bar_met` / `consensus`;下面的表是它的人类可读镜像。**改判据必须三处同改**:①本表 ②`bar_met`/`consensus` ③`consensus_gate._selfcheck()` 里对应的断言。`orchestrate.py` 启动时跑 `_selfcheck()`,本表与实现漂移(如 H4:OA≥4 应是维持 bar 不是 raise bar)会**当场拒绝开跑**,不会带病跑一整晚。
+> ⚠️ **Single source of truth + drift guard**: the authoritative implementation of the zone bar is `rebuttal_verifier/consensus_gate.bar_met` / `consensus`; the table below is its human-readable mirror. **Changing the criterion means changing three places**: ① this table ② `bar_met`/`consensus` ③ the matching assertions in `consensus_gate._selfcheck()`. `orchestrate.py` runs `_selfcheck()` at startup, so any drift between this table and the implementation (e.g. H4: OA≥4 must use the maintain bar, not the raise bar) makes it **refuse to start** rather than run all night with a broken criterion.
 >
-> 🔎 **谁在用这根 bar**:r7 涨分门(整稿停机)+ **实验说服力门 S-exp**(`stages/r4_experiment_persuasion.md`,r4→r5 之间,对**单个实验真结果**逐 concern 调**同一个** `bar_met`)。S-exp 是这根 bar 的**消费者**,不新增判据 → **不属于**上面的三处同改。
+> 🔎 **Who uses this bar**: the r7 raise gate (halting for a whole draft) and the **S-exp experiment persuasion gate** (`stages/r4_experiment_persuasion.md`, between r4 and r5, which calls **the same** `bar_met` per concern against a **single experiment's real result**). S-exp is a **consumer** of this bar and adds no criterion of its own, so it is **not** part of the three-place rule above.
 
-## 目标(一句话)
-对**每个 targeted reviewer**,让 rebuttal 在**跨家族合议门**下清掉**该 reviewer 分区对应的 bar**;全清则 DONE,否则按 `LOOP.md` 继续 roll,到 `max_iter` 仍不清 → **诚实让步**输出 best-so-far。
+## Goal (one sentence)
 
-## 分区 bar(按 reviewer 的 overall_assessment,由 `consensus_gate.bar_met` 判)
-| 分区 | bar(必须两家族都满足) |
+For **each targeted reviewer**, make the rebuttal clear **the bar for that reviewer's zone** under the **cross-family consensus gate**. All clear means DONE; otherwise keep rolling per `LOOP.md`, and if `max_iter` is reached without clearing, emit the best-so-far with an **honest concession**.
+
+## Zone bars (by the reviewer's overall assessment, decided by `consensus_gate.bar_met`)
+
+| Zone | Bar (both families must satisfy it) |
 |---|---|
-| **OA = 3(borderline)** | 诊断器 `veto == 'none'` **且** `raise_potential == 'high'`(= 强度达标;**不是**预测涨分结局——borderline 结局文本不可测) |
-| **OA ≤ 2(低起点)** | `reaction == 'raise'`(低起点 raise 信号存在) |
-| **OA ≥ 4(高起点)** | `reaction != 'lower'`(维持不掉) |
+| **OA = 3 (borderline)** | Diagnoser reports `veto == 'none'` **and** `raise_potential == 'high'` (i.e. sufficient strength — **not** a prediction of the score change, because the borderline outcome is not predictable from text) |
+| **OA ≤ 2 (low start)** | `reaction == 'raise'` (a raise signal exists from a low starting score) |
+| **OA ≥ 4 (high start)** | `reaction != 'lower'` (hold the score, do not drop) |
 
-## 停机判据(DONE ⟺ 全 true)
-合议是**分区路由的**(见 `consensus_gate.consensus`),不是所有分区都用同一条 AND。停机对每个 targeted reviewer:
+## Stopping criterion (DONE ⟺ all true)
+
+Consensus is **zone-routed** (see `consensus_gate.consensus`); not every zone uses the same conjunction. For each targeted reviewer:
+
 ```
 DONE ⟺  ∀ reviewer ∈ target.require_raise_on ∪ target.maintain:
-            consensus(deepseek, codex, case).stop == True   # 分区路由(见下)
-        AND ammo_hits(final_rebuttal) == []                 # 弹药硬门(全分区)
-        AND no_fabrication(rebuttal, evidence)              # 每个 claim 追溯真实证据
+            consensus(deepseek, codex, case).stop == True   # zone-routed, see below
+        AND ammo_hits(final_rebuttal) == []                 # ammunition hard gate (all zones)
+        AND no_fabrication(rebuttal, evidence)              # every claim traces to real evidence
 
-其中 consensus(...).stop 按分区:
-  · OA ≤ 2 / OA ≥ 4 (strict 模式)  ⟺  bar_met(deepseek) AND bar_met(codex)   # 两家族都清
-  · OA = 3 border  (authoritative 模式) ⟺  bar_met(codex_primary) AND deepseek.reaction != 'lower'
+where consensus(...).stop depends on the zone:
+  · OA ≤ 2 / OA ≥ 4 (strict mode)        ⟺  bar_met(deepseek) AND bar_met(codex)
+  · OA = 3 borderline (authoritative)    ⟺  bar_met(codex_primary) AND deepseek.reaction != 'lower'
 ```
-- **为何 OA=3 不强制 strict**:borderline 处 DeepSeek 质量分离弱(README §7,+0.13 vs Codex +0.28),强行要 DeepSeek 也 `bar_met` 会注入假阴性、把 loop 卡死。故权威判官=Codex/GPT-5.5(高 reasoning)主判,DeepSeek 降级为**否决权软检查**(只要它没判 `lower` 就不挡)。其余分区两家族对等,strict 双清。
-- **仍是跨家族**:即便 authoritative 模式,DeepSeek 的 `lower` 否决仍能挡停机——单靠 Codex 拟合过不了(不可违反 #4 成立)。
 
-## 出口
-- **DONE** → 打包 per-reviewer rebuttal + AC 评论。
-- **迭代 = max_iter 仍未 DONE** → 每个未清的 reviewer 输出 best-so-far + 诚实让步 + 缺口清单,标 `HONEST_CONCEDE`。**绝不为"看起来过了"编实验/拟合判官。**
+- **Why OA=3 is not strict**: at the borderline DeepSeek separates quality weakly (README §7: +0.13 versus Codex's +0.28). Forcing DeepSeek to clear the bar as well would inject false negatives and deadlock the loop. So the authoritative judge is Codex/GPT-5.5 (high reasoning) and DeepSeek is demoted to a **soft veto** — it only has to refrain from judging `lower`. Every other zone treats the two families as equals and requires both.
+- **Still cross-family**: even in authoritative mode a DeepSeek `lower` blocks halting, so fitting Codex alone cannot get a draft through. Invariant #4 holds.
 
-## 不可违反(否则整轮作废)
-1. 绝不编数字/引用;做不到写 `[TBD]`(不是空承诺)。
-2. 弹药 grep == 0(含"表演式诚实/过度让步"这类软弹药,见 ammunition-checklist)。
-3. worker 看不到门内部 prompt,不对判据拟合。
-4. 停机必须跨家族合议,不靠单判官。
+## Exits
+
+- **DONE** → package the per-reviewer rebuttals and the AC comment.
+- **max_iter reached without DONE** → for each reviewer that did not clear, emit the best-so-far plus an honest concession and a list of the gaps, marked `HONEST_CONCEDE`. **Never fabricate an experiment or fit the judge to make something "look like it passed".**
+
+## Inviolable (breaking any of these voids the round)
+
+1. Never invent a number or a citation. If you cannot support it, write `[TBD]` — not an empty promise.
+2. `ammo_hits == 0`, including soft ammunition such as performative honesty and over-concession (see `ammunition-checklist`).
+3. The worker never sees the gate's internal prompt and must not fit the criterion.
+4. Halting requires cross-family consensus; a single judge is never sufficient.

@@ -1,13 +1,13 @@
-# stage r2_diagnose — concern 诊断
+# stage r2_diagnose — diagnose the concerns
 
-> 新引擎上下文。review + card → `concern_ledger.json`。
+> Fresh engine context. review + card → `concern_ledger.json`.
 
-## 槽位 `{{SLUG}}`
-## 输入(只读):`papers/{{SLUG}}/review.md`、`campaigns/{{SLUG}}/REBUTTAL_CARD.json`、`harness/shared-assets/rebuttal-tips.md`(分类学)。
+## Slot `{{SLUG}}`
+## Inputs (read-only): `papers/{{SLUG}}/review.md`, `campaigns/{{SLUG}}/REBUTTAL_CARD.json`, `harness/shared-assets/rebuttal-tips.md` (the taxonomy).
 
-## 规则(每个原子 concern)
-1. **诊断心结**:reviewer 写下的 vs 真正担心的;是**误读**(paper 其实有)还是**真实缺口**?有无 **frame-lock**(逐条回答也没用,需先打破框架)?
-2. 分类(type)+ 定 **P0/P1/P2**(P0=压分主因,通常低分高信心)。
-3. 跨 reviewer 聚类:同一顾虑归一份证据(记哪几个 reviewer 提的)。
+## Rules (for each atomic concern)
+1. **Diagnose the real concern**: what the reviewer wrote versus what they are actually worried about. Is it a **misreading** (the paper does contain it) or a **real gap**? Is there a **frame lock** — a case where answering point by point will not help because the framing has to be broken first?
+2. Classify it (`type`) and assign a **priority** of P0/P1/P2 (P0 = the main reason the score is low, typically a low score held with high confidence).
+3. Cluster across reviewers: the same worry maps to one piece of evidence, recording which reviewers raised it.
 
-## 输出:`campaigns/{{SLUG}}/ledger/concern_ledger.json`(每条:`{id, cluster, reviewers[], type, surface, real_concern, misread_or_gap, frame_lock, priority}`)。receipt:`{n_concern, n_P0, n_frame_lock}`。
+## Output: `campaigns/{{SLUG}}/ledger/concern_ledger.json`, one entry per concern: `{id, cluster, reviewers[], type, surface, real_concern, misread_or_gap, frame_lock, priority}`. Receipt: `{n_concern, n_P0, n_frame_lock}`.

@@ -1,13 +1,13 @@
-# stage r1_evidence_map — 证据基底
+# stage r1_evidence_map — evidence base
 
-> 新引擎上下文。paper + card → `evidence_map.json`(可诚实引用的一切)。
+> Fresh engine context. paper + card → `evidence_map.json`: everything that can be cited honestly.
 
-## 槽位 `{{SLUG}}`
-## 输入(只读):`papers/{{SLUG}}/Tex/`、`campaigns/{{SLUG}}/REBUTTAL_CARD.json`、扫已有实验结果目录。
+## Slot `{{SLUG}}`
+## Inputs (read-only): `papers/{{SLUG}}/Tex/`, `campaigns/{{SLUG}}/REBUTTAL_CARD.json`, and a scan of existing experiment result directories.
 
-## 规则
-1. 每个 `paper_claim` 定位到真实 §/图/表/定理(claim_anchors)。
-2. 每个 `concern_seed` 给 `response_mode`(clarify/existing/experiment/concede/literature，按可行性阶梯)+ `evidence`(真实定位/已有结果文件路径/需要的 expid)+ `ready`(现在齐 or 等实验)。
-3. **只定位真实存在的证据,别编**;引不到 → concede。
+## Rules
+1. Anchor every `paper_claim` to a real section, figure, table or theorem (`claim_anchors`).
+2. Give every `concern_seed` a `response_mode` (clarify / existing / experiment / concede / literature, following the feasibility ladder), the `evidence` behind it (a real location, a path to an existing result file, or the expid that would be needed), and `ready` (available now, or waiting on an experiment).
+3. **Anchor only evidence that actually exists — never invent one.** If you cannot anchor it, concede.
 
-## 输出:`campaigns/{{SLUG}}/ledger/evidence_map.json`(`{claim_anchors:[], concern_evidence:[]}`)。receipt:`{n_anchors, n_concern, n_ready, n_wait_experiment}`。
+## Output: `campaigns/{{SLUG}}/ledger/evidence_map.json` (`{claim_anchors:[], concern_evidence:[]}`). Receipt: `{n_anchors, n_concern, n_ready, n_wait_experiment}`.

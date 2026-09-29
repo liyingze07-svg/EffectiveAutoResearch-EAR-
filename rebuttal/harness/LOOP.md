@@ -1,48 +1,53 @@
-# LOOP.md — 显式循环协议(goal 模式)
+# LOOP.md — Explicit loop protocol (goal mode)
 
-> per-reviewer 的 r6→r7 循环。引擎按这个**确切步骤序列**跑,不即兴。停机判据见 `GOAL.md`。
+> The per-reviewer r6→r7 loop. The engine follows this **exact step sequence** and does not improvise. For the stopping criterion see `GOAL.md`.
 
-## 每个 reviewer 的循环
+## The loop, per reviewer
+
 ```
-seed = None                                   # carry-forward 种子(上轮 best + advice)
+seed = None                                   # carry-forward seed (last round's best + advice)
 best_ever = None
-for round in 1..max_iter:                     # max_iter 来自 card,默认 4
-  # ① MoE 生成:每个策略一版(引擎无关,读 strategies/MANIFEST.json)
+for round in 1..max_iter:                     # max_iter comes from the card, default 4
+  # ① MoE generation: one draft per strategy (engine-agnostic, reads strategies/MANIFEST.json)
   drafts = [ engine(stages/r6_write.md, {reviewer, strategy: s, seed}) for s in MANIFEST ]
-  # ② 便宜门:弹药 grep + DeepSeek 判官,选最高
+  # ② Cheap gate: ammunition grep + DeepSeek judge, take the highest
   for d in drafts: d.ammo = ammo_hits(d); d.ds = deepseek_judge(case(reviewer, d))
-  best = argmax(drafts, key=rank)             # bar_met > rp=high > ammo少 > reaction
-  if best.ammo != []: seed = carry(best, "去掉弹药: "+best.ammo); continue   # 便宜拒,不调 Codex
-  if not bar_met(best.ds): seed = carry(best, best.ds.advice); continue      # DeepSeek 没过
-  # ③ 权威门:Codex(高 reasoning,分区路由),只在便宜门过了才调
+  best = argmax(drafts, key=rank)             # bar_met > rp=high > fewer ammo > reaction
+  if best.ammo != []: seed = carry(best, "remove ammunition: "+best.ammo); continue  # cheap reject, no Codex
+  if not bar_met(best.ds): seed = carry(best, best.ds.advice); continue              # DeepSeek did not clear
+  # ③ Authoritative gate: Codex (high reasoning, zone-routed), called only after the cheap gate passes
   codex = codex_judge(case(reviewer, best))
-  con = consensus(best.ds, codex, case)       # authoritative(OA=3) / strict(其余)
+  con = consensus(best.ds, codex, case)       # authoritative (OA=3) / strict (all other zones)
   if con.stop and best.ammo == []:
-     record(reviewer, best, "PASS"); break     # 达标,退出该 reviewer 循环
+     record(reviewer, best, "PASS"); break     # cleared, leave this reviewer's loop
   best_ever = better(best_ever, best)
-  seed = carry(best, con.advice)               # ④ carry-forward:best 稿 + 裁判 advice + 要避开的弹药
+  seed = carry(best, con.advice)               # ④ carry-forward: best draft + judge advice + phrases to avoid
 else:
-  record(reviewer, best_ever, "HONEST_CONCEDE")   # 轮尽 → 诚实让步
+  record(reviewer, best_ever, "HONEST_CONCEDE")   # rounds exhausted → honest concession
 ```
 
-## carry-forward 种子(下一轮 r6_write 的输入)
+## Carry-forward seed (input to the next round's r6_write)
+
 ```json
-{ "prior_best_rebuttal": "<上轮最优正文>",
-  "blocker": "<门给的 blocker>",
-  "apply_advice": "<门给的 advice>",
-  "avoid_phrases": ["<上轮泄漏的弹药句式>"] }
+{ "prior_best_rebuttal": "<last round's best text>",
+  "blocker": "<blocker reported by the gate>",
+  "apply_advice": "<advice reported by the gate>",
+  "avoid_phrases": ["<ammunition phrasing that leaked last round>"] }
 ```
-下一轮生成**在 prior_best 上改**(保留有效的、按 advice 补、删 avoid),不从零重写。
 
-## 四条内建(防偷懒/防拟合/防浪费/防震荡)
-1. **便宜门先行**:弹药/DeepSeek 没过绝不调昂贵的 Codex 权威判官。
-2. **裁判意见驱动重写**:advice + avoid 喂回,不是换措辞碰运气。
-3. **best-so-far** 防震荡(别把过的改差)。
-4. **max_iter → 诚实让步**,不无限拟合。
+The next round **edits `prior_best`** — keep what worked, add what the advice asks for, delete what must be avoided. It does not rewrite from scratch.
 
-## 路由(门不过时 advice 指向哪个阶段)
-| 门的 advice 类型 | 回哪个 stage |
+## Four built-in protections (against laziness, criterion-fitting, waste and oscillation)
+
+1. **Cheap gate first**: never spend the expensive Codex judge on a draft that failed the ammunition check or DeepSeek.
+2. **Judge feedback drives the rewrite**: advice and avoid-phrases are fed back; the loop does not reroll wording and hope.
+3. **Best-so-far** prevents oscillation (do not make a passing draft worse).
+4. **max_iter → honest concession**, rather than fitting the criterion indefinitely.
+
+## Routing (which stage the advice sends you back to when a gate fails)
+
+| Type of advice from the gate | Go back to |
 |---|---|
-| 证据不足/需要数据 | r4(补真实验/文献,或 warrant 阶梯换证据) |
-| 逻辑弱/没说到点 | r6(重建论证 DAG) |
-| 误解了 concern | r2(重诊断) |
+| Insufficient evidence / data needed | r4 (run a real experiment, cite literature, or move down the warrant ladder) |
+| Weak logic / missed the point | r6 (rebuild the argument DAG) |
+| Misread the concern | r2 (re-diagnose) |

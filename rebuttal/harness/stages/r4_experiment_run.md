@@ -1,19 +1,15 @@
-# stage r4_experiment_run — 跑一个实验
+# stage r4_experiment_run — run one experiment
 
-> 新引擎上下文(Codex,tx-118)。experiment_request + 论文真码真数据 → 可验收产物。**产物之后会被另一个 Codex 过 X1-X6,绝不能造假。**
+> Fresh engine context. experiment_request + the paper's real code and real data → an auditable artifact. **A different engine will audit this artifact afterwards, so nothing may be fabricated.**
 
-## 槽位 `{{SLUG}}` `{{EXPID}}`
-## 输入(只读):`campaigns/{{SLUG}}/ledger/experiment_queue.json` 里 `{{EXPID}}` 的 request、`papers/{{SLUG}}/`(论文码/数据,**只读,绝不改、绝不 git**)。
+## Slots `{{SLUG}}` `{{EXPID}}`
+## Inputs (read-only): the request for `{{EXPID}}` in `campaigns/{{SLUG}}/ledger/experiment_queue.json`, and `papers/{{SLUG}}/` (the paper's code and data — **read-only, never modify, never commit**).
 
-## 规则
-0. **先检查执行域**：若 `campaigns/{{SLUG}}/REMOTE_ONLY.md` 存在，必须先完整读取并遵守。该文件存在时，任何数据准备、统计、推理、训练、评测和 smoke run 都只能在文件声明的远端执行；本机只允许静态 lint、编排和保存小型摘要/哈希。不得因为任务是 CPU-only 就在本机运行。
-1. 用论文**真实**数据/已有码;**绝不 np.random/合成/toy 当数据源**(bootstrap 重采样真数据可以)。
-2. codex 写 `driver.py` → 本机静态 lint → 跑(CPU on tx-118;需 GPU → `ExpAuto/NewInfra/runner/zj.sh` ZJM=A + `gpu_lock.sh`,**全套 timeout**)→ 存 `{raw,derived}`。
-3. **绝不编数字**；运行时限优先服从 experiment request 中显式注册的
-   remote wall-time budget。未显式注册时默认 40 分钟。跑不出、数据缺或
-   超时 → `status:failed|partial` + 原因（合法结局，下游走 warrant
-   阶梯让步）。不得为了满足默认 40 分钟而截断一个 request 已明确允许
-   更长时间、且正在正常收敛的多 epoch 远端训练。
-4. 工作目录只 `campaigns/{{SLUG}}/experiments/{{EXPID}}/`。
+## Rules
+0. **Check the execution domain first.** If `campaigns/{{SLUG}}/REMOTE_ONLY.md` exists, read it in full and obey it. When that file exists, all data preparation, statistics, inference, training, evaluation and smoke runs must happen on the remote host it declares; the local machine may only run static lint, orchestration and small summaries or hashes. Do not run locally merely because a task happens to be CPU-only.
+1. Use the paper's **real** data and existing code. **Never use `np.random`, synthetic or toy data as the data source** (bootstrap resampling of real data is fine).
+2. Write `driver.py`, lint it statically, run it (locally for CPU work; for GPU go through the declared remote runner with its lock, and wrap every remote call in a timeout), then store `{raw, derived}`.
+3. **Never invent a number.** The wall-time limit follows whatever the experiment request explicitly registers; when nothing is registered, default to 40 minutes. If the run fails, the data is missing, or it times out → `status: failed|partial` plus the reason (a legitimate outcome; downstream moves down the warrant ladder and concedes). Do not truncate a multi-epoch remote training run that is converging normally and that the request explicitly allowed more time for, merely to fit the 40-minute default.
+4. The working directory is only `campaigns/{{SLUG}}/experiments/{{EXPID}}/`.
 
-## 输出(全放上面目录):`results.json`(`{raw,derived}`,derived 带 recipe)、`run.log`、`driver.py`、`manifest.json`(host/started_utc/duration_sec/seed_count/sample_count/data_source_path/**data_fingerprint**/model_id/cmd)。receipt:`{expid, status, key_numbers, data_source_path}`。
+## Output (everything in the directory above): `results.json` (`{raw, derived}`, with a recipe attached to `derived`), `run.log`, `driver.py`, and `manifest.json` (host, started_utc, duration_sec, seed_count, sample_count, data_source_path, **data_fingerprint**, model_id, cmd). Receipt: `{expid, status, key_numbers, data_source_path}`.

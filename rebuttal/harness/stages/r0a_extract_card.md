@@ -1,14 +1,14 @@
-# stage r0a_extract_card — 抽卡
+# stage r0a_extract_card — extract the card
 
-> 新引擎上下文。paper + reviews → `REBUTTAL_CARD.json`。
+> Fresh engine context. paper + reviews → `REBUTTAL_CARD.json`.
 
-## 槽位 `{{SLUG}}`
-## 输入(只读):`papers/{{SLUG}}/review.md`、`papers/{{SLUG}}/Tex/main.tex`+`sections/*.tex`、扫代码/实验索引(判 concern 可行性)。
+## Slot `{{SLUG}}`
+## Inputs (read-only): `papers/{{SLUG}}/review.md`, `papers/{{SLUG}}/Tex/main.tex` plus `sections/*.tex`, and a scan of the code and experiment index (to judge whether a concern is addressable).
 
-## 规则
-1. reviewer 的 `initial_overall`(/5)、`soundness`、`confidence` 照 review.md **原值抽,别猜**。
-2. `paper_claims` 必须来自论文正文;`concern_seeds` 必须来自 review 原文,**原子化**(一条 weakness/question 一条)。
-3. 每个 concern 标 `type` + `likely_needs_experiment`(诚实:只有"明确要新实验/数据/baseline"且代码可能支持才 true)+ `note`(需实验→补什么;否则→已有证据/澄清/让步)。
-4. `target.require_raise_on` = OA≤3 的 reviewer;`maintain` = OA≥4。绝不编。
+## Rules
+1. Take each reviewer's `initial_overall` (out of 5), `soundness` and `confidence` **verbatim from review.md — do not guess**.
+2. `paper_claims` must come from the paper body; `concern_seeds` must come from the review text and must be **atomised** (one weakness or question per entry).
+3. Tag every concern with a `type`, with `likely_needs_experiment` (be honest: only true when the reviewer explicitly asks for a new experiment, dataset or baseline **and** the code could plausibly support it), and with a `note` (what to run if an experiment is needed; otherwise which existing evidence, clarification or concession applies).
+4. `target.require_raise_on` = reviewers with OA≤3; `maintain` = reviewers with OA≥4. Never invent these.
 
-## 输出:`campaigns/{{SLUG}}/REBUTTAL_CARD.json`(schema 见 `templates/REBUTTAL_CARD.schema.json`)。receipt:`{slug, n_reviewers, n_concerns, n_need_experiment, target}`。
+## Output: `campaigns/{{SLUG}}/REBUTTAL_CARD.json` (schema in `templates/REBUTTAL_CARD.schema.json`). Receipt: `{slug, n_reviewers, n_concerns, n_need_experiment, target}`.

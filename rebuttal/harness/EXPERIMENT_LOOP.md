@@ -1,50 +1,57 @@
-# EXPERIMENT_LOOP.md — 实验 goal 循环(一等公民)
+# EXPERIMENT_LOOP.md — The experiment goal loop (first-class)
 
-> 和 `LOOP.md`(reviewer MoE 循环)对称:那个循环把 **rebuttal 文本**迭代到过 r7 涨分门;
-> **这个循环把一个实验迭代到过 S-exp 说服力门(STRENGTH),或诚实让步。**
-> 停机判据 = S-exp;写手/规划是 DRIVE,判官是 ACQUIT,物理隔离,复用冻结 `bar_met`。
+> Symmetric to `LOOP.md` (the reviewer MoE loop). That loop iterates the **rebuttal text** until it clears the r7 raise gate;
+> **this loop iterates a single experiment until it clears the S-exp persuasion gate (STRENGTH), or concedes honestly.**
+> The stopping criterion is S-exp. Writing and planning are DRIVE, judging is ACQUIT, they are physically separated, and both reuse the frozen `bar_met`.
 
-## 目标(一句话)
-对每个要补的实验:让它的**真实结果**在跨家族合议下清掉它服务的 (reviewer, concern) 的**分区 bar**(= `STRENGTH`)。
-清了 → 进证据池;清不了 → 说清**为什么** + **怎么重设计** → 换更强的真实验重跑;到 `max_experiment_iter`(默认 3)
-或重设计不可行 → **诚实让步**,带着**最好的真实结果**出(**绝不重贴成 STRENGTH**)。
+## Goal (one sentence)
 
-## 循环(`orchestrate.experiment_loop`)
+For each experiment to be added: make its **real result** clear the **zone bar** of the (reviewer, concern) it serves, under cross-family consensus (that is, `STRENGTH`).
+If it clears, the result enters the evidence pool. If it does not, state **why** and **how to redesign**, then run a stronger real experiment. At `max_experiment_iter` (default 3), or when no feasible redesign exists, **concede honestly** and emit the **best real result obtained** — **never relabel it as STRENGTH**.
+
+## The loop (`orchestrate.experiment_loop`)
+
 ```
-输入:一个 experiment_request(带 serves[] + expected_or_falsifier)
+Input: one experiment_request (with serves[] and expected_or_falsifier)
 ──────────────────────────────────────────────────────────────
-ANTE 门(r3b,跑之前,合议才拦):
-   NOT_NEEDED → 便宜 warrant 已够,不必加 → 退出(status=NOT_NEEDED)
-   REDESIGN   → 连 best-case 都翻不了 → 先重设计(planner);不可行→诚实让步
-   GREENLIGHT → 进下面的循环
+ANTE gate (r3b, before spending anything; only a consensus blocks):
+   NOT_NEEDED → a cheap warrant already suffices → exit (status=NOT_NEEDED)
+   REDESIGN   → even the best case would not move the reviewer → redesign first;
+                if infeasible, concede honestly
+   GREENLIGHT → enter the loop below
 ──────────────────────────────────────────────────────────────
 for it in 1..max_experiment_iter:
-   r4_run(A 机 zjexp,danger-full-access,timeout) → results.json
-   r4_accept(异引擎 X1-X6 防造假) → ACCEPTANCE.json
-      REJECT = 诚实/跑挂了(不是说服问题) → 诚实让步收尾(不算说服迭代)
-   S-exp 说服力门(分区路由,OA=3 Codex 主判) → PERSUASION.json
-      STRENGTH → 停机,WON(进证据池当硬证据)          ← 唯一停机条件(用户策略)
-      非 STRENGTH →
-         r4_experiment_redesign(planner,DRIVE 引擎)产:
-            why_cannot_persuade(心结哪块没动)+ deficiency(轴错/规模/混淆/baseline/指标/效应)
-            + 更强的 new_experiment_request + feasible?
-         feasible → 换成新 request(新 expid)→ 下一轮重跑
-         infeasible → 诚实让步(warrant 阶梯 move-6),带 best-so-far 真结果
-到 max_iter 仍非 STRENGTH → 诚实让步 best-so-far
+   r4_run(remote host, danger-full-access, timeout) → results.json
+   r4_accept(a different engine runs the code audit) → ACCEPTANCE.json
+      REJECT = an honesty or execution failure, not a persuasion failure
+               → close out with an honest concession (does not count as a persuasion iteration)
+   S-exp persuasion gate (zone-routed; Codex is primary at OA=3) → PERSUASION.json
+      STRENGTH → halt, WON (enters the evidence pool as hard evidence)   ← the only halting condition
+      not STRENGTH →
+         r4_experiment_redesign (planner, DRIVE engine) produces:
+            why_cannot_persuade (which part of the concern was not moved)
+            + deficiency (wrong axis / scale / confound / baseline / metric / effect too small)
+            + a stronger new_experiment_request + feasible?
+         feasible → adopt the new request (new expid) → rerun next iteration
+         infeasible → concede honestly (warrant ladder move 6) with the best real result so far
+max_iter reached without STRENGTH → concede honestly with the best-so-far
 ```
 
-## 停机与出口
-- **WON** ⟺ 某轮 S-exp `overall == STRENGTH`(跨家族合议清该分区 bar)。
-- **HONEST_CONCEDE** ⟺ 重设计不可行 / X1-X6 REJECT / max_iter 到。带 `final`(最好那轮 expid)+ `why` + `chain`(每轮留痕)。
-- **NOT_NEEDED** ⟺ ANTE 判便宜 warrant 已够。
-- 留痕:`experiments/<base>/loop.json`(ANTE 决策 + 每轮 accept/persuasion + 重设计链)、`ledger/experiment_loop_results.json`(全实验汇总)。
+## Halting and exits
 
-## 不可违反(否则整轮作废)
-1. **只 STRENGTH 停机,但绝不为停机造假**:够 STRENGTH 只能靠**设计更强的真实验**,不能把弱/双刃结果重贴成强;做不到就诚实让步(带真实下界结果,不改标签)。
-2. 每轮真跑真数据过 X1-X6;负结果照报;`feasible=false` 是合法结局。
-3. 判官(S-exp/accept 的 ACQUIT)≠ 写手/规划(run/redesign 的 DRIVE);判官跑 `JUDGE_MODEL`,规划跑写手引擎。
-4. 停机判据 = 冻结 `bar_met` 的跨家族合议,不靠单判官。
-5. **死磕有界**:`max_experiment_iter` + 每次重设计过可行性闸;不可行立即让步,不空耗 GPU。
+- **WON** ⟺ some iteration's S-exp reports `overall == STRENGTH` (cross-family consensus cleared that zone's bar).
+- **HONEST_CONCEDE** ⟺ no feasible redesign, or acceptance REJECT, or `max_iter` reached. Carries `final` (the best iteration's expid), `why`, and `chain` (a trace of every iteration).
+- **NOT_NEEDED** ⟺ the ANTE gate judged that a cheap warrant already suffices.
+- Trace: `experiments/<base>/loop.json` (the ANTE decision, each iteration's acceptance and persuasion results, and the redesign chain) and `ledger/experiment_loop_results.json` (a summary over all experiments).
 
-## 和 reviewer 循环的关系
-实验循环产出的是**证据**(evidence_pool 里 STRENGTH=met / 让步=unmet + framing_hint);reviewer 循环(`LOOP.md`)再用这些证据把 rebuttal 迭代到过 r7。两个循环解耦:实验先收敛到"能说服的证据",文本循环再收敛到"过涨分门的稿"。
+## Inviolable (breaking any of these voids the round)
+
+1. **Only STRENGTH halts, and nothing is ever faked to reach it.** Reaching STRENGTH is only allowed by **designing a stronger real experiment**; a weak or double-edged result must never be relabelled as strong. If that is not possible, concede honestly and carry the real lower-bound result with its true label.
+2. Every iteration runs on real data and passes the acceptance audit. Negative results are reported as they are. `feasible=false` is a legitimate outcome.
+3. The judge (ACQUIT: S-exp and acceptance) is never the writer or planner (DRIVE: run and redesign). The judge runs `JUDGE_MODEL`; the planner runs the writer engine.
+4. The stopping criterion is cross-family consensus on the frozen `bar_met`, never a single judge.
+5. **Bounded persistence**: `max_experiment_iter` plus a feasibility check on every redesign. If it is infeasible, concede immediately rather than burning compute.
+
+## Relationship to the reviewer loop
+
+The experiment loop produces **evidence** (in the evidence pool: STRENGTH marks a concern `met`, a concession marks it `unmet` and attaches a `framing_hint`). The reviewer loop (`LOOP.md`) then uses that evidence to iterate the rebuttal until it clears r7. The two loops are decoupled: evidence converges to "persuasive" first, then text converges to "clears the gate".

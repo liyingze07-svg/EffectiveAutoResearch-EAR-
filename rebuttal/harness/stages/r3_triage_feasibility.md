@@ -1,19 +1,19 @@
-# stage r3_triage_feasibility — 响应模式 + 实验可行性阶梯
+# stage r3_triage_feasibility — response modes and the experiment feasibility ladder
 
-> 新引擎上下文。concern_ledger → 响应模式 + 去重实验队列。核心:**实验是 warrant 不是目的**,大多数 concern 不需新实验。
+> Fresh engine context. concern_ledger → response modes plus a deduplicated experiment queue. The core idea: **an experiment is a warrant, not a goal**; most concerns need no new experiment.
 
-## 槽位 `{{SLUG}}`
-## 输入(只读):`concern_ledger.json`、`evidence_map.json`、`harness/shared-assets/experiment-ladder.md`(§0 可行性阶梯)。
+## Slot `{{SLUG}}`
+## Inputs (read-only): `concern_ledger.json`, `evidence_map.json`, `harness/shared-assets/experiment-ladder.md` (the feasibility ladder).
 
-## 规则(每个 concern)
-1. 判响应模式:A 澄清 / B 已有证据 / C 补实验 / D 补文献 / E 让步 / F 反驳。
-2. **先给 concern 定 `priority`(决定补实验的积极程度)**:
-   - **P0 = reviewer 明确点名要实验 / 质疑「泛化性·缺实验·缺 baseline·未验证·只在 X 上测过」**的 concern(尤其 OA≤3 的攻坚 reviewer)。这类 concern 的心结就是「拿证据来」,写作糊弄不过去。
-   - P1/P2 = 锦上添花或次要澄清。
-3. **C 类走 warrant 回退阶梯**(experiment-ladder 阶梯表:1已有→2论证无关→3更便宜代理→4pilot→5文献→6让步→7真做E),但**按 priority 分档**:
-   - **P0:默认走档 4 `pilot`(小规模真实验,能复用已有基建/数据/代码就跑)**。只有 pilot 明确不可行——无可复用基建 / 需真人标注 / 远超预算/时间——才降到档 6 让步,且**必须填 `pilot_rejected_reason`**。绝不因「省事 / 写作能绕」直接滑到让步。
-   - P1/P2:能复用基建且耗时小才补,否则走已有证据 / 让步。
-4. **诚实闸(硬)**:任何 concern 落到「E 让步」之前,必须显式回答「能不能用 pilot 补?」——`pilot_rejected_reason` 为空则**不许**标让步。让步是 pilot 被否决后的兜底,不是默认档。
-5. 真需实验的 → 写 `experiment_request`,**按规格去重**成论文级队列,每个带 `serves:[concern/reviewer]` + `priority`。
+## Rules (per concern)
+1. Decide the response mode: A clarify / B existing evidence / C new experiment / D literature / E concede / F rebut.
+2. **Assign a `priority` first — it decides how hard you try to add an experiment.**
+   - **P0 = the reviewer explicitly asks for an experiment, or challenges generalisation, missing experiments, a missing baseline, lack of verification, or "only tested on X"** (especially for the OA≤3 reviewers you are trying to move). For these the real concern is "show me evidence", and no amount of writing will paper over it.
+   - P1/P2 = nice-to-have, or a secondary clarification.
+3. **Mode C follows the warrant fallback ladder** (see the ladder table in experiment-ladder: 1 already exists → 2 argumentatively irrelevant → 3 cheaper proxy → 4 pilot → 5 literature → 6 concede → 7 run the full experiment), **graded by priority**:
+   - **P0: default to rung 4, `pilot`** — a small real experiment, run it whenever existing infrastructure, data or code can be reused. Only drop to rung 6 (concede) when the pilot is clearly infeasible (no reusable infrastructure, human annotation required, or far beyond the budget or time window), and then you **must** fill in `pilot_rejected_reason`. Never slide straight to a concession because it is easier or because the writing could work around it.
+   - P1/P2: add an experiment only when infrastructure is reusable and the cost is small; otherwise use existing evidence or concede.
+4. **Honesty gate (hard)**: before any concern lands on "E concede", you must explicitly answer "could a pilot cover this?" — if `pilot_rejected_reason` is empty, the concession is **not** allowed. A concession is the fallback after a pilot has been ruled out, not the default.
+5. For concerns that genuinely need an experiment, write an `experiment_request`, **deduplicate by specification** into a paper-level queue, each carrying `serves:[concern/reviewer]` and `priority`.
 
-## 输出:`concern_ledger.json` 补 `response_mode` + `priority`(+ 让步的补 `pilot_rejected_reason`);`campaigns/{{SLUG}}/ledger/experiment_queue.json`（去重 experiment_request,带 serves[] + priority）。receipt:`{n_by_mode, n_experiments_queued, n_pilot_P0}`。
+## Output: `concern_ledger.json` gains `response_mode` and `priority` (plus `pilot_rejected_reason` for concessions); `campaigns/{{SLUG}}/ledger/experiment_queue.json` holds the deduplicated experiment requests with `serves[]` and `priority`. Receipt: `{n_by_mode, n_experiments_queued, n_pilot_P0}`.

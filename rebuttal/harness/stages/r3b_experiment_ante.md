@@ -1,29 +1,32 @@
-# stage r3b_experiment_ante — 实验前置门(ANTE;跑之前判"要不要跑")
+# stage r3b_experiment_ante — the ANTE gate (decide *before* running whether to run at all)
 
-> **不是自由 prompt——复用冻结 `consensus_gate`,orchestrator 在 Python 里跑(`orchestrate.experiment_ante`)。**
-> 在**烧 GPU 之前**回答你原始诉求的前半:**什么时候需要加实验**,以及**加了能不能说服**。
-> 策略 = **合议才拦**(保守,偏向"便宜就跑"):只有异家族合议清清楚楚才 NOT_NEEDED / REDESIGN。
+> **Not a free-form prompt.** It reuses the frozen `consensus_gate` and is executed in Python by the orchestrator (`orchestrate.experiment_ante`).
+> **Before any GPU time is spent**, it answers the first half of the question: **when is a new experiment needed**, and **would adding one actually persuade**.
+> Policy: **only a consensus blocks.** This is deliberately conservative and biased towards "if it is cheap, just run it": NOT_NEEDED or REDESIGN require a clear cross-family agreement.
 
-## 它判什么(每个实验请求,逐服务的 concern)
-用**同一根** `bar_met`,对两个反事实小桩各判一次(和 S-exp 同机器、同分区路由):
-1. **便宜 warrant 桩**:"reviewer concern X;不加新实验的最佳已有 warrant(论文定位 / 已有资产 / 文献 / 界定让步)" → 过 bar?
-2. **实验 best-case 桩**:"reviewer concern X;我们要跑 E,best-case 真结果 = 预注册成功判据" → 过 bar?
+## What it judges (per experiment request, per concern served)
 
-## 决策(聚合到实验级)
-| 情形 | decision | loop 动作 |
+Using **the same** `bar_met`, it judges two counterfactual stubs (same machinery and same zone routing as S-exp):
+
+1. **Cheap-warrant stub**: "reviewer concern X; the best available warrant *without* a new experiment (a pointer into the paper, an existing asset, literature, or a scoped concession)" — does it clear the bar?
+2. **Experiment best-case stub**: "reviewer concern X; we intend to run E, and the best-case real result equals the pre-registered success criterion" — does it clear the bar?
+
+## Decision (aggregated to the experiment level)
+
+| Situation | decision | Loop action |
 |---|---|---|
-| **所有** 服务的 concern 便宜 warrant 都 STRENGTH | **NOT_NEEDED** | 不必加实验(便宜 warrant 已够)→ 踢出队列,r3 走澄清/已有证据 |
-| 便宜不够,但 **≥1** concern 的 best-case STRENGTH | **GREENLIGHT** | 放行去跑(进 run→accept→persuade 循环) |
-| 连 best-case 都没有一个 STRENGTH | **REDESIGN** | 别烧 GPU——直接进重设计 planner(可行则换更强设计,不可行则诚实让步) |
+| **Every** concern served already clears on the cheap warrant | **NOT_NEEDED** | No experiment needed — drop it from the queue; r3 uses clarification or existing evidence |
+| The cheap warrant is not enough, but **at least one** concern clears on the best case | **GREENLIGHT** | Proceed to run (enters the run → accept → persuade loop) |
+| Not even the best case clears for any concern | **REDESIGN** | Do not burn GPU — go straight to the redesign planner (adopt a stronger design if feasible, otherwise concede honestly) |
 
-- **为何 best-case 用预注册判据**:它同时成了实验的**预注册 falsifier**——真跑完 POST 拿真结果比对,打不到就判 CONCEDE,反 p-hacking。
-- **合议才拦**:STRENGTH = 分区路由下两家族合议清(OA=3 Codex 主判);单判官说不行不足以 NOT_NEEDED/REDESIGN。off-distribution 保守。
+- **Why the best case uses the pre-registered criterion**: it doubles as the experiment's **pre-registered falsifier**. After the real run, POST compares the real result against it; missing it yields CONCEDE. This is the anti-p-hacking mechanism.
+- **Only a consensus blocks**: STRENGTH means both families agree under zone routing (Codex is primary at OA=3). One judge saying no is not enough to declare NOT_NEEDED or REDESIGN. Off-distribution, stay conservative.
 
-## 输入(只读)
-- `campaigns/{{SLUG}}/ledger/experiment_queue.json`(request + serves + expected_or_falsifier)、`evidence_map.json`(便宜 warrant 来源)、`REBUTTAL_CARD.json`(reviewer OA)、`rebuttal_verifier/consensus_gate.py`。
+## Inputs (read-only)
+`campaigns/{{SLUG}}/ledger/experiment_queue.json` (request, serves, expected_or_falsifier), `evidence_map.json` (the source of cheap warrants), `REBUTTAL_CARD.json` (reviewer OA), and `rebuttal_verifier/consensus_gate.py`.
 
-## 输出:内存决策 + `experiments/<expid>/loop.json` 的 ANTE 段(`{decision, per_concern:[{reviewer,concern,cheaper_clears,bestcase_clears}]}`)。
+## Output: an in-memory decision plus the ANTE section of `experiments/<expid>/loop.json`: `{decision, per_concern:[{reviewer, concern, cheaper_clears, bestcase_clears}]}`.
 
 ## DO-NOT
-- 不新增 bar(只 `bar_met`);best-case 桩是**假设**,只 gate "要不要跑" 的决定,**不是**可引用的 claim。
-- 不因单判官假阴性就毙实验;不把"省事"当 NOT_NEEDED(那是 DeepSeek/Codex 合议判的,不是驱动拍的)。
+- Do not add a new bar (only `bar_met`). The best-case stub is a **hypothetical**: it gates the decision to run, and is **never** a citable claim.
+- Do not kill an experiment on one judge's false negative, and do not dress up "this is easier" as NOT_NEEDED — that verdict comes from the cross-family consensus, not from the driver.

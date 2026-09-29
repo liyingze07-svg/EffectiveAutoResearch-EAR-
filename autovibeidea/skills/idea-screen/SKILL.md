@@ -22,7 +22,7 @@ Screen and rank research ideas: **$ARGUMENTS**
 > - `CODEX_MODE=codex-cli` → `bash tools/codex_call.sh --thread <thread文件> --output <输出文件> --phase <阶段> --model REVIEWER_MODEL --config '{"model_reasoning_effort":"xhigh"}' --prompt "..."`。新建线程时 thread 文件为空即可，脚本会把 thread_id 写回该文件；后续同线程调用传同一个文件即自动 `resume`。**无需 API key**。
 > - `CODEX_MODE=gpt-api` → `bash tools/gpt_call.sh`（同样的参数形态，需 `OPENAI_API_KEY`）。
 >
-> 三条路径都不可用时，才降级为 Claude 自评，并在节点上置 `scores.degraded=true`。
+> 三条路径都不可用时，才降级为本地 agent 自评，并在节点上置 `scores.degraded=true`。
 
 ## Overview
 
@@ -236,9 +236,9 @@ mcp__codex__codex:
 > `bash tools/gpt_call.sh --model REVIEWER_MODEL --config '{"model_reasoning_effort":"xhigh"}' --prompt "[prompt text]" --output /tmp/screen_venue_resp.txt`
 
 **Codex MCP failure handling**: If `mcp__codex__codex` is unavailable:
-1. Fall back to Claude performing the venue reviewer simulation directly
+1. Fall back to the local agent performing the venue reviewer simulation directly
 2. Use the exact same prompt (venue profile injection, 3 reviewers + meta review)
-3. Log: "⚠️ Codex MCP unavailable. Venue simulation performed by Claude (self-review mode — reduced independence)."
+3. Log: "⚠️ Codex MCP unavailable. Venue simulation performed by the local agent (self-review mode — reduced independence)."
 4. Apply a 0.8x penalty to the venue score to account for reduced objectivity
 5. Continue pipeline — do NOT stop or ask the user.
 
@@ -261,7 +261,7 @@ Convert each reviewer's verdict to a numeric score:
 
 ## Module C: Strategic Fit Assessment
 
-This module deepens the 4-dimension researcher-fit framework (provenance in `README.md`) into a quantified 5-dimension evaluation. Claude performs this assessment directly — no external LLM call needed.
+This module deepens the 4-dimension researcher-fit framework (provenance in `README.md`) into a quantified 5-dimension evaluation. The local agent performs this assessment directly — no external LLM call needed.
 
 For EACH idea, evaluate on these 5 dimensions (1-10 each):
 
@@ -364,7 +364,7 @@ Where:
 - **Novelty_Score** = Module A score (0-10)
 - **Venue_Score** = Module B score (average of 3 reviewer verdicts, mapped to numeric, 0-10)
 - **Strategic_Score** = Module C score (average of 5 dimensions, 0-10)
-- **Feasibility_Score** = Carried from the `/idea-gen` output. If not available (e.g., ideas were provided directly), Claude estimates feasibility on a 0-10 scale based on: computational requirements, data availability, timeline, and implementation complexity.
+- **Feasibility_Score** = Carried from the `/idea-gen` output. If not available (e.g., ideas were provided directly), the local agent estimates feasibility on a 0-10 scale based on: computational requirements, data availability, timeline, and implementation complexity.
 
 Default weights: `novelty=0.25, venue=0.35, strategic=0.20, feasibility=0.20`
 
@@ -420,7 +420,7 @@ python3 tools/idea_nodes.py update IDEA-0X \
     --set scores.novelty=8.0 --set scores.venue=6.67 \
     --set scores.strategic=7.6 --set scores.feasibility=7.0 \
     --set scores.composite=7.25 \
-    --set 'scores.source=<REVIEWER_MODEL> via <codex-mcp|gpt-api|claude-selfreview>' \
+    --set 'scores.source=<REVIEWER_MODEL> via <codex-mcp|gpt-api|local-selfreview>' \
     --set scores.degraded=<true|false>
 ```
 

@@ -22,11 +22,11 @@ Four principles dominate this skill:
 
 ```
 User input (idea + rough approach)
-  -> Phase 0 (Claude): Freeze Problem Anchor
-  -> Phase 0.5 (Claude): Skeleton Extraction
-  -> Phase 1 (Claude): Scan grounding papers -> identify technical gap -> choose the sharpest route -> write focused proposal
+  -> Phase 0 (local agent): Freeze Problem Anchor
+  -> Phase 0.5 (local agent): Skeleton Extraction
+  -> Phase 1 (local agent): Scan grounding papers -> identify technical gap -> choose the sharpest route -> write focused proposal
   -> Phase 2 (Codex/GPT-5.4): Review for fidelity, specificity, contribution quality, and frontier leverage
-  -> Phase 3 (Claude): Parse + Top-2 diagnosis + Skeleton gap check -> revise method -> rewrite full proposal
+  -> Phase 3 (local agent): Parse + Top-2 diagnosis + Skeleton gap check -> revise method -> rewrite full proposal
   -> Phase 4 (Codex, same thread): Re-evaluate revised proposal
   -> Repeat Phase 3-4 until OVERALL SCORE >= 9 or MAX_ROUNDS reached
   -> Phase 5: Save full history to refine-logs/
@@ -49,7 +49,7 @@ User input (idea + rough approach)
 > - `CODEX_MODE=codex-cli` → `bash tools/codex_call.sh --thread <thread文件> --output <输出文件> --phase <阶段> --model REVIEWER_MODEL --config '{"model_reasoning_effort":"xhigh"}' --prompt "..."`。新建线程时 thread 文件为空即可，脚本会把 thread_id 写回该文件；后续同线程调用传同一个文件即自动 `resume`。**无需 API key**。
 > - `CODEX_MODE=gpt-api` → `bash tools/gpt_call.sh`（同样的参数形态，需 `OPENAI_API_KEY`）。
 >
-> 三条路径都不可用时，才降级为 Claude 自评，并在节点上置 `scores.degraded=true`。
+> 三条路径都不可用时，才降级为本地 agent 自评，并在节点上置 `scores.degraded=true`。
 
 ## Output Structure
 
@@ -358,8 +358,8 @@ Use this structure:
 
 Before starting external review, parse `$ARGUMENTS` for a `-- mode:` directive:
 
-- `-- mode: socratic` or `-- mode: socratic-auto`: Enter **Socratic Dialogue Mode** (see below). Fully automated — Claude answers GPT's questions autonomously.
-- `-- mode: socratic-human`: Enter **Socratic Dialogue Mode** (see below). Semi-automated — Claude extracts GPT's questions, then **PAUSES for human input**. This is the ONLY place in the pipeline where human interaction is permitted.
+- `-- mode: socratic` or `-- mode: socratic-auto`: Enter **Socratic Dialogue Mode** (see below). Fully automated — the local agent answers GPT's questions autonomously.
+- `-- mode: socratic-human`: Enter **Socratic Dialogue Mode** (see below). Semi-automated — The local agent extracts GPT's questions, then **PAUSES for human input**. This is the ONLY place in the pipeline where human interaction is permitted.
 - No `-- mode:` directive, or `-- mode: normal` (default): Skip to Phase 2 directly.
 
 ---
@@ -413,11 +413,11 @@ Begin questioning. Remember: NO score, NO verdict, only specific mechanistic que
 - Save GPT's questions to `refine-logs/socratic-turn-0-questions.md`.
 
 **Codex MCP failure handling (Socratic Turn 0)**: If `mcp__codex__codex` fails:
-1. Fall back to Claude playing both roles (Claude generates questions as if it were GPT)
-2. Log: "⚠️ Codex MCP unavailable. Socratic mode running as Claude self-dialogue (reduced independence). MAX_DIALOGUE_TURNS reduced to 2."
+1. Fall back to the local agent playing both roles (it generates questions as if it were GPT)
+2. Log: "⚠️ Codex MCP unavailable. Socratic mode running as local-agent self-dialogue (reduced independence). MAX_DIALOGUE_TURNS reduced to 2."
 3. Set MAX_DIALOGUE_TURNS = 2 for self-dialogue mode
 4. Continue — do NOT stop.
-5. For `socratic-human` mode: if Codex fails, automatically fall back to `socratic-auto` mode (Claude answers its own questions). Log this fallback.
+5. For `socratic-human` mode: if Codex fails, automatically fall back to `socratic-auto` mode (the local agent answers its own questions). Log this fallback.
 
 > **GPT-only mode**: Substitute `mcp__codex__codex` with:
 > `bash tools/gpt_call.sh --model REVIEWER_MODEL --config '{"model_reasoning_effort":"xhigh"}' --prompt "..." --output /tmp/socratic_t0.txt`
@@ -442,14 +442,14 @@ Save questions to `refine-logs/socratic-turn-T-questions.md`.
 
 **Step C: Answer Questions**
 
-For `socratic-auto` mode: Claude answers each question in detail, drawing on the current proposal, local papers, and domain knowledge.
+For `socratic-auto` mode: The local agent answers each question in detail, drawing on the current proposal, local papers, and domain knowledge.
 For `socratic-human` mode: Use the human-provided answers verbatim.
 
 Write answers to `refine-logs/socratic-turn-T-answers.md`.
 
 **Step D: Integrate Answers and Expand Proposal**
 
-Claude rewrites the proposal, integrating the answers into the relevant method sections. This is an EXPANSION task, not a revision task — do not change the direction or claimed contributions. Make the method more concrete and specific based on the answers.
+The local agent rewrites the proposal, integrating the answers into the relevant method sections. This is an EXPANSION task, not a revision task — do not change the direction or claimed contributions. Make the method more concrete and specific based on the answers.
 
 Save updated proposal to `refine-logs/socratic-turn-T-refinement.md`.
 
@@ -614,10 +614,10 @@ mcp__codex__codex:
 ```
 
 **Codex MCP failure handling**: If `mcp__codex__codex` is unavailable:
-1. Fall back to Claude performing the review directly
+1. Fall back to the local agent performing the review directly
 2. Use the same 7-dimension scoring prompt
-3. Log: "Warning: Codex MCP unavailable. Review performed by Claude (self-review — reduced objectivity)."
-4. Lower SCORE_THRESHOLD to 8 when in self-review mode (Claude reviewing its own work is inherently less critical)
+3. Log: "Warning: Codex MCP unavailable. Review performed by the local agent (self-review — reduced objectivity)."
+4. Lower SCORE_THRESHOLD to 8 when in self-review mode (an agent reviewing its own work is inherently less critical)
 5. Continue pipeline — do NOT stop or ask the user.
 
 **CRITICAL: Save the `threadId`** from this call for all later rounds.
@@ -888,8 +888,8 @@ Current proposal for context:
 > **GPT-only mode**: Use `bash tools/gpt_call.sh --thread THREAD_FILE --model REVIEWER_MODEL --config '{"model_reasoning_effort":"xhigh"}' --prompt "..." --output /tmp/expansion_resp.txt`
 
 **Codex MCP failure handling (Phase 5.5)**: If `mcp__codex__codex-reply` fails:
-1. Claude performs the expansion directly using the same prompt structure
-2. Log: "⚠️ Codex MCP unavailable for Phase 5.5. Deep Expansion performed by Claude."
+1. The local agent performs the expansion directly using the same prompt structure
+2. Log: "⚠️ Codex MCP unavailable for Phase 5.5. Deep Expansion performed by the local agent."
 3. Continue to Phase 5 — do NOT stop.
 
 #### Step 5.5.3: Re-run Theory-Experiment Alignment Check

@@ -69,7 +69,7 @@ git clone <this-repo> && cd EAR
 tail -f outputs/pipeline.log               # 实时日志
 ```
 
-在 Claude Code / Codex REPL 里也可以直接用 slash command：
+在支持 slash command 的 agent 环境（如 Codex REPL）里也可以直接调用：
 
 ```
 /start "offline RL 在图像观测下的样本效率瓶颈" -- venue: NeurIPS
@@ -227,7 +227,7 @@ codex exec --dangerously-bypass-approvals-and-sandbox
 如果你不接受这个前提，有两条更克制的路径：
 
 1. **在容器/一次性虚拟机里跑**，把仓库目录挂进去。
-2. **不用 shell 入口**，改在 Claude Code / Codex REPL 里逐个 skill 调用（`/lit-survey`、`/idea-gen` …）。
+2. **不用 shell 入口**，改在 agent REPL 里逐个 skill 调用（`/lit-survey`、`/idea-gen` …）。
    这时由你的 REPL 自己的权限策略管控，本仓库不绕过它。
 
 另外 `tools/codex_call.sh`（`--codex-cli` 路径下 skill 内部的单次外部模型调用）**不带**这个 flag，
@@ -257,7 +257,7 @@ claude mcp add codex -s user -- codex mcp-server
 
 **可选：** Zotero MCP（搜索本地论文库）、Obsidian MCP（搜索笔记）。两者缺失时自动降级为 WebSearch。
 
-外部模型调用失败时，所有 skill 会 fallback 到 Claude 自评并自动降级评分阈值，pipeline 不会停下等待输入。
+外部模型调用失败时，所有 skill 会 fallback 到本地 agent 自评并自动降级评分阈值，pipeline 不会停下等待输入。
 
 ---
 

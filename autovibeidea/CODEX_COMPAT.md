@@ -1,4 +1,4 @@
-本仓库的 `SKILL.md` 最初为 Claude Code 工作流编写。当前运行环境改为 Codex CLI 时，请按下面的兼容规则执行：
+本仓库的 `SKILL.md` 最初为支持 Skill / Agent 工具的 agent 环境编写。当前运行环境改为 Codex CLI 时，请按下面的兼容规则执行：
 
 1. 没有 `Skill` 工具。
 遇到“调用 `/lit-survey`”“调用 `/idea-gen`”“调用 `/idea-screen`”“调用 `/idea-refine`”时，不要停下来，也不要把它当成普通文本输出。

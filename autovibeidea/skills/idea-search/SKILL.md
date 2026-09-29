@@ -31,7 +31,7 @@ python3 tools/idea_nodes.py validate || echo "节点文件有问题，先修"
 > - `CODEX_MODE=codex-cli` → `bash tools/codex_call.sh --thread <thread文件> --output <输出文件> --phase <阶段> --model REVIEWER_MODEL --config '{"model_reasoning_effort":"xhigh"}' --prompt "..."`。新建线程时 thread 文件为空即可，脚本会把 thread_id 写回该文件；后续同线程调用传同一个文件即自动 `resume`。**无需 API key**。
 > - `CODEX_MODE=gpt-api` → `bash tools/gpt_call.sh`（同样的参数形态，需 `OPENAI_API_KEY`）。
 >
-> 三条路径都不可用时，才降级为 Claude 自评，并在节点上置 `scores.degraded=true`。
+> 三条路径都不可用时，才降级为本地 agent 自评，并在节点上置 `scores.degraded=true`。
 
 ## Workflow
 
@@ -147,7 +147,7 @@ python3 tools/mcts_search.py report --provenance > outputs/SEARCH_REPORT.md
 3. **被剪节点永不删除。** 剪枝记录是产物，用于事后统计剪枝精度。
 4. **子候选必须机制不同。** 换措辞的子候选会被 `tools/dedup_ideas.py` 标出来；发现后用 `mark` 剪掉并让模型重写。
 5. **本 skill 不做精炼。** 搜索结束后对最优候选跑 `/idea-refine`。
-6. 全程不等待用户输入；外部模型不可用时降级为 Claude 自评并在节点上置 `scores.degraded=true`。
+6. 全程不等待用户输入；外部模型不可用时降级为本地 agent 自评并在节点上置 `scores.degraded=true`。
 
 ## Composing
 

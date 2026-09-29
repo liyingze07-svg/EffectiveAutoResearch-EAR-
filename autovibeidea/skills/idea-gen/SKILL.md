@@ -28,7 +28,7 @@ This skill is designed to compose with the `/lit-survey` skill (run first for be
 > - `CODEX_MODE=codex-cli` → `bash tools/codex_call.sh --thread <thread文件> --output <输出文件> --phase <阶段> --model REVIEWER_MODEL --config '{"model_reasoning_effort":"xhigh"}' --prompt "..."`。新建线程时 thread 文件为空即可，脚本会把 thread_id 写回该文件；后续同线程调用传同一个文件即自动 `resume`。**无需 API key**。
 > - `CODEX_MODE=gpt-api` → `bash tools/gpt_call.sh`（同样的参数形态，需 `OPENAI_API_KEY`）。
 >
-> 三条路径都不可用时，才降级为 Claude 自评，并在节点上置 `scores.degraded=true`。
+> 三条路径都不可用时，才降级为本地 agent 自评，并在节点上置 `scores.degraded=true`。
 
 ## Workflow
 
@@ -146,10 +146,10 @@ Output a numbered "Critique Manifest" covering all four dimensions. Each entry m
 - **Save the `threadId`** — it will be reused in Phase 2b.
 
 **Phase 2a Codex MCP failure handling**: If `mcp__codex__codex` call fails:
-1. Claude performs the landscape critique directly using the same four-dimension prompt structure
+1. The local agent performs the landscape critique directly using the same four-dimension prompt structure
 2. Write the critique output to `outputs/CRITICAL_ANALYSIS.md` anyway
-3. Log: "⚠️ Codex MCP unavailable. Phase 2a (landscape critique) performed by Claude."
-4. Since there is no threadId, Phase 2b also becomes a direct Claude call (no thread context). Log this.
+3. Log: "⚠️ Codex MCP unavailable. Phase 2a (landscape critique) performed by the local agent."
+4. Since there is no threadId, Phase 2b also becomes a direct local-agent call (no thread context). Log this.
 5. Continue — do NOT stop or ask the user.
 
 > **GPT-only mode**: If `CODEX_MODE=gpt-api` is set in the environment, substitute
@@ -252,8 +252,8 @@ python3 tools/dedup_ideas.py mark IDEA-0X IDEA-0Y --reason "裁定理由"
 被标记方进入 `status=pruned` / `prune.mask=duplicate`，**不删除**——剪枝记录本身是产物。若裁定为不同机制，不做任何操作，并在 `outputs/PIPELINE_LOG.md` 记一行"已复核 X 组候选重复对，判定为不同机制"。
 
 **Phase 2b Codex MCP failure handling**: If the reply call fails (or no threadId available from Phase 2a fallback):
-1. Claude brainstorms directly using the Phase 2b prompt structure and the critique manifest from `outputs/CRITICAL_ANALYSIS.md`
-2. Log: "⚠️ Codex MCP unavailable. Phase 2b (idea generation) performed by Claude using critique manifest."
+1. The local agent brainstorms directly using the Phase 2b prompt structure and the critique manifest from `outputs/CRITICAL_ANALYSIS.md`
+2. Log: "⚠️ Codex MCP unavailable. Phase 2b (idea generation) performed by the local agent using critique manifest."
 3. Continue — do NOT stop or ask the user.
 
 > **GPT-only mode**: Use `bash tools/gpt_call.sh --thread THREAD_FILE --model REVIEWER_MODEL --prompt "..."` where THREAD_FILE is the path saved from Phase 2a.

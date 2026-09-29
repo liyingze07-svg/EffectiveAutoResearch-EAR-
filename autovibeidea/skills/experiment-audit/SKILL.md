@@ -21,10 +21,10 @@ Audit experiment code for academic integrity: **$ARGUMENTS**
 
 ```
 实验代码写完
-  → Phase 1 (Claude): 代码扫描与结构理解
-  → Phase 2 (Claude): 六大模块逐项审计
+  → Phase 1 (local agent): 代码扫描与结构理解
+  → Phase 2 (本地 agent): 六大模块逐项审计
   → Phase 3 (Codex/GPT-5.4): 独立交叉代码审计
-  → Phase 4 (Claude): 综合评估与修复清单
+  → Phase 4 (本地 agent): 综合评估与修复清单
   → Phase 5: 审计报告输出
 ```
 
@@ -480,7 +480,7 @@ Audit experiment code for academic integrity: **$ARGUMENTS**
 2. **评估代码**（metric computation + result reporting）
 3. **数据处理代码**（data loading + preprocessing + splitting）
 4. **Baseline vs Proposed Method 的关键差异**
-5. **Phase 2 中 Claude 发现的 CRITICAL 问题列表**（让外部 LLM 交叉验证）
+5. **Phase 2 中本地 agent 发现的 CRITICAL 问题列表**（让外部 LLM 交叉验证）
 
 如果代码量过大（> 500 行），只发送最关键的部分并附上代码结构摘要。
 
@@ -524,7 +524,7 @@ mcp__codex__codex:
     [DIFF_SUMMARY]
 
     ## 先前内部审计发现的问题（请交叉验证）
-    [CLAUDE_FINDINGS]
+    [LOCAL_AGENT_FINDINGS]
 
     请输出:
 
@@ -555,14 +555,14 @@ mcp__codex__codex:
 ```
 
 **Codex MCP 失败处理**: 如果 `mcp__codex__codex` 不可用:
-1. Claude 自行执行交叉审计（使用相同的审计维度）
-2. 日志记录: "⚠️ Codex MCP 不可用。交叉审计由 Claude 执行（自审模式——客观性降低）。"
+1. 本地 agent 自行执行交叉审计（使用相同的审计维度）
+2. 日志记录: "⚠️ Codex MCP 不可用。交叉审计由本地 agent 执行（自审模式——客观性降低）。"
 3. 对自审发现的 CRITICAL 问题数量乘以 1.2 系数（补偿自审时可能的漏检）
 4. 继续流程，不中断。
 
 ### Step 3.3: 整合发现
 
-合并 Phase 2（Claude 审计）和 Phase 3（外部 LLM 审计）的发现:
+合并 Phase 2（本地 agent 审计）和 Phase 3（外部 LLM 审计）的发现:
 1. 去重: 两个来源发现的相同问题合并
 2. 交叉验证: 如果两个来源对同一问题的严重级别不同，取较高者
 3. 独立发现: 只有一方发现的问题标记来源
@@ -686,7 +686,7 @@ mkdir -p outputs
 ## 交叉审计结果
 
 ### 外部 LLM 独立发现
-[列出外部 LLM 独立发现但 Claude 未发现的问题]
+[列出外部 LLM 独立发现但本地 agent 未发现的问题]
 
 ### 交叉验证结果
 [列出两方一致的发现和分歧]
@@ -774,7 +774,7 @@ AUDIT_EOF
 2. **CRITICAL 问题零容忍。** 任何存在 CRITICAL 问题的代码必须判定为 FAIL，无论总分多高。学术诚信没有灰色地带。
 3. **给出具体修复代码。** 不要只说"这里有问题"，要说"把第 45 行的 `scaler.fit(all_data)` 改为 `scaler.fit(train_data)`"。可操作性是这个 skill 的生命线。
 4. **区分"合理适配"和"不当 hack"。** 不同数据集使用不同的 `num_classes` 是合理适配。不同数据集使用不同的 loss 函数是不当 hack（除非有充分理由）。
-5. **双模型交叉验证。** Claude 的发现必须经过外部 LLM 交叉验证。两方独立发现的问题可信度更高。
+5. **双模型交叉验证。** 本地 agent 的发现必须经过外部 LLM 交叉验证。两方独立发现的问题可信度更高。
 6. **不要过度报告。** INFO 级别的问题不要超过 10 个。审计报告应该聚焦于真正影响结果可信度的问题，而非代码风格偏好。
 7. **Fully autonomous operation.** 不要向用户提问、等待确认或提供选择。所有决策自主完成并记录。
 8. **Large file handling**: 如果 Write 工具失败，用 Bash heredoc 写入。不需要询问用户。

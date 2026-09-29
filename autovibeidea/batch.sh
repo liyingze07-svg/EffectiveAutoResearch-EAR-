@@ -53,7 +53,7 @@ for i in "${!TASKS[@]}"; do
     START_TIME=$(date +%s)
     log "开始时间: $(date '+%H:%M:%S')"
 
-    # 核心: 用短 prompt 让 Claude 自己读 SKILL.md 并执行
+    # 核心: 用短 prompt 让 agent 自己读 SKILL.md 并执行
     if claude -p "你是 EAR 自动化科研 Agent。请完成以下任务:
 
 1. 读取文件 skills/idea-pipeline/SKILL.md，这是你的完整工作流指令

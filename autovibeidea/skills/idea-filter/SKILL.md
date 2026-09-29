@@ -114,15 +114,15 @@ For each recommended direction, verify its activity with targeted web searches:
 Rank all directions by a composite of:
 - External LLM's fitness score (50%)
 - Confirmed activity from web search (25%)
-- Constraint alignment verified by Claude (25%)
+- Constraint alignment verified by the local agent (25%)
 
 Keep the top SURVIVING_DIRECTIONS (default 3) directions. Log eliminated directions with reasons.
 
 **Codex MCP failure handling**: If `mcp__codex__codex` is unavailable:
-1. Fall back to Claude performing direction discovery directly
+1. Fall back to the local agent performing direction discovery directly
 2. Use the same prompt structure
 3. Augment with additional WebSearch queries to compensate for reduced knowledge breadth
-4. Log: "⚠️ Codex MCP unavailable. Direction discovery performed by Claude (single-model mode)."
+4. Log: "⚠️ Codex MCP unavailable. Direction discovery performed by the local agent (single-model mode)."
 5. Continue pipeline — do NOT stop or ask the user.
 
 ---
@@ -161,7 +161,7 @@ mcp__codex__codex-reply:
     - 优先推荐能做出"上界 + 下界 + 小实验"或"主定理 + 推论 + 反例"这种完整结构的题
 ```
 
-If the `mcp__codex__codex-reply` call fails, fall back to a new `mcp__codex__codex` call (or Claude if Codex is unavailable). Include the direction context in the prompt.
+If the `mcp__codex__codex-reply` call fails, fall back to a new `mcp__codex__codex` call (or the local agent if Codex is unavailable). Include the direction context in the prompt.
 
 ### Step 2.2: Cross-Direction Novelty Quick-Check
 
@@ -255,7 +255,7 @@ mcp__codex__codex-reply:
 
 ### Step 3.2: Crystallization Validation
 
-For each crystallized idea, Claude independently validates:
+For each crystallized idea, the local agent independently validates:
 
 1. **Consistency check**: Does the main theorem shape actually follow from the problem definition?
 2. **Scope check**: Is this too big for one paper? If yes, suggest a smaller first version.

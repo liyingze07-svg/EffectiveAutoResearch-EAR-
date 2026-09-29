@@ -157,7 +157,7 @@ The arXiv API returns structured metadata (title, abstract, full author list, ca
 - If the retry also fails: log the failure and move to the next query
 - If arXiv API (`arxiv_fetch.py`) fails: fall back to WebSearch with "arxiv [topic]" queries
 - If ALL web searches fail (e.g., network unavailable):
-  1. Build the landscape map using Claude's training knowledge of the research area
+  1. Build the landscape map using the agent's training knowledge of the research area
   2. Clearly mark the output: "⚠️ OFFLINE MODE: This landscape was built from model training knowledge, not live search. Papers listed are real but may not include the most recent (2025-2026) publications."
   3. Continue pipeline normally — do NOT stop or ask the user
   4. The downstream skills can still use this landscape for idea generation and screening

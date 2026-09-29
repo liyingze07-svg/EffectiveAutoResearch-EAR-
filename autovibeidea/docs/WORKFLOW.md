@@ -242,7 +242,7 @@
        │  新颖性评估   │ │  审稿人模拟   │ │  战略评估     │
        │              │ │              │ │              │
        │  4 阶段流程   │ │  3人审稿     │ │  5 个维度     │
-       │  多源搜索     │ │  + Meta      │ │  Claude 直评  │
+       │  多源搜索     │ │  + Meta      │ │  本地直评    │
        │  交叉验证     │ │  Review      │ │              │
        └──────┬───────┘ └──────┬───────┘ └──────┬───────┘
               │                │                │
@@ -351,7 +351,7 @@ COMPOSITE = 0.25 * Novelty + 0.35 * Venue + 0.20 * Strategic + 0.20 * Feasibilit
 | 0.25 | Novelty (新颖性) | Module A |
 | 0.35 | Venue (会议审稿) | Module B |
 | 0.20 | Strategic (战略契合) | Module C |
-| 0.20 | Feasibility (可行性) | 继承自 idea-gen 或 Claude 估算 |
+| 0.20 | Feasibility (可行性) | 继承自 idea-gen 或本地 agent 估算 |
 
 > 权重可通过 `-- weights:` 指令覆盖。
 
@@ -470,7 +470,7 @@ Socratic 路径 (-- mode: socratic):     ← v2 新增
         ├── 检测"我已充分理解这个方法" ──Yes──→ 最终评分 ──┐
         │                                                  │
         ├── 提取问题 → [socratic-human 模式: PAUSE 等人工]  │
-        │             [socratic-auto 模式: Claude 自动回答] │
+        │             [socratic-auto 模式: 本地 agent 自动回答] │
         │                                                  │
         └── 整合答案 + 扩写提案 → 继续对话                   │
                                                            │
@@ -538,7 +538,7 @@ State A                          State B
 ## 6. 多模型协作
 
 ```
-    Claude (执行层)                         External LLM / gpt-5.4 (评审/生成层)
+    本地 agent (执行层)                         External LLM / gpt-5.4 (评审/生成层)
     ─────────────────                       ──────────────────────────────────────
     文献搜索 / PDF / Zotero / Obsidian       景观批判分析 Phase 2a (xhigh) ← v2
     Gap 识别 & 主题综合                      批判锚定 idea 生成 Phase 2b (xhigh) ← v2
@@ -556,7 +556,7 @@ State A                          State B
                 或 (--gpt-only) tools/gpt_call.sh → OpenAI API ← v2
 
     设计原则:
-    • Claude 负责结构化推理、搜索、过滤、撰写、理论对齐检查
+    • 本地 agent 负责结构化推理、搜索、过滤、撰写、理论对齐检查
     • External LLM 负责批判性分析、发散性创作、对抗性审稿、Socratic 追问
     • 所有外部 LLM 调用使用 xhigh reasoning effort
     • Phase 2a 的 threadId 贯穿 Phase 2b、review 轮次、Phase 5.5 全流程

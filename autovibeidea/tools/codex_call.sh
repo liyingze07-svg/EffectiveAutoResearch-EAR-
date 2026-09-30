@@ -1,9 +1,7 @@
 #!/usr/bin/env bash
 # tools/codex_call.sh — Use local Codex CLI as the external model, with the same interface as tools/gpt_call.sh.
 #
-# Why this exists: Codex CLI **removed the `mcp-server` subcommand** in 0.158.0,
-# so `claude mcp add codex -s user -- codex mcp-server` from older documentation no longer works.
-# `codex exec` is the equivalent replacement: noninteractive, using Codex authentication and supporting resume.
+# Uses codex exec without requiring an MCP host: noninteractive, authenticated, resumable.
 #
 # Usage:
 #   bash tools/codex_call.sh --prompt "..." --output /tmp/r.txt [--thread /tmp/t.id]
@@ -18,6 +16,7 @@
 # Exit codes: 0=success  1=call failure  2=configuration error
 
 set -uo pipefail
+umask 077
 
 MODEL=""
 PROMPT=""
@@ -44,11 +43,11 @@ command -v codex >/dev/null 2>&1 || {
     echo "Error: codex CLI not found. Install: npm install -g @openai/codex@latest" >&2; exit 2; }
 
 # Read reasoning effort from config JSON and map it to a Codex -c override
-EFFORT=$(python3 -c "
+EFFORT=$(python3 -c '
 import json,sys
-try: print(json.loads('''$CONFIG''').get('model_reasoning_effort',''))
-except Exception: print('')
-" 2>/dev/null)
+try: print(json.loads(sys.argv[1]).get("model_reasoning_effort", ""))
+except Exception: sys.exit(2)
+' "$CONFIG") || { echo "Invalid --config JSON" >&2; exit 2; }
 
 ARGS=(exec --skip-git-repo-check --json)
 [[ -n "$MODEL"  ]] && ARGS+=(--model "$MODEL")
@@ -65,13 +64,17 @@ if [[ -n "$RESUME_ID" ]]; then
     [[ -n "$EFFORT" ]] && ARGS+=(-c "model_reasoning_effort=\"$EFFORT\"")
 fi
 
+ARGS+=(-c 'sandbox_mode="read-only"' -c 'approval_policy="never"' -c 'web_search="disabled"')
 LAST_MSG=$(mktemp /tmp/codex_last_XXXXXX.txt)
 EVENTS=$(mktemp /tmp/codex_events_XXXXXX.jsonl)
+ERRORS=$(mktemp /tmp/codex_err_XXXXXX.txt)
+trap 'rm -f "$LAST_MSG" "$EVENTS" "$ERRORS"' EXIT
 ARGS+=(-o "$LAST_MSG")
 
 _T0=$(date +%s)
+echo "DATA NOTICE: this prompt/history is sent through Codex; CLI session files may retain it." >&2
 # stdin must be /dev/null: without a TTY, Codex blocks waiting for additional input
-codex "${ARGS[@]}" "$PROMPT" </dev/null >"$EVENTS" 2>/tmp/codex_err.txt
+codex "${ARGS[@]}" "$PROMPT" </dev/null >"$EVENTS" 2>"$ERRORS"
 RC=$?
 _T1=$(date +%s)
 
@@ -108,7 +111,7 @@ if [[ $RC -ne 0 || -n "$ERRMSG" ]]; then
         echo "  Tip: Codex authenticated with ChatGPT can only use models available to that account." >&2
         echo "        Omit --model to use the default model (codex exec prints model: ... at startup)." >&2
     fi
-    grep -v "Reading additional input from stdin" /tmp/codex_err.txt 2>/dev/null | head -3 >&2
+    grep -v "Reading additional input from stdin" "$ERRORS" 2>/dev/null | head -3 >&2
     rm -f "$LAST_MSG" "$EVENTS"
     exit 1
 fi

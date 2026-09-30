@@ -1,0 +1,3 @@
+# Main harness and standalone verifier. Python 3.10+.
+# Direct dependency version used for the local installation check.
+openai==2.29.0

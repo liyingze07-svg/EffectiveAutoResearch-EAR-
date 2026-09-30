@@ -4,9 +4,9 @@
 Renders CLAUDE/GOAL/SPEC/VERIFY/RESOURCE from the harness templates, filling BOTH
 the mechanical placeholders (slug/paths/limits) AND the content placeholders
 (title/venue/paper_claims/reviewers/target) straight from REBUTTAL_CARD.json --
-no per-case judgment, all values come from the card. Also copies the case inputs
-into the campaign folder (`inputs/`) and stamps the harness version into the
-ledger so every campaign records which harness produced it.
+no per-case judgment, all values come from the card. Creates the campaign output
+directories and stamps the harness version into the ledger. Paper/review inputs
+remain under papers/<slug>/; this renderer does not copy them.
 
 Mirrors ExpAuto/NewInfra/instantiate.py. Idempotent: only creates files/dirs that
 are missing, never overwrites an existing draft/ledger.
@@ -16,7 +16,7 @@ Usage:
 """
 import argparse, json, os, shutil
 
-ROOT_DEFAULT = "$AUTOREBUTTAL_ROOT"
+ROOT_DEFAULT = os.environ.get("AUTOREBUTTAL_ROOT") or os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 TEMPLATES = {"CLAUDE.md": "CLAUDE.tmpl.md", "GOAL.md": "GOAL.tmpl.md",
              "SPEC.md": "SPEC.tmpl.md", "VERIFY.md": "VERIFY.tmpl.md",
              "RESOURCE.md": "RESOURCE.tmpl.md"}
@@ -82,7 +82,9 @@ def render(text, values):
     return text
 
 
-def instantiate(slug, harness, campaigns):
+def instantiate(slug, harness, campaigns, force=False):
+    if not slug or slug in (".", "..") or os.path.basename(slug) != slug:
+        raise ValueError("slug must be a single directory name")
     camp = os.path.join(campaigns, slug)
     card_path = os.path.join(camp, "REBUTTAL_CARD.json")
     if not os.path.isfile(card_path):
@@ -91,14 +93,18 @@ def instantiate(slug, harness, campaigns):
     values = build_values(card, slug, harness)
 
     for out_name, tmpl_name in TEMPLATES.items():
+        if os.path.exists(os.path.join(camp, out_name)) and not force:
+            continue
         tmpl = open(os.path.join(harness, "templates", tmpl_name)).read()
         open(os.path.join(camp, out_name), "w").write(render(tmpl, values))
 
     for d in ("inputs", "evidence", "ledger", "drafts"):
         os.makedirs(os.path.join(camp, d), exist_ok=True)
 
-    with open(os.path.join(camp, "ledger", "harness-version.txt"), "w") as f:
-        f.write(harness_version(harness) + "\n")
+    version_path = os.path.join(camp, "ledger", "harness-version.txt")
+    if force or not os.path.exists(version_path):
+        with open(version_path, "w") as f:
+            f.write(harness_version(harness) + "\n")
 
     left = sum(open(os.path.join(camp, o)).read().count("{{") for o in TEMPLATES)
     return f"OK   {slug}: harness={harness_version(harness)} braces_left={left}"
@@ -110,9 +116,12 @@ def main():
     ap.add_argument("--all", action="store_true")
     ap.add_argument("--harness", default=os.path.join(ROOT_DEFAULT, "harness"))
     ap.add_argument("--campaigns", default=os.path.join(ROOT_DEFAULT, "campaigns"))
+    ap.add_argument("--force", action="store_true", help="regenerate contracts and version stamp; preserve drafts")
     a = ap.parse_args()
     harness = os.path.abspath(a.harness)
     if a.all:
+        if not os.path.isdir(a.campaigns):
+            ap.error(f"campaign directory not found: {a.campaigns}; create a campaign card first")
         slugs = sorted(d for d in os.listdir(a.campaigns)
                        if os.path.isfile(os.path.join(a.campaigns, d, "REBUTTAL_CARD.json")))
     elif a.slug:
@@ -120,7 +129,7 @@ def main():
     else:
         ap.error("need --slug or --all")
     for s in slugs:
-        print(instantiate(s, harness, a.campaigns))
+        print(instantiate(s, harness, a.campaigns, force=a.force))
 
 
 if __name__ == "__main__":

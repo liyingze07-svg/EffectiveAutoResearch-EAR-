@@ -1,0 +1,4 @@
+# Optional src/ dataset/reviewer research utilities; not required by the harness.
+-r requirements.txt
+dspy==3.2.1
+openreview-py==2.2.3

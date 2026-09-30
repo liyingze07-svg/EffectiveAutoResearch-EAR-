@@ -10,8 +10,10 @@
 #   ./run.sh --refine "idea description"         # refinement only
 #   ./run.sh --daemon "research direction" VLDB    # run in the background (nohup)
 #   ./run.sh --status                    # Check run status
+#   ./run.sh --stop                      # Stop the background process tree
 
-set -e
+set -euo pipefail
+umask 077
 cd "$(dirname "$0")"
 
 GREEN='\033[0;32m'
@@ -29,11 +31,26 @@ for arg in "$@"; do
     elif [ "$arg" = "--codex-cli" ]; then
         CODEX_CLI_MODE=true
         export CODEX_MODE=codex-cli
+    elif [ "$arg" = "--unsafe" ]; then
+        export EAR_UNSAFE=1
+    elif [ "$arg" = "--allow-network" ]; then
+        export EAR_ALLOW_NETWORK=1
     else
         FILTERED_ARGS+=("$arg")
     fi
 done
 set -- "${FILTERED_ARGS[@]}"
+if $GPT_ONLY && $CODEX_CLI_MODE; then
+    echo "Choose either --gpt-only or --codex-cli, not both." >&2
+    exit 2
+fi
+MODE="${1:---interactive}"
+case "$MODE" in
+    --survey|--gen|--screen|--refine|--daemon)
+        [[ -n "${2:-}" ]] || { echo "Error: $MODE requires a direction or idea." >&2; exit 2; } ;;
+    --interactive|-i|--status|--stop|--help|-h) ;;
+    --*) echo "Unknown option: $MODE (use --help)" >&2; exit 2 ;;
+esac
 if [ "$CODEX_CLI_MODE" = "true" ]; then
     echo -e "${YELLOW}Codex CLI mode enabled (CODEX_MODE=codex-cli)${NC}"
     echo "  External model calls use tools/codex_call.sh (local Codex login; no API key required)"
@@ -47,7 +64,7 @@ if [ "$GPT_ONLY" = "true" ]; then
 fi
 
 # Check Codex CLI
-if ! command -v codex &> /dev/null && ! command -v codex.exe &> /dev/null; then
+if [[ "$MODE" != --help && "$MODE" != -h && "$MODE" != --status && "$MODE" != --stop ]] && ! command -v codex &> /dev/null && ! command -v codex.exe &> /dev/null; then
     echo "Error: codex command not found. Install Codex CLI first:"
     echo "  npm install -g @openai/codex"
     exit 1
@@ -56,11 +73,13 @@ fi
 if command -v codex.exe &> /dev/null; then
     CODEX_CMD="$(command -v codex.exe)"
 else
-    CODEX_CMD="$(command -v codex)"
+    CODEX_CMD="$(command -v codex || true)"
 fi
 
 # Ensure the outputs directory exists
-mkdir -p outputs refine-logs
+if [[ "$MODE" != --help && "$MODE" != -h && "$MODE" != --status && "$MODE" != --stop ]]; then
+    mkdir -p outputs refine-logs
+fi
 
 # Helper: execute a skill with Codex
 run_skill() {
@@ -72,8 +91,7 @@ run_skill() {
         --role "an automated research agent"
 }
 
-MODE="${1:---interactive}"
-DIRECTION="$1"
+DIRECTION="${1:-}"
 VENUE="${2:-ICML}"
 
 case "$MODE" in
@@ -86,7 +104,10 @@ case "$MODE" in
         echo "  ./run.sh --screen \"idea\" VLDB                multidimensional screening"
         echo "  ./run.sh --refine \"idea\"                      in-depth refinement"
         echo ""
-        "$CODEX_CMD" --search "Read CODEX_COMPAT.md and README.md in the current workspace, then help operate this EAR repository in Codex-only mode."
+        source tools/execution_policy.sh
+        ear_execution_policy
+        ear_data_notice
+        "$CODEX_CMD" "${CODEX_SECURITY_ARGS[@]}" "Read CODEX_COMPAT.md and README.md in the current workspace, then help operate this EAR repository in Codex-only mode."
         ;;
     --survey)
         echo -e "${GREEN}Running literature survey: $2${NC}"
@@ -112,33 +133,32 @@ case "$MODE" in
         echo -e "Venue: $VENUE"
         echo "Log: outputs/pipeline.log"
         echo ""
-        cat > outputs/.run_pipeline.sh << 'RUNEOF_HEAD'
-#!/bin/bash
-set -e
-cd "$(dirname "$0")/.."
-RUNEOF_HEAD
-        cat >> outputs/.run_pipeline.sh << RUNEOF_BODY
-bash tools/run_codex_skill.sh \
-  --skill skills/idea-pipeline/SKILL.md \
-  --args "\"${DIRECTION}\" -- venue: ${VENUE}" \
-  --role "an automated research agent" \
-  2>&1 | tee outputs/pipeline.log
-date -Iseconds > outputs/DONE
-RUNEOF_BODY
-        chmod +x outputs/.run_pipeline.sh
-        nohup bash outputs/.run_pipeline.sh > /dev/null 2>&1 &
+        command -v flock >/dev/null || { echo "Install flock (util-linux) for background mode." >&2; exit 2; }
+        exec 9>outputs/.pipeline.lock
+        flock -n 9 || { echo "A background pipeline already holds outputs/.pipeline.lock" >&2; exit 1; }
+        # Clear only previous status markers after obtaining the per-workspace lock.
+        rm -f outputs/DONE outputs/FAILED outputs/pipeline.pid outputs/pipeline.run.json
+        nohup bash tools/run_background.sh "$DIRECTION" "$VENUE" > outputs/launcher.log 2>&1 &
         BGPID=$!
         echo "Background process PID: $BGPID"
         echo $BGPID > outputs/pipeline.pid
         echo -e "${GREEN}Pipeline started in the background.${NC}"
         echo "  Check progress: ./run.sh --status"
         echo "  View logs: tail -f outputs/pipeline.log"
-        echo "  Stop: kill \$(cat outputs/pipeline.pid)"
+        echo "  Stop: ./run.sh --stop"
+        ;;
+    --stop)
+        exec python3 tools/background_runner.py stop
         ;;
     --status)
+        STATUS_RC=0
         echo -e "${GREEN}EAR status${NC}"
         echo ""
-        if [ -f outputs/DONE ]; then
+        if [ -f outputs/FAILED ]; then
+            STATUS_RC=1
+            echo "Pipeline failed (exit code below); see outputs/pipeline.log and outputs/launcher.log"
+            cat outputs/FAILED
+        elif [ -f outputs/DONE ]; then
             echo -e "${GREEN}✅ Pipeline complete${NC}"
             cat outputs/DONE
         elif [ -f outputs/pipeline.pid ] && kill -0 "$(cat outputs/pipeline.pid)" 2>/dev/null; then
@@ -156,6 +176,7 @@ RUNEOF_BODY
             echo "Latest log entries:"
             tail -20 outputs/PIPELINE_LOG.md
         fi
+        exit "$STATUS_RC"
         ;;
     --help|-h)
         echo "EAR - automated AI research idea discovery workflow"
@@ -170,10 +191,14 @@ RUNEOF_BODY
         echo "  ./run.sh --refine \"idea\"               refinement only"
         echo "  ./run.sh --daemon \"research direction\" VLDB      run in the background (nohup)"
         echo "  ./run.sh --status                       Check run status"
+        echo "  ./run.sh --stop                         Stop the background task and its descendants"
         echo ""
         echo "Options:"
         echo "  --gpt-only                              GPT-only mode (affects only the fallback policy for additional reasoning within skills)"
         echo "  --codex-cli                             Use local Codex CLI as the external model (no API key required)"
+        echo "  --allow-network                         Allow shell network access and live web search (opt-in)"
+        echo "  --unsafe                                Disable sandboxing (explicit opt-in; isolated hosts only)"
+        echo "  Default: workspace-write sandbox, no approvals, shell network disabled."
         echo "  Append -- mode: socratic to --refine for Socratic dialogue refinement"
         echo "  Append -- mode: socratic-human to --refine for human-in-the-loop Socratic refinement"
         echo ""

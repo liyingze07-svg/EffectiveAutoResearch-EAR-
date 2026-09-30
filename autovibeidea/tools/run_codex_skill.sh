@@ -1,6 +1,7 @@
 #!/bin/bash
 
 set -euo pipefail
+umask 077
 
 ROOT_DIR="$(cd "$(dirname "$0")/.." && pwd)"
 cd "$ROOT_DIR"
@@ -54,7 +55,7 @@ if [[ -z "$CODEX_BIN" ]]; then
 fi
 
 COMPAT_CONTENT="$(cat CODEX_COMPAT.md)"
-SKILL_CONTENT="$(sed '1{/^---$/,/^---$/d}' "$SKILL_FILE")"
+SKILL_CONTENT="$(awk 'NR == 1 && $0 == "---" {front=1; next} front && $0 == "---" {front=0; next} !front {print}' "$SKILL_FILE")"
 
 PROMPT=$(cat <<EOF
 You are ${SYSTEM_ROLE}. Follow the workflow below strictly; begin executing it rather than only describing a plan.
@@ -76,7 +77,10 @@ EOF
 # This previously hard-coded `-m gpt-5.4`, but Codex authenticated with ChatGPT rejected it with HTTP 400:
 #   "The 'gpt-5.4' model is not supported when using Codex with a ChatGPT account."
 # Override with CODEX_MODEL=... when needed (only if the model is available to this account).
-CODEX_ARGS=(exec --skip-git-repo-check --dangerously-bypass-approvals-and-sandbox)
+source "$ROOT_DIR/tools/execution_policy.sh"
+ear_execution_policy
+ear_data_notice
+CODEX_ARGS=(exec --skip-git-repo-check "${CODEX_SECURITY_ARGS[@]}")
 if [[ -n "${CODEX_MODEL:-}" ]]; then
     CODEX_ARGS+=(-m "$CODEX_MODEL")
 fi

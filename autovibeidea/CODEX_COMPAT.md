@@ -14,7 +14,7 @@ If `CODEX_MODE=gpt-api`, `tools/gpt_call.sh` is available, and an API key is ava
 
 If `CODEX_MODE=codex-cli`, use `bash tools/codex_call.sh --thread <file> --output <file> --prompt "..."` instead.
 It uses the local `codex exec` to provide equivalent new/continued-thread semantics and requires no API key.
-**Note that codex CLI ≥0.158.0 has removed the `mcp-server` subcommand**, so `mcp__codex__*` tools are necessarily unavailable in newer environments. This is expected, not a malfunction.
+MCP availability depends on the host agent and installed CLI capabilities; the shell entry points do not require MCP.
 
 4. A background `codex exec` may lack native `WebSearch / WebFetch`.
 If native web search is unavailable, use shell equivalents for online retrieval, such as:
@@ -25,6 +25,10 @@ Do not stop because the native WebSearch tool is missing; prioritize preserving 
 
 5. Prioritize automation.
 The entire pipeline must not wait for user input. At any checkpoint, write the decision to `outputs/PIPELINE_LOG.md` and continue.
+Respect the launcher's execution policy: shell networking and live search are disabled unless the user
+selected `--allow-network`; sandbox bypass requires an explicit `--unsafe`. A denied action is not
+permission to change sandbox settings or relaunch unrestricted. Record blocked retrieval and degraded
+evidence coverage; do not describe cached or unavailable retrieval as a fresh search.
 
 6. Preserve the established artifact paths.
 - `outputs/LANDSCAPE.md`

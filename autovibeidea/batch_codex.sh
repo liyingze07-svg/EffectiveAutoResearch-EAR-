@@ -11,6 +11,7 @@
 #   nohup bash batch_codex.sh > logx/batch_launcher.log 2>&1 &
 
 set -euo pipefail
+umask 077
 
 PROJECT_ROOT="$(cd "$(dirname "$0")" && pwd)"
 DEFAULT_TASK_FILE="$PROJECT_ROOT/batch_tasks/example.txt"
@@ -27,6 +28,8 @@ while [[ $# -gt 0 ]]; do
             DRY_RUN=true
             shift
             ;;
+        --unsafe) export EAR_UNSAFE=1; shift ;;
+        --allow-network) export EAR_ALLOW_NETWORK=1; shift ;;
         --help|-h)
             cat <<'EOF'
 Batch runner for EAR
@@ -34,6 +37,8 @@ Batch runner for EAR
 Options:
   --task-file PATH   Task list file. Default: batch_tasks/example.txt
   --dry-run          Print parsed tasks and exit without running
+  --allow-network    Allow shell network access and live web search
+  --unsafe           Disable sandboxing (isolated hosts only)
   --help             Show this help
 
 Task file format:
@@ -52,7 +57,7 @@ EOF
     esac
 done
 
-if ! command -v codex >/dev/null 2>&1 && ! command -v codex.exe >/dev/null 2>&1; then
+if ! $DRY_RUN && ! command -v codex >/dev/null 2>&1 && ! command -v codex.exe >/dev/null 2>&1; then
     echo "Error: codex CLI not found. Install it first: npm install -g @openai/codex" >&2
     exit 1
 fi
@@ -60,7 +65,7 @@ fi
 if command -v codex.exe >/dev/null 2>&1; then
     CODEX_BIN="$(command -v codex.exe)"
 else
-    CODEX_BIN="$(command -v codex)"
+    CODEX_BIN="$(command -v codex || true)"
 fi
 
 timestamp() {
@@ -252,3 +257,9 @@ log "Batch finished. Success: $success_count, Failed: $fail_count"
 for archive_dir in "${ARCHIVES[@]}"; do
     log "Archive: $archive_dir"
 done
+
+# Keep all archives, but never report a partially failed batch as successful.
+if (( fail_count > 0 )); then
+    exit 1
+fi
+exit 0

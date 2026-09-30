@@ -1,0 +1,15 @@
+{
+  "title": "SYNTHETIC DEMO: Making a Toy Aggregation Rule Explicit",
+  "venue": "EMNLP/ARR demo (not a submission)",
+  "word_limit": "300 words per reviewer for this synthetic fixture",
+  "allow_new_experiments": false,
+  "n_strategies": 3,
+  "max_iter": 1,
+  "paper_claims": ["C1: The toy aggregation rule is the arithmetic mean of the input scores."],
+  "reviewers": [
+    {"id": "R1", "initial_overall": 3, "confidence": 3, "soundness": 3, "presentation": 2, "contribution": 2, "review_ref": "review.md#R1"},
+    {"id": "R2", "initial_overall": 4, "confidence": 3, "soundness": 3, "presentation": 3, "contribution": 3, "review_ref": "review.md#R2"}
+  ],
+  "concern_seeds": ["R1: Please state the aggregation equation explicitly.", "R2: Preserve the scope as a toy illustration."],
+  "target": {"require_raise_on": ["R1"], "maintain": ["R2"], "min_delta": 1}
+}

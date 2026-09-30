@@ -16,6 +16,14 @@ logx/
 __pycache__/
 *.pyc
 .pytest_cache/
+.venv/
+
+# Private research inputs, campaigns, and local demo output
+/rebuttal/papers/
+/rebuttal/campaigns/
+/rebuttal/data/
+/rebuttal/.env
+/outputs/
 
 # ── Internal proprietary material; never commit ──
 # Infrastructure skills containing plaintext credentials / internal-network topology

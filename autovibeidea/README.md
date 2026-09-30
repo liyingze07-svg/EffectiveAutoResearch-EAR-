@@ -63,11 +63,28 @@ These capabilities are being refined; interfaces and defaults may change.
 ## Quick Start
 
 ```bash
-git clone <this-repo> EAR && cd EAR/autovibeidea
-./run.sh --daemon "your research direction" NeurIPS  # Full pipeline in the background (recommended)
+git clone https://github.com/liyingze07-svg/EffectiveAutoResearch-EAR-.git EAR
+cd EAR
+python3 scripts/doctor.py --offline
+python3 scripts/offline_demo.py                    # No model calls; prints result directory
+python3 scripts/doctor.py --component autovibeidea  # Before a live run; see prerequisites below
+cd autovibeidea
+./run.sh --allow-network --daemon "your research direction" NeurIPS
 ./run.sh --status                                  # Check progress
 tail -f outputs/pipeline.log                       # Follow logs
 ```
+
+Background runs keep `DONE` only for a successful executor exit and `FAILED` with the exit code
+otherwise. `--status` returns nonzero for a recorded failure. A workspace lock rejects overlapping
+background launches; use separate checkouts for parallel runs. A successful exit is not a quality verdict.
+Use `./run.sh --stop` to stop a background task. It verifies the saved process identity, terminates
+the task and its descendants (including detached children), and escalates to SIGKILL after two seconds
+if needed. Status and the workspace lock are finalized only after cleanup. SIGTERM to the launcher
+PID follows the same cleanup path; SIGKILL cannot run cleanup and should not be used on the supervisor.
+Background control requires Linux/WSL2 with pidfd support (Linux 5.3+); the doctor checks availability.
+`batch.sh` now delegates to `batch_codex.sh`; provide directions with `--task-file` instead of editing
+the old launcher's embedded task array. A batch continues to archive each task, but exits nonzero
+if any task failed; only an entirely successful batch returns zero.
 
 In an agent environment supporting slash commands, such as Codex REPL:
 
@@ -215,43 +232,64 @@ To add a venue, copy `venue-profiles/_template.md` and fill in calibration tiers
 
 ## ⚠️ Execution Safety
 
-`./run.sh` and `./batch_codex.sh` invoke Codex through `tools/run_codex_skill.sh` using:
+`./run.sh`, `./batch_codex.sh`, and the compatibility entry point `./batch.sh`
+use a shared execution policy. By default:
 
 ```
-codex exec --dangerously-bypass-approvals-and-sandbox
+codex exec -c 'sandbox_mode="workspace-write"' -c 'approval_policy="never"' \
+  -c sandbox_workspace_write.network_access=false -c 'web_search="disabled"'
 ```
 
-**Codex runs without a sandbox or step-by-step approval**, allowing unattended reads and writes to `outputs/` and `refine-logs/` and retrieval-tool calls. It can therefore execute arbitrary shell commands on your machine.
+Commands run unattended inside the CLI sandbox. Out-of-policy actions are denied, not automatically
+escalated. `--allow-network` explicitly enables shell network access and live search, which are needed
+for fresh literature retrieval and nested API/CLI calls. CLI-to-model traffic remains enabled even
+without this flag. A sandbox limits writes but does not hide all host files or constrain every MCP tool.
 
-If you do not accept this premise, use either alternative:
+Use `--unsafe` only when you intentionally need unrestricted execution in an externally isolated
+environment. It is never an automatic fallback. The equivalent environment variables for wrappers are
+`EAR_ALLOW_NETWORK=1` and `EAR_UNSAFE=1`; both default to `0`.
 
-1. **Run inside a container or disposable VM**, mounting the repository.
-2. **Invoke skills individually in an agent REPL**, such as /lit-survey or /idea-gen, instead of using the shell entry points. Your REPL's permission policy governs execution; the repository does not bypass it.
+For a verified **offline** isolation path, run `bash ../scripts/isolated_demo.sh` on Linux with
+`bubblewrap`. For live research, prefer a disposable VM with only the required checkout and credentials;
+the offline runner intentionally does not expose credentials or networking. Skills invoked manually
+in an agent REPL are governed by that REPL's policy, not these launchers.
 
-The separate `tools/codex_call.sh` wrapper, used for individual external-model calls in `--codex-cli` mode, **does not use** this flag. It is a question-and-answer call and does not execute commands.
+`tools/codex_call.sh` explicitly selects a read-only sandbox with no approvals and disabled web search,
+including when resuming a thread. Read-only does not mean tool-free: permitted read commands can still run.
+`tools/gpt_call.sh` is a text-only API client; neither prompts nor model responses are executed as code.
+
+### Data handling
+
+Before live runs, read [EAR's data-handling notice](../README.md#execution-safety-and-data-handling).
+Prompts, retrieved text and relevant files can be sent to model services. Local output/log directories,
+API conversation JSON files and Codex session history may preserve them. Logs are not automatically
+safe to publish. The launcher prints a reminder before starting live execution.
 
 ## Prerequisites
 
-**One of the following is required:**
+**Required for the full pipeline:** Linux / WSL2, Bash, Python 3.10+, Codex CLI and its authentication.
+Background mode also requires `flock` (util-linux), `nohup` and `tee`. Python tools use only the standard
+library. Choose an **additional model-call path** below; all `run.sh` modes still use Codex as the driver.
 
 ```bash
-# Option A (recommended): local Codex CLI, using its own login; no API key needed
-npm install -g @openai/codex@latest
+# Install the mandatory driver
+npm install -g @openai/codex
 codex login                       # Skip if already logged in
-./run.sh --codex-cli "direction" NeurIPS
 
-# Option B: direct OpenAI API
+# Option A: additional reviews through local Codex login; no separate API key
+./run.sh --allow-network --codex-cli "direction" NeurIPS
+
+# Option B: additional reasoning through the OpenAI API (NOT a Codex-free pipeline)
 export OPENAI_API_KEY=...          # Or save it in ~/.openai_key
-./run.sh --gpt-only "direction" NeurIPS
+./run.sh --allow-network --gpt-only "direction" NeurIPS
 
-# Option C: Codex MCP (older Codex versions only; see below)
-claude mcp add codex -s user -- codex mcp-server
+# Standalone text API calls do not need Codex:
+bash tools/gpt_call.sh --prompt 'Explain this public research question.'
 ```
 
-> ⚠️ **Codex CLI removed the `mcp-server` subcommand in 0.158.0**. Option C fails with
-> `Connection closed` on newer versions. Use Option A instead: `tools/codex_call.sh`
-> provides equivalent functionality through `codex exec`, including resume and token
-> usage capture, and has been tested.
+MCP-based skill invocation is optional and depends on the host agent and installed CLI capabilities.
+It is not required by the shell quick start. Check the installed CLI help before following MCP setup
+instructions from another environment.
 
 **Optional:** Zotero MCP for a local paper library and Obsidian MCP for notes. When unavailable, retrieval falls back to WebSearch.
 

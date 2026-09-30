@@ -57,18 +57,39 @@ The bar depends on the reviewer's pre-rebuttal score:
 
 ## Install and run
 
+**Try it without credentials first** (from the EAR repository root):
+
+```bash
+python3 scripts/doctor.py --offline
+python3 scripts/offline_demo.py
+```
+
+The demo supplies a clearly synthetic paper, two reviews and a campaign card; it renders all five
+contracts and runs the real orchestrator in `--dry-run` mode. Expected: `PASS` and a new temporary
+directory containing `rebuttal/DRY_RUN.txt`. It does not generate a response or measure rebuttal quality.
+The older `demo-argument-compiler` example remains a historical contract-only illustration.
+
 **Requirements**
 
-- Python 3.10+, `pip install openai`
+- Linux / WSL2, Python 3.10+; install direct dependencies from `requirements.txt`
 - [Codex CLI](https://github.com/openai/codex) — the writer engine and the authoritative judge
 - A DeepSeek API key — the second judge family, required for cross-family consensus
 
 **Configure**
 
 ```bash
+cd rebuttal                         # from the EAR repository root
+python3 -m venv .venv
+source .venv/bin/activate
+python3 -m pip install -r requirements.txt
 cp rebuttal_verifier/.env.example rebuttal_verifier/.env   # set DEEPSEEK_API_KEY
 export AUTOREBUTTAL_ROOT=$(pwd)                            # optional; inferred from repo layout
+python3 ../scripts/doctor.py --component rebuttal
 ```
+
+Optional dependencies are separate: `requirements-server.txt` for the HTTP verifier service,
+`requirements-research.txt` for `src/` research/data utilities. Neither is required for the main harness.
+The doctor checks local availability only; it does not authenticate or contact model services.
 
 **Run**
 
@@ -90,6 +111,20 @@ Useful flags:
 | `--mt-rounds N` | Rounds of multi-turn exchange |
 | `--fanout-all` | Write every strategy each round instead of stopping at the first that passes |
 | `--no-deepseek` | Single-family fallback. Cross-family consensus no longer holds; outputs are marked accordingly |
+| `--allow-network` | Allow generated shell commands to use the network and enable live search; model/API traffic is separate |
+| `--unsafe` | Explicitly allow unrestricted experiment stages; use only in an externally isolated environment |
+
+The default CLI stages use their declared read-only/workspace-write sandbox, no approval prompts,
+and no shell networking. Experiment stages requesting full host access are blocked unless `--unsafe`
+was provided. This does not disable direct DeepSeek API calls or Codex model traffic.
+
+### Data handling
+
+Papers, reviews, drafts and relevant tool results can be sent to Codex/OpenAI and DeepSeek, or to
+explicitly configured provider endpoints. Use only material you are authorized to send. Campaigns,
+receipts, logs and CLI session history may retain that material locally; never publish raw logs or
+private reviews without inspecting them. Provider-side retention depends on the provider/account.
+See [EAR's full notice](../README.md#execution-safety-and-data-handling).
 
 **Using the judge on its own**
 
@@ -134,6 +169,7 @@ examples/demo-argument-compiler/   rendered contract set for a synthetic case
                                    Illustrative only — the review files it
                                    points at are not included, so it is not
                                    a runnable demo.
+examples/offline-demo/             complete synthetic inputs for the root offline demo
 ```
 
 ---
@@ -142,7 +178,11 @@ examples/demo-argument-compiler/   rendered contract set for a synthetic case
 
 1. Write `campaigns/<case>/REBUTTAL_CARD.json` (schema in `harness/templates/`)
 2. Put the paper and the reviews under `papers/<case>/`
-3. Check the wiring with `--dry-run`, then run for real
+3. Use `papers/<case>/review.md` and `papers/<case>/Tex/main.tex` (plus any section files).
+   Review blocks use `Official Review of Submission<number> by Reviewer <id>`; IDs must match the card.
+4. Render contracts with `python3 harness/instantiate.py --slug <case>`.
+   Existing contracts and their version stamp are preserved; `--force` explicitly regenerates them.
+5. Check the wiring with `--dry-run`, then run for real
 
 Switching papers means writing a new card. The harness itself does not change.
 
@@ -154,8 +194,8 @@ Switching papers means writing a new card. The harness itself does not change.
 - Criteria tuned on ICLR **do not transfer** to EMNLP; each venue needs its own template.
 - Cross-family consensus requires two models from different vendors. With only one available the pipeline degrades and marks its output `cross_family=false`; such output is not a valid acquittal.
 - Strategy selection follows a fixed ladder (stop at the first draft that clears the gate). It does not route by paper or concern type.
-- The bundled example is a **rendered contract set**, not a runnable demo: it shows what a campaign's
-  contracts look like, but ships no reviews, evidence or drafts.
+- `demo-argument-compiler` is a **rendered contract set**, not a runnable demo. The new `offline-demo`
+  contains complete synthetic inputs for installation/dry-run checks, but no paid-model evaluation.
 
 ---
 

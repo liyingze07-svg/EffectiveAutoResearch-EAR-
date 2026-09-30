@@ -44,6 +44,8 @@ _COST_PROBE = cost.install_deepseek_probe()   # Intercept DeepSeek token at the 
 
 
 MAX_ITER_OVERRIDE = None  # --max-iter: temporarily reduce goal-loop iterations (to save quota), without changing REBUTTAL_CARD.json
+ALLOW_UNSAFE = False     # explicit opt-in before an experiment can bypass the sandbox
+ALLOW_NETWORK = False   # generated shell commands have no network by default
 B3_REPEATS = 3           # --b3-repeats: number of consecutive B3 runs; take the **union** of hits. See the empirical basis in ammo_gate.
 FANOUT_ALL = False       # --fanout-all: restore the old behavior of "writing all N strategies every round" (use only for strategy-comparison evaluations).
                          # The default is a strategy-level lazy ladder; see the cost basis in reviewer_loop.
@@ -72,10 +74,16 @@ def codex_exec(prompt, cwd=ROOT, sandbox="workspace-write", effort="medium", tim
     M1: `--json` makes codex emit events as JSONL to stdout (previously DEVNULL, so token was discarded),
     and records token from turn.completed.usage in the cost ledger. `-o <rc>` remains the sole receipt source,
     so adding --json does not change return-value semantics (empirically verified). stage/slug/unit/role are used only for accounting."""
+    if sandbox == "danger-full-access" and not ALLOW_UNSAFE:
+        log("    unrestricted experiment blocked; use --unsafe only in an isolated environment")
+        return "__CODEX_ERROR__ unrestricted experiment requires explicit --unsafe"
     rc = f"/tmp/codex_receipt_{os.getpid()}_{int(time.time()*1000)%100000}.txt"
     cmd = ["codex", "exec", "-s", sandbox, "-C", cwd,
            "-c", f"model_reasoning_effort={effort}", "-c", "approval_policy=\"never\"",
            "--json", "--skip-git-repo-check", "-o", rc, "-"]
+    cmd += ["-c", "sandbox_workspace_write.writable_roots=[]",
+            "-c", f"sandbox_workspace_write.network_access={'true' if ALLOW_NETWORK else 'false'}",
+            "-c", f'web_search="{"live" if ALLOW_NETWORK else "disabled"}"']
     m = model or MODEL
     if m:
         cmd[2:2] = ["-m", m]
@@ -1269,6 +1277,8 @@ def run_paper(slug, from_stage="r0a", dry=False):
 
 
 def main():
+    global ALLOW_UNSAFE, ALLOW_NETWORK
+    os.umask(0o077)
     global MODEL, JUDGE_MODEL, WRITE_EFFORT, JUDGE_EFFORT, MAX_ITER_OVERRIDE, NO_DEEPSEEK, FANOUT_ALL, B3_REPEATS, MT_ROUNDS
     # SPEC<->IMPL guard: bar_met/consensus must still implement GOAL.md's zone predicate.
     # Fail CLOSED at startup on drift (e.g. someone edits GOAL.md but not the gate, or vice-versa)
@@ -1301,7 +1311,15 @@ def main():
     ap.add_argument("--max-iter", type=int, default=None,
                     help="override the card's max_iter (cost control; 1-2 recommended for validation runs)")
     ap.add_argument("--dry-run", action="store_true")
+    ap.add_argument("--allow-network", action="store_true", help="allow generated shell commands to access the network")
+    ap.add_argument("--unsafe", action="store_true", help="allow unrestricted experiment stages; isolated environments only")
     a = ap.parse_args()
+    ALLOW_UNSAFE, ALLOW_NETWORK = a.unsafe, a.allow_network
+    if not a.dry_run:
+        log("DATA NOTICE: papers, reviews, drafts and tool results may be sent to OpenAI/Codex and DeepSeek (or configured endpoints).")
+        log("Local campaign files, receipts and CLI history may retain this content; use only authorized inputs. See README Data handling.")
+        if ALLOW_UNSAFE:
+            log("WARNING: --unsafe allows experiment stages unrestricted host and network access.")
     MODEL, JUDGE_MODEL = a.model, a.judge_model
     WRITE_EFFORT, JUDGE_EFFORT = a.write_effort, a.judge_effort
     MAX_ITER_OVERRIDE = a.max_iter

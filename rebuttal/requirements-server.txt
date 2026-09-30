@@ -1,0 +1,4 @@
+# Optional HTTP verifier service.
+-r requirements.txt
+fastapi==0.135.2
+uvicorn==0.42.0

@@ -1,13 +1,15 @@
 # EAR — Effective Auto Research
 
-An automation toolkit for the full research workflow. It currently contains two independent, standalone subprojects:
+An automation toolkit for research planning and rebuttal drafting. It contains two subprojects that can be run separately from a complete EAR checkout:
 
 | Subdirectory | What it does |
 |---|---|
-| **[`autovibeidea/`](autovibeidea/)** | **From research direction to proposal.** Literature survey → critical analysis → idea generation → multidimensional screening → in-depth refinement, producing an actionable, venue-ready proposal |
-| **[`rebuttal/`](rebuttal/)** | **From reviews to responses.** Given a paper and its reviews, produces a response to each reviewer and a comment to the AC. Designed for EMNLP / ACL Rolling Review |
+| **[`autovibeidea/`](autovibeidea/)** | **From research direction to proposal draft.** Literature survey → critical analysis → idea generation → screening → refinement, producing a structured research plan for human evaluation |
+| **[`rebuttal/`](rebuttal/)** | **From reviews to response drafts.** Given a paper and its reviews, drafts responses for the selected reviewers and a comment to the Area Chair (AC). Designed for EMNLP / ACL Rolling Review |
 
-Together they cover both ends of the research cycle—topic selection and plan development **before submission**, and responding to reviews **after submission**. They share the design principles of "independent review by an external model + traceable evidence + no fabricated numbers or citations." Clone this repository once and choose either subproject; root-level scripts provide shared setup and safety checks.
+They support topic selection and plan development **before submission**, and responding to reviews **after submission**. They do not automate the entire research cycle or guarantee novelty, factual accuracy, or acceptance. Researchers remain responsible for checking sources, running necessary experiments, and approving anything submitted.
+
+Clone this repository once and choose either subproject; root-level scripts provide shared setup and safety checks. Review separation and evidence tracing are design goals, with explicit limitations when model calls fail or the workflow falls back to self-evaluation.
 
 ---
 
@@ -32,38 +34,49 @@ For an OS-isolated offline check on Linux, install `bubblewrap` and run
 hides the host home directory and disables networking. Only the printed output directory is writable
 on the host. This is an **offline demo runner**, not a container for live model calls.
 
-Live pipelines are supported on Linux / WSL2 with Bash, Python 3.10+ and an authenticated
-Codex CLI. The autovibeidea tools use the Python standard library; rebuttal additionally needs:
+### Choose a live pipeline
+
+Both pipelines require Linux / WSL2, Bash, Python 3.10+ and an authenticated Codex CLI.
+With Node.js and npm available, install and authenticate the shared driver:
 
 ```bash
-python3 -m venv .venv
-source .venv/bin/activate
-python3 -m pip install -r rebuttal/requirements.txt
 npm install -g @openai/codex
 codex login
-python3 scripts/doctor.py --component autovibeidea  # local checks only
 ```
 
-For rebuttal, configure DeepSeek as described in its README, then use `--component rebuttal`.
-The doctor does not verify authentication, model access, or endpoint availability.
+Choose one path below; both start from the EAR repository root. Live calls use account quota
+and may incur charges. The doctor checks local prerequisites, not authentication, model access,
+or endpoint availability.
 
 ### autovibeidea — Find Ideas
 
 ```bash
+python3 scripts/doctor.py --component autovibeidea
 cd autovibeidea
-./run.sh --allow-network --daemon "your research direction" NeurIPS
+./run.sh --allow-network --codex-cli --daemon "your research direction" NeurIPS
 ./run.sh --status                                     # check progress
+# ./run.sh --stop                                     # cancel and clean up child processes
 ```
 
-Produces `outputs/LANDSCAPE.md` (literature map + gap matrix), `outputs/CRITICAL_ANALYSIS.md` (critique list),
-`outputs/SCREENING_RANKED.md` (multidimensional score ranking), and `refine-logs/FINAL_PROPOSAL.md` (final proposal).
+The recommended `--codex-cli` route requests review in separate Codex sessions using the local login;
+it does not imply a different model or provider. Without an explicit review route, the shell workflow
+may evaluate in the generating session. Failed review calls can also trigger self-evaluation;
+inspect the run logs and degradation markers before interpreting scores.
+
+Expected outputs include `outputs/LANDSCAPE.md` (literature map + gap matrix),
+`outputs/SCREENING_RANKED.md` (model-generated ranking), and `refine-logs/FINAL_PROPOSAL.md`
+(proposal draft). A successful process exit does not establish research quality.
 
 See [`autovibeidea/README.md`](autovibeidea/README.md) for details.
 
 ### rebuttal — Write a Rebuttal
 
-Given a paper and its reviews, runs an 18-stage materialized pipeline and passes four gates to produce the responses.
-See [`rebuttal/README.md`](rebuttal/README.md) for details.
+Install the Python dependencies and configure DeepSeek, then prepare a paper/review case.
+The [AutoRebuttal quick start](rebuttal/README.md#install-and-run) walks through input preparation,
+contract generation, a dry-run, a live run, and locating the response drafts.
+
+The workflow has 18 stage prompts and four review gates. Its cross-family consensus mode uses
+Codex and DeepSeek; single-family fallback is labeled and is not equivalent to cross-family approval.
 
 ---
 
@@ -97,10 +110,10 @@ without their contents. This is heuristic detection, not a guarantee that no sec
 
 ## Shared Design Principles
 
-- **External models serve as reviewers.** Generation and review are separated to prevent inflated self-evaluation.
-- **Evidence is traceable.** Every claim must point back to literature, code, or experimental records.
-- **No fabrication.** Do not invent experimental numbers or citations; if a search finds nothing, record that it found nothing.
-- **Degrade without stopping.** When an external dependency is unavailable, automatically degrade and record the event; the pipeline does not stop to wait for a person.
+- **Separate generation and review where configured.** Separate sessions reduce shared context but do not guarantee independent judgments; cross-family review requires different providers.
+- **Require traceable evidence.** Workflows ask claims to point back to literature, code, or experimental records. These checks assist, rather than replace, human verification.
+- **Prohibit fabrication in the workflow.** Prompts and checks reject unsupported numbers and citations; model errors can still occur. Missing evidence should be recorded, not invented.
+- **Make degradation visible.** Some unavailable dependencies allow a documented fallback. Self-evaluation and single-family review provide weaker assurance; safety denials do not authorize unrestricted execution.
 
 ---
 

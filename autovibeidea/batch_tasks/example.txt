@@ -1,4 +1,4 @@
-# 批量任务清单。每行一个: direction|venue|archive_name
-# 以 # 开头的行是注释。跑法: bash batch_codex.sh --task-file batch_tasks/example.txt
+# Batch task list. One per line: direction|venue|archive_name
+# Lines beginning with # are comments. Run with: bash batch_codex.sh --task-file batch_tasks/example.txt
 sample efficiency of offline RL with image observations|NeurIPS|OfflineRL_Sample_Efficiency
 robustness of retrieval-augmented generation under noisy retrievers|EMNLP|RAG_Noise_Robustness

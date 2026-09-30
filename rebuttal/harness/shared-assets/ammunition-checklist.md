@@ -1,56 +1,56 @@
-# ammunition-checklist.md — 弹药 grep 清单（终稿必 0 命中）
+# ammunition-checklist.md — ammunition grep checklist (the final draft must have 0 matches)
 
-"弹药"= rebuttal 里**自己递给 reviewer 的攻击面 / 自揭短 / 过度让步框架**句式。给 reviewer 递现成攻击,本身就是失败。任何 Type-B 门(尤其涨分门)调用前,终稿必须过本清单 grep == 0。
+"ammunition" = phrasing in the rebuttal that **hands the reviewer an attack surface / exposes one's own weaknesses / frames an excessive concession**. Handing the reviewer a ready-made attack is itself a failure. Before invoking any Type-B gate (especially a raise gate), the final draft must pass this checklist with grep == 0.
 
-> **⚠️ 权威判定 = 语义门 `b3_ammunition_gate.md`(独立判官,非 grep)。** 正则(`coach_loop.AMMO_PATTERNS`)太静态、追不上"sharpen/streamline/tighten…"的无限变体,也分不清"we will revise X"(弹药)和"the revised X reads:'…'"(不是)。所以正则**已降级为 cheap_eval 里的免费排名提示**,不再当放行门;**PASS 前由 B3 语义判官逐句读全文、按句意判 A–E 类弹药**。本清单是 B3 判官的**判据定义**(给它读),不是给 grep 的模式表。
+> **⚠️ Authoritative judgment = semantic gate `b3_ammunition_gate.md` (independent judge, not grep).** The regex (`coach_loop.AMMO_PATTERNS`) is too static to keep up with the endless variants of "sharpen/streamline/tighten…", and it cannot distinguish "we will revise X" (ammunition) from "the revised X reads:'…'" (not ammunition). Therefore, the regex **has been downgraded to a free ranking hint in cheap_eval** and no longer serves as a clearance gate; **before PASS, the B3 semantic judge must read the full text sentence by sentence and classify type A–E ammunition according to each sentence's meaning**. This checklist is the **definition of the judgment criteria** for the B3 judge (provided for it to read), not a pattern table for grep.
 
-grep 是**信号**不是真理:命中只是排名 hint,真判定在 B3。宁可改写句式,也别把自我攻击留给 reviewer。
+grep is a **signal**, not truth: a match is only a ranking hint; the real judgment is in B3. Prefer rephrasing the sentence over leaving a self-attack for the reviewer.
 
-## A. 自揭短 / 泄底（禁止进正文）
-- 未测 / 尚未验证 / 还没来得及 / due to time / we did not test
-- 留作后续 / future work will / 我们计划 / we plan to（除非是真诚 action item 且不是核心 claim）
-- 我们不声称 / we do not claim / 不保证 / no guarantee that
-- 诚实地说 / to be honest / 坦白 / admittedly（把让步做成示弱）
-- 可能存在问题 / might be flawed / 不确定是否 / it is unclear whether（对自己方法）
-- 这确实是个局限 / this is indeed a limitation（未加转折就收尾）
+## A. Exposing one's own weaknesses / revealing one's hand (prohibited in the main text)
+- not tested / not yet verified / did not have time yet / due to time / we did not test
+- leave for follow-up / future work will / we plan / we plan to (unless it is a sincere action item and not a core claim)
+- we do not claim / we do not claim / no assurance / no guarantee that
+- honestly speaking / to be honest / frankly / admittedly (turning a concession into a display of weakness)
+- there may be a problem / might be flawed / uncertain whether / it is unclear whether (about one's own method)
+- this is indeed a limitation / this is indeed a limitation (ending without a pivot)
 
-## B. 过度让步 / 认框架（禁止）
-- 我们承认这只是 / we agree this is merely / 确实只是组合 / just a combination（认了 novelty 攻击的框架）
-- reviewer 说得对,我们的方法 [弱点]（认了没转折）
-- 我们同意 [核心 claim] 有问题 / we agree that [C1] is problematic
+## B. Excessive concession / accepting the framing (prohibited)
+- we acknowledge this is merely / we agree this is merely / indeed just a combination / just a combination (accepting the framing of the novelty attack)
+- the reviewer is right; our method [weakness] (accepting it without a pivot)
+- we agree [core claim] is problematic / we agree that [C1] is problematic
 
-## B2. 表演式诚实 / 过度让步（软弹药 —— 新增,这次真实跑踩过）
-诚实是**不谎报事实**,不是**在正文里反复声明自己诚实**。把"我很诚实"写出来 = 显得心虚 + 递软肋 + 让论文看着更弱。命中即改写(去表白,保留事实):
+## B2. Performative honesty / excessive concession (soft ammunition — newly added, encountered in an actual run this time)
+Honesty means **not misrepresenting facts**, not **repeatedly declaring one's honesty in the main text**. Writing "I am very honest" explicitly = appearing guilty + handing over a vulnerability + making the paper look weaker. Rewrite any match (remove the declaration, retain the facts):
 - we honestly concede / we disclose ... honestly / we did not spin it / honest scope / honest caveat
 - we will not manufacture (results) / we prefer to concede ... rather than assert / we are careful not to over-claim
-- 每条让步贴 `(conceded)` 标签 / this is a fair criticism（反复)
-- 同一 caveat/proxy 反复自我说明("we are explicit that ... not synthetic")——事实陈述一次即可
-- 让步展开成一大段(应:一句带过 + 立刻转回强度/scope/补偿证据)
-**正确写法**:陈述局限一次→立刻给 scope 或补偿证据→收口。别把诚实做成表演。
+- attaching a `(conceded)` label to every concession / this is a fair criticism (repeatedly)
+- repeatedly explaining the same caveat/proxy ("we are explicit that ... not synthetic") — stating the fact once is sufficient
+- expanding a concession into a long paragraph (should be: mention it in one sentence + immediately pivot back to strength/scope/compensating evidence)
+**Correct formulation**: state the limitation once → immediately provide scope or compensating evidence → close. Do not turn honesty into a performance.
 
-## C. 空承诺 vs 合法编辑承诺（区分,别一刀切）
-**禁（=弹药）**：用承诺**搪塞 reviewer 要的实质/实验工作**——
-- 我们会补跑 X 实验 / we will run/add experiments / provide new results（对 P0 实质 concern）
-- 如果被接收我们将 / if accepted we will
-- 篇幅所限无法（当作不做的借口）
+## C. Empty promise vs legitimate editing commitment (distinguish them; do not treat them indiscriminately)
+**Prohibited (= ammunition)**: using a promise to **fob off the substantive/experimental work requested by the reviewer** —
+- we will additionally run experiment X / we will run/add experiments / provide new results (for a P0 substantive concern)
+- if accepted, we will / if accepted we will
+- cannot due to space limitations (used as an excuse for not doing it)
 
-**合法（不是弹药）**：对**编辑请求**（定义术语/重画图/加引用/调小节顺序）用 camera-ready 将来时——
-- `In the camera-ready version, we will define/redraw/add-citation/reorder X`（手稿编辑本就用将来时,直接回应"请定义/加 X"）
+**Legitimate (not ammunition)**: for **editing requests** (define terminology/redraw a figure/add a citation/reorder subsections), use the camera-ready future tense —
+- `In the camera-ready version, we will define/redraw/add-citation/reorder X` (manuscript edits naturally use the future tense; this directly answers "please define/add X")
 
-## C2. 假装已改（禁止,overclaim）
-把**未落地**的手稿编辑写成已完成——命中即改回将来时：
-- "is now stated / the revised X reads: '…' / we have revised X to '…'"（rebuttal 阶段论文往往还没 revise → 谎报已完成）
-- 正确：`In the camera-ready version, we will …`
+## C2. Pretending a change has already been made (prohibited, overclaim)
+Describing a manuscript edit that **has not been materialized** as already completed — rewrite any match back into the future tense:
+- "is now stated / the revised X reads: '…' / we have revised X to '…'" (at the rebuttal stage, the paper often has not yet been revised → falsely reporting completion)
+- Correct: `In the camera-ready version, we will …`
 
-## D. 开新攻击面（禁止）
-- 为回应 R_i 而主动提及 R_j 没提的弱点
-- "另一个可能的问题是…"（自己给自己找茬）
-- 引入 paper 里没有、也没证据支撑的新 claim（无 warrant 的断言）
+## D. Opening a new attack surface (prohibited)
+- proactively mentioning a weakness not raised by R_j in order to respond to R_i
+- "another possible problem is…" (finding fault with oneself)
+- introducing a new claim that is absent from the paper and unsupported by evidence (an assertion without warrant)
 
-## E. 不诚实（红线,直接失败非改写）
-- 把没做的实验说成做了 / 把 [TBD] 写成已完成
-- 编造的数字 / 编造或不相关的引用
-- 把 FAIL 报成 PASS / 夸大提升幅度
+## E. Dishonesty (red line, direct failure rather than a rewrite)
+- claiming an unperformed experiment was performed / presenting [TBD] as completed
+- fabricated numbers / fabricated or irrelevant citations
+- reporting FAIL as PASS / exaggerating the magnitude of improvement
 
 ---
-grep 实现:对上述句式(中英)做正则扫描 `drafts/final_rebuttal.md`,输出命中行号。A–D 命中 → 改写;E 命中 → campaign 失败(造假),回去重做。
+grep implementation: perform a regex scan of `drafts/final_rebuttal.md` for the phrasing above (Chinese and English), and output the matching line numbers. A–D match → rewrite; E match → campaign failure (fabrication), go back and redo it.

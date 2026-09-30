@@ -1,46 +1,46 @@
-# stage r4_experiment_redesign — 说服力不足 → 为什么 + 怎么重设计(DRIVE 侧 planner)
+# stage r4_experiment_redesign — Insufficient persuasion → why + how to redesign (DRIVE-side planner)
 
-> 新引擎上下文(**写手/默认引擎,不是 JUDGE_MODEL** —— 这是 DRIVE 侧规划,不是 ACQUIT 判决)。
-> 当 S-exp 说服力门判**非 STRENGTH**(实验不足以说服该 reviewer),这一阶段回答两件事:
-> **① 为什么这个实验(哪怕结果)动不了这个 concern;② 该怎么重设计一个更强的实验去真正说服。**
-> 产出被 `experiment_loop` 消费 → 可行则替换成新 request 重跑,不可行则诚实让步。
+> New engine context (**writer/default engine, not JUDGE_MODEL** — this is DRIVE-side planning, not an ACQUIT verdict).
+> When the S-exp persuasion gate judges **non-STRENGTH** (the experiment is insufficient to persuade this reviewer), this stage answers two questions:
+> **① Why this experiment (even with results) cannot move this concern; ② how to redesign a stronger experiment that can genuinely persuade.**
+> The output is consumed by `experiment_loop` → if feasible, replace it with a new request and rerun; if infeasible, make an honest concession.
 
-## 槽位 `{{SLUG}}` `{{EXPID}}` `{{BASIS}}`(`ante_bestcase` = 还没真跑,判的是 best-case / `post_result` = 真结果不足)`{{ITER}}`
+## Slots `{{SLUG}}` `{{EXPID}}` `{{BASIS}}` (`ante_bestcase` = not actually run yet; the judgment is based on the best-case / `post_result` = the actual result is insufficient) `{{ITER}}`
 
-## 输入(只读)
-- `campaigns/{{SLUG}}/experiments/{{EXPID}}/PERSUASION.json`(若 `post_result`)→ 每个未过 target 的 `verdict` + **`why_not_persuasive`**(权威判官说的心结哪块没动)+ `judge_advice`。
-- `campaigns/{{SLUG}}/experiments/{{EXPID}}/results.json`(若 `post_result`)→ 真实 `derived`(看真结果到底弱在哪:效应太小/双刃/CI 跨 0/子轴 not_run)。
-- `campaigns/{{SLUG}}/ledger/experiment_queue.json` 里 `{{EXPID}}` 的当前 `experiment_request`(要改的对象)。
-- `campaigns/{{SLUG}}/ledger/concern_ledger.json` → 该 concern 的 **`real_concern`(心结)**:重设计必须瞄准这个,不是原实验的惯性。
-- `campaigns/{{SLUG}}/ledger/evidence_map.json` → 有哪些可复用基建/数据/资产(定 `feasible`)。
-- `harness/shared-assets/experiment-ladder.md`(warrant 阶梯 + 实验请求契约)。
+## Inputs (read-only)
+- `campaigns/{{SLUG}}/experiments/{{EXPID}}/PERSUASION.json` (if `post_result`) → the `verdict` for each target that did not pass + **`why_not_persuasive`** (which part of the real concern the authoritative judge says remains unmoved) + `judge_advice`.
+- `campaigns/{{SLUG}}/experiments/{{EXPID}}/results.json` (if `post_result`) → the actual `derived` (identify exactly where the actual result is weak: effect too small/double-edged/CI crosses 0/sub-axis not_run).
+- The current `experiment_request` for `{{EXPID}}` in `campaigns/{{SLUG}}/ledger/experiment_queue.json` (the object to modify).
+- `campaigns/{{SLUG}}/ledger/concern_ledger.json` → the concern's **`real_concern` (the real concern)**: the redesign must target this, not follow the momentum of the original experiment.
+- `campaigns/{{SLUG}}/ledger/evidence_map.json` → which infrastructure/data/assets are reusable (used to determine `feasible`).
+- `harness/shared-assets/experiment-ladder.md` (warrant ladder + experiment-request contract).
 
-## 规则(编号,严格按序)
-1. **先归因(为什么不能说服)**:把 `why_not_persuasive` + 真实 `derived` 归到一个**缺陷类**:
-   `wrong_axis`(测的轴不是 reviewer 质疑的那条)/ `underpowered`(规模/seed/n 不够,CI 跨 0)/ `confounded`(有混淆变量/oracle 泄漏)/ `weak_baseline`(对照是稻草人)/ `off_metric`(指标不对应心结)/ `effect_too_small`(方向对但量级不足以翻盘)/ `other`。写清**心结的哪一子句仍未被动**。
-2. **再开药(怎么重设计)**:针对缺陷类给**一个更强的 `experiment_request`**(experiment-ladder 的实验请求契约(全字段)):把轴/规模/baseline/指标/隔离设计**具体改到能真正回答心结**。例:`underpowered`→n 提到 CI 排除 0;`confounded`→加对照臂隔离机制;`wrong_axis`→换到 reviewer 点名的设置(如短答→长自由 CoT)。
-3. **可行性闸(硬,防死磕烧空)**:新 request 必须 `feasible=true` 才回。可行 = **有可复用基建/数据/代码 + 在预算/时间窗内**(experiment-ladder 阶梯表 五步 Step1)。做不到(数据 gated / 需真人标注 / 远超预算)→ `feasible=false` + 填 `pilot_rejected_reason`,**触发诚实让步**(不硬造更强设计骗自己)。
-4. **绝不造假**:重设计是**换一个更强的真实验**,不是把弱结果重贴成强;新 request 的 `expected_or_falsifier` 必须可证伪、真 baseline;`serves` 保持原 (reviewer, concern)。
-5. **别原地打转**:新设计必须在缺陷类上**实质更强**(不是换措辞/换 seed 数还是同一弱轴)。iter 越高越要么真升级要么诚实让步。
+## Rules (numbered, follow strictly in order)
+1. **First attribute the cause (why it cannot persuade)**: map `why_not_persuasive` + the actual `derived` to one **deficiency class**:
+   `wrong_axis` (the measured axis is not the one the reviewer questioned)/ `underpowered` (scale/seed/n is insufficient, CI crosses 0)/ `confounded` (there is a confound/oracle leakage)/ `weak_baseline` (the control is a straw man)/ `off_metric` (the metric does not correspond to the real concern)/ `effect_too_small` (the direction is right, but the magnitude is insufficient to overturn the judgment)/ `other`. State clearly **which subclause of the real concern remains unmoved**.
+2. **Then prescribe the remedy (how to redesign)**: for the deficiency class, provide **one stronger `experiment_request`** (all fields from the experiment-request contract in experiment-ladder): specifically change the axis/scale/baseline/metric/isolation design **so that it can genuinely answer the real concern**. Examples: `underpowered` → raise n until the CI excludes 0; `confounded` → add a control arm to isolate the mechanism; `wrong_axis` → switch to the setting explicitly named by the reviewer (e.g., short answers → long free-form CoT).
+3. **Feasibility gate (hard, prevents stubbornly burning the budget to nothing)**: return a new request only if it has `feasible=true`. Feasible = **reusable infrastructure/data/code + within the budget/time window** (the five-step experiment-ladder table, Step1). If this cannot be done (data gated / requires human annotation / far exceeds the budget) → `feasible=false` + fill in `pilot_rejected_reason`, **triggering honest concession** (do not fabricate a stronger design to deceive yourself).
+4. **Never fabricate**: the redesign is **a different, stronger real experiment**, not relabeling a weak result as strong; the new request's `expected_or_falsifier` must be falsifiable, with a real baseline; `serves` must retain the original (reviewer, concern).
+5. **Do not go in circles**: the new design must be **materially stronger** with respect to the deficiency class (not merely changing the wording/changing the seed count while staying on the same weak axis). As iter increases, either genuinely escalate or make an honest concession.
 
-## 输出(写这个确切文件)
+## Output (write this exact file)
 `campaigns/{{SLUG}}/experiments/{{EXPID}}/redesign_iter{{ITER}}.json`:
 ```json
 { "expid":"{{EXPID}}", "basis":"{{BASIS}}", "iter":{{ITER}},
-  "why_cannot_persuade":"心结哪一子句仍未被动 + 结果弱在哪(具体)",
+  "why_cannot_persuade":"which subclause of the real concern remains unmoved + where the result is weak (specific)",
   "deficiency":"wrong_axis|underpowered|confounded|weak_baseline|off_metric|effect_too_small|other",
   "feasible": true,
-  "pilot_rejected_reason":"(feasible=false 时必填:为什么连更强 pilot 都不可行)",
+  "pilot_rejected_reason":"(required when feasible=false: why even a stronger pilot is infeasible)",
   "new_experiment_request": {
-     "expid":"(留空,driver 会给新 id)", "serves":["<原 reviewer-concern>"], "priority":"P0",
-     "goal":"...", "hypothesis":"可证伪", "what_to_measure":"指标+数据+模型",
-     "baseline":"真 baseline", "expected_or_falsifier":"预期+数值 falsifier",
-     "resources":"可复用的数据/模型/代码入口", "budget":"算力/时间上限" }
+     "expid":"(leave blank, driver will assign a new id)", "serves":["<original reviewer-concern>"], "priority":"P0",
+     "goal":"...", "hypothesis":"falsifiable", "what_to_measure":"metric+data+model",
+     "baseline":"real baseline", "expected_or_falsifier":"expected outcome+numerical falsifier",
+     "resources":"reusable data/model/code entry point", "budget":"compute/time limit" }
 }
 ```
-receipt(回一行):`{expid, deficiency, feasible, new_expid_hint}`。
+receipt (return one line):`{expid, deficiency, feasible, new_expid_hint}`.
 
-## DO-NOT(硬)
-- 不读判官内部(`rebuttal_verifier/`、`r7_gate.md`、`r4_experiment_persuasion.md` 的判定实现)——只用 PERSUASION.json 给你的 `why`。
-- `feasible=false` 时**不硬编**一个假装可行的 request 去骗过循环;诚实让步是合法结局。
-- 不改 `serves` 的 (reviewer, concern);不把同一弱轴换个 seed 数当"更强设计"。
+## DO-NOT (hard)
+- Do not read judge internals (`rebuttal_verifier/`, `r7_gate.md`, or the judging implementation in `r4_experiment_persuasion.md`) — use only the `why` given to you by PERSUASION.json.
+- When `feasible=false`, **do not fabricate** a request that only pretends to be feasible in order to deceive the loop; honest concession is a legitimate outcome.
+- Do not change the (reviewer, concern) in `serves`; do not treat the same weak axis with a different seed count as a "stronger design."

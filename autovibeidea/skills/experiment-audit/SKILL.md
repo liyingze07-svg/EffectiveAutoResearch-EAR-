@@ -1,754 +1,754 @@
 ---
 name: experiment-audit
-description: "Audit experiment code for academic integrity: data leakage, baseline fairness, evaluation gaming, LLM-generated code tricks, and method-code alignment. Use when user says \"audit code\", \"check experiment\", \"审计代码\", \"检查实验\", \"code integrity\", \"实验审查\", or wants to verify that experiment code maintains academic standards before reporting results."
+description: "Audit experiment code for academic integrity: data leakage, baseline fairness, evaluation gaming, LLM-generated code tricks, and method-code alignment. Use when user says \"audit code\", \"check experiment\", \"review code integrity\", \"verify experiments\", \"code integrity\", \"experiment review\", or wants to verify that experiment code maintains academic standards before reporting results."
 argument-hint: "[code-directory-or-file] [-- proposal: path/to/FINAL_PROPOSAL.md] [-- venue: ICML|NeurIPS|VLDB]"
 allowed-tools: Bash(*), Read, Write, Edit, Grep, Glob, WebSearch, WebFetch, Agent, mcp__codex__codex, mcp__codex__codex-reply
 ---
 
-# Experiment Audit — 实验代码学术诚信审计
+# Experiment Audit — Academic Integrity of Experiment Code
 
 Audit experiment code for academic integrity: **$ARGUMENTS**
 
 ## Overview
 
-当 LLM 为研究 idea 编写实验代码时，可能引入**六类"无意识学术不端"**——这些不是恶意造假，而是模型为了让代码"跑通"或"出好结果"时自然产生的偏差。这个 skill 扮演**内部 Reproducibility Chair** 的角色，在实验结果报告之前对代码进行全面审计。
+When LLMs write experiment code for research ideas, they can introduce **six categories of unintentional academic misconduct**. These are not deliberate fraud, but biases that emerge as a model tries to make code run or produce good results. This skill acts as an **internal Reproducibility Chair**, comprehensively auditing code before results are reported.
 
-核心哲学：
-1. **代码是方法的唯一真相。** 论文写什么不重要，代码做了什么才重要。
-2. **公平比较是底线。** 对自己的方法和 baseline 必须一碗水端平。
-3. **可复现是基本功。** 换一台机器、换一个 seed，结果不应该有本质差异。
-4. **泛化是真正的贡献。** 只在特定 instance 上 work 的方法没有学术价值。
+Core philosophy:
+1. **Code is the sole source of truth for the method.** What matters is what the code does, not what the paper says.
+2. **Fair comparison is nonnegotiable.** Treat the proposed method and baselines equally.
+3. **Reproducibility is fundamental.** Changing machines or seeds should not fundamentally change results.
+4. **Generalization is the real contribution.** A method that works only on a particular instance has no academic value.
 
 ```
-实验代码写完
-  → Phase 1 (local agent): 代码扫描与结构理解
-  → Phase 2 (本地 agent): 六大模块逐项审计
-  → Phase 3 (Codex/GPT-5.4): 独立交叉代码审计
-  → Phase 4 (本地 agent): 综合评估与修复清单
-  → Phase 5: 审计报告输出
+Experiment code complete
+  → Phase 1 (local agent): Code scan and structural understanding
+  → Phase 2 (local agent): Six-module audit
+  → Phase 3 (Codex/GPT-5.4): Independent cross-audit
+  → Phase 4 (local agent): Overall assessment and fix checklist
+  → Phase 5: Audit report
 ```
 
 ## Constants
 
-- **REVIEWER_MODEL** = `gpt-5.4` — 用于独立代码审计的外部模型。（**模型可用性依赖账号**：用 ChatGPT 账号登录的 codex 只能用账号自带模型，指定不支持的模型会被 400 拒绝。走 `--codex-cli` 时**不要传 `--model`**，让 codex 用默认模型；走 `--gpt-only` 时该模型必须对你的 OpenAI API key 可用。）
-- **SEVERITY_LEVELS** = `{CRITICAL, WARNING, INFO}` — 问题严重程度。
-  - `CRITICAL`: 必须修复，否则论文结果不可信（如数据泄露、评估作弊）
-  - `WARNING`: 应当修复，否则审稿人会质疑（如缺少多 seed、baseline 不公平）
-  - `INFO`: 建议改进，提升论文质量（如代码可读性、文档完整性）
+- **REVIEWER_MODEL** = `gpt-5.4` — External model for independent code auditing. (**Model availability depends on your account**: Codex signed in with a ChatGPT account can use only models available to that account; unsupported models return a 400 error. With `--codex-cli`, **do not pass `--model`**; let Codex use its default model. With `--gpt-only`, the model must be available to your OpenAI API key.)
+- **SEVERITY_LEVELS** = `{CRITICAL, WARNING, INFO}` — Issue severity.
+  - `CRITICAL`: Must fix; otherwise results are unreliable (e.g., data leakage, evaluation cheating)
+  - `WARNING`: Should fix; otherwise reviewers may object (e.g., missing multiple seeds, unfair baselines)
+  - `INFO`: Suggested improvement for paper quality (e.g., readability, documentation completeness)
 - **VERDICT_OPTIONS** = `{PASS, CONDITIONAL_PASS, FAIL}`
-  - `PASS`: 代码通过审计，可以报告结果
-  - `CONDITIONAL_PASS`: 存在 WARNING 但无 CRITICAL，修复后可报告
-  - `FAIL`: 存在 CRITICAL 问题，必须修复后重新审计
-- **MAX_FILES_DEEP_SCAN** = `30` — 深度扫描的最大文件数（超出则按重要性排序取 top-30）
+  - `PASS`: Code passes the audit; results may be reported
+  - `CONDITIONAL_PASS`: WARNING issues but no CRITICAL issues; report after fixes
+  - `FAIL`: CRITICAL issues present; fix and rerun the audit
+- **MAX_FILES_DEEP_SCAN** = `30` — Maximum files for deep inspection (if exceeded, prioritize the top-30).
 
 ## Input
 
-1. **`$ARGUMENTS`** — 必须包含以下之一:
-   - 代码目录路径（e.g., `./experiments/`, `src/`）
-   - 单个代码文件路径（e.g., `train.py`）
-   - 如未指定路径，扫描当前工作目录下所有 `.py`, `.sh`, `.yaml`, `.json` 文件
+1. **`$ARGUMENTS`** — Must contain one of:
+   - Code directory path (e.g., `./experiments/`, `src/`)
+   - A single code file path (e.g., `train.py`)
+   - If no path is specified, scan all `.py`, `.sh`, `.yaml`, and `.json` files in the current working directory
 
-2. **`-- proposal:` 指令**（可选但强烈推荐）— 指向 FINAL_PROPOSAL.md 或其他 proposal 文件。用于 Module E（Method-Code 一致性检查）。如未指定，尝试自动查找 `refine-logs/FINAL_PROPOSAL.md`。
+2. **`-- proposal:` directive** (optional but strongly recommended) — Path to FINAL_PROPOSAL.md or another proposal. Used by Module E (Method-Code Alignment). If omitted, try `refine-logs/FINAL_PROPOSAL.md`.
 
-3. **`-- venue:` 指令**（可选）— 目标会议，用于校准审稿人视角。默认 `ICML`。
+3. **`-- venue:` directive** (optional) — Target venue for calibrating the reviewer perspective. Default: `ICML`.
 
 ### Parsing Logic
 
-1. 解析 `$ARGUMENTS` 确定代码路径。
-2. 解析 `-- proposal:` 获取 proposal 路径。如未指定，依次查找:
+1. Parse `$ARGUMENTS` to identify the code path.
+2. Parse `-- proposal:` for the proposal path. If omitted, search in order:
    - `refine-logs/FINAL_PROPOSAL.md`
-   - `outputs/SCREENING_RANKED.md`（取排名第一的 idea 描述）
-   - 如都找不到，Module E 将在无 proposal 参照的情况下运行（仅检查代码内部一致性）。
-3. 解析 `-- venue:` 获取目标会议。
+   - `outputs/SCREENING_RANKED.md` (use the top-ranked idea description)
+   - If neither exists, run Module E without a proposal reference (internal code consistency only).
+3. Parse `-- venue:` for the target venue.
 
 ---
 
-## Phase 1: 代码扫描与结构理解
+## Phase 1: Code Scan and Structural Understanding
 
-在审计之前，先建立对实验代码结构的全局理解。
+Build a global understanding of the experiment code before auditing.
 
-### Step 1.1: 发现代码文件
+### Step 1.1: Discover Code Files
 
 ```
-扫描目标目录，识别:
-- 训练脚本 (train.py, run_*.py, main.py 等)
-- 评估脚本 (eval.py, test.py, evaluate.py 等)
-- 数据处理脚本 (data*.py, dataset*.py, preprocess*.py 等)
-- 配置文件 (*.yaml, *.json, *.toml, config*.py 等)
-- Baseline 实现 (baseline*.py, 或 baselines/ 目录)
-- 工具脚本 (utils*.py, helpers*.py 等)
-- Shell 脚本 (*.sh — 通常包含运行参数)
+Scan the target directory for:
+- Training scripts (train.py, run_*.py, main.py, etc.)
+- Evaluation scripts (eval.py, test.py, evaluate.py, etc.)
+- Data-processing scripts (data*.py, dataset*.py, preprocess*.py, etc.)
+- Configuration files (*.yaml, *.json, *.toml, config*.py, etc.)
+- Baseline implementations (baseline*.py or the baselines/ directory)
+- Utility scripts (utils*.py, helpers*.py, etc.)
+- Shell scripts (*.sh; often contain run parameters)
 ```
 
-用 `Glob` 和 `Grep` 快速定位关键文件。如果文件总数超过 MAX_FILES_DEEP_SCAN (30)，按以下优先级排序:
-1. 训练主循环（含 loss 计算的文件）
-2. 评估脚本（含 metric 计算的文件）
-3. 数据加载/处理文件
-4. 配置文件
-5. 其余文件
+Use `Glob` and `Grep` to locate key files quickly. If the total exceeds MAX_FILES_DEEP_SCAN (30), prioritize:
+1. Main training loops (files containing loss computation)
+2. Evaluation scripts (files containing metric computation)
+3. Data loading/processing files
+4. Configuration files
+5. Other files
 
-### Step 1.2: 构建代码地图
+### Step 1.2: Build a Code Map
 
-读取关键文件，输出一份简要的代码结构图:
+Read key files and produce a concise structural map:
 
 ```markdown
-## 代码结构
-- 训练入口: train.py (L1-L300)
-  - 数据加载: data_loader.py → Dataset 类
-  - 模型定义: model.py → ProposedModel 类
+## Code Structure
+- Training entry point: train.py (L1-L300)
+  - Data loading: data_loader.py → Dataset class
+  - Model definition: model.py → ProposedModel class
   - Loss: losses.py → combined_loss()
-  - 评估: eval.py → evaluate()
+  - Evaluation: eval.py → evaluate()
 - Baseline:
-  - baselines/method_a.py → MethodA 类
-  - baselines/method_b.py → MethodB 类
-- 配置: config.yaml
-- 运行脚本: run_all.sh
+  - baselines/method_a.py → MethodA class
+  - baselines/method_b.py → MethodB class
+- Configuration: config.yaml
+- Run script: run_all.sh
 ```
 
-### Step 1.3: 识别数据流
+### Step 1.3: Identify Data Flow
 
-追踪数据从原始输入到最终 metric 的完整流向:
+Trace data from raw input to final metrics:
 
 ```
-原始数据 → 预处理 → 数据切分 → 训练集/验证集/测试集
+Raw data → Preprocessing → Data split → Training/validation/test sets
                                     ↓           ↓
-                               模型训练    →  评估 → 报告 metric
+                               Model training → Evaluation → Reported metrics
 ```
 
-特别关注:
-- 预处理参数（mean, std, vocabulary, tokenizer）是在哪里计算的？用了哪些数据？
-- 数据切分是什么时候做的？切分之前有没有已经用到了全量数据？
-- 有没有从测试集反向流入训练流程的信息？
+Pay particular attention to:
+- Where are preprocessing parameters (mean, std, vocabulary, tokenizer) computed, and on which data?
+- When is the data split? Is the full dataset used before splitting?
+- Does any test-set information flow back into training?
 
 ---
 
-## Phase 2: 六大模块逐项审计
+## Phase 2: Six-Module Audit
 
-对每个模块中发现的每个问题，记录:
-- **问题编号**: `A-01`, `B-02` 等（模块前缀 + 序号）
-- **严重级别**: CRITICAL / WARNING / INFO
-- **文件位置**: `file_path:line_number`
-- **问题描述**: 具体说明什么代码有什么问题
-- **影响**: 这个问题会如何影响实验结果的可信度
-- **修复建议**: 具体的代码修改建议
+For every issue found in each module, record:
+- **Issue ID**: `A-01`, `B-02`, etc. (module prefix + sequence number)
+- **Severity**: CRITICAL / WARNING / INFO
+- **Location**: `file_path:line_number`
+- **Description**: Identify the specific code and problem
+- **Impact**: Explain how it affects the credibility of experimental results
+- **Suggested fix**: Concrete code changes
 
-### Module A: 数据管线完整性 (Data Pipeline Integrity)
+### Module A: Data Pipeline Integrity
 
-检查数据处理流程中是否存在信息泄露或不当操作。
+Check for information leakage or inappropriate data-processing operations.
 
-#### A.1 数据泄露检测
+#### A.1 Data Leakage Detection
 
-搜索以下模式:
-
-```python
-# 反模式 1: 预处理统计量使用了全量数据（含 test）
-# 搜索关键词: fit(), fit_transform(), .mean(), .std(), .vocab
-# 检查这些操作的输入是否包含测试集数据
-
-# 反模式 2: 特征工程泄露标签信息
-# 搜索关键词: target_encode, label_encode (在非目标列使用目标信息)
-# 检查是否在特征构建时使用了 y/label/target
-
-# 反模式 3: 时序数据的未来信息泄露
-# 搜索关键词: shift(), rolling(), 检查窗口方向
-# 检查是否使用了未来时间步的数据
-
-# 反模式 4: 数据切分后的跨集污染
-# 搜索: train_test_split 的调用位置
-# 检查切分是在预处理之前还是之后
-
-# 反模式 5: 数据增强泄露
-# 检查: 增强后的样本是否可能横跨 train/test（如同一张图片的不同 crop 分别在 train 和 test）
-```
-
-具体搜索策略:
-1. 用 `Grep` 搜索 `fit_transform|\.fit\(|\.mean\(|\.std\(|normalize|standardize|vocab` 等关键词
-2. 对每个匹配，追溯其输入数据来源，判断是否包含测试集
-3. 用 `Grep` 搜索 `train_test_split|split|\.train\b|\.test\b|\.val\b` 确定切分位置
-4. 检查切分调用与预处理调用的相对顺序
-
-#### A.2 数据过滤审查
+Search for these patterns:
 
 ```python
-# 反模式: 静默过滤"难"样本
-# 搜索: filter, drop, remove, skip, ignore, mask (在数据集上下文中)
-# 检查: 过滤条件是否合理？是否同时应用于所有方法？
-# 特别注意: 基于模型输出的过滤（如 "confidence > 0.5 的样本才参与计算"）
+# Anti-pattern 1: Preprocessing statistics use all data, including test data
+# Search terms: fit(), fit_transform(), .mean(), .std(), .vocab
+# Check whether inputs to these operations contain test-set data
+
+# Anti-pattern 2: Feature engineering leaks label information
+# Search terms: target_encode, label_encode (target information in non-target columns)
+# Check whether feature construction uses y/label/target
+
+# Anti-pattern 3: Future-information leakage in time-series data
+# Search terms: shift(), rolling(); inspect window direction
+# Check whether future time steps are used
+
+# Anti-pattern 4: Cross-split contamination after splitting
+# Search: locations of train_test_split calls
+# Check whether splitting occurs before or after preprocessing
+
+# Anti-pattern 5: Data-augmentation leakage
+# Check whether augmented samples cross train/test boundaries (e.g., crops of one image appear in both)
 ```
 
-#### A.3 数据切分合理性
+Concrete search strategy:
+1. Use `Grep` to search for `fit_transform|\.fit\(|\.mean\(|\.std\(|normalize|standardize|vocab`
+2. Trace each match's input data to determine whether it includes the test set
+3. Use `Grep` to search for `train_test_split|split|\.train\b|\.test\b|\.val\b` to locate splits
+4. Check the relative ordering of splitting and preprocessing
+
+#### A.2 Data Filtering Review
 
 ```python
-# 检查点:
-# 1. 是否使用固定 seed 进行切分？
-# 2. 切分比例是否合理且标准？
-# 3. 对于有结构的数据（时序、用户、组），是否按结构切分？
-# 4. 验证集和测试集是否严格分开？
-# 5. 是否存在验证集被当作测试集使用的情况？
+# Anti-pattern: Silently filtering "hard" samples
+# Search: filter, drop, remove, skip, ignore, mask (in dataset contexts)
+# Check whether filtering criteria are justified and applied equally to all methods
+# Watch for filtering based on model outputs (e.g., "only samples with confidence > 0.5 count")
 ```
 
-### Module B: Baseline 公平性 (Baseline Fairness)
+#### A.3 Data Split Validity
 
-这是审稿人最容易攻击的点。LLM 写代码时往往对自己的方法精心调优，对 baseline 草草实现。
+```python
+# Checks:
+# 1. Is a fixed seed used for splitting?
+# 2. Are split ratios reasonable and standard?
+# 3. Is structured data (time series, users, groups) split according to its structure?
+# 4. Are validation and test sets strictly separate?
+# 5. Is the validation set being used as a test set?
+```
 
-#### B.1 资源公平性
+### Module B: Baseline Fairness
 
-对每个 baseline 和 proposed method 检查:
+This is an easy target for reviewer criticism. LLMs often carefully tune their own method while implementing baselines hastily.
 
-| 检查项 | 具体检查内容 |
+#### B.1 Resource Fairness
+
+For every baseline and the proposed method, check:
+
+| Item | Specific Checks |
 |--------|------------|
-| **学习率** | 是否所有方法使用了等效的学习率 schedule？proposed method 是否享有更精细的 warmup/decay？ |
-| **训练轮次** | 所有方法是否训练了相同的 epoch/step 数？是否有方法提前停止但其他方法训练更久？ |
-| **模型容量** | 参数量是否在同一量级？proposed method 是否使用了更大的 backbone？ |
-| **数据增强** | 是否所有方法享有相同的数据增强策略？proposed method 是否独享某些增强？ |
-| **预训练权重** | 是否所有方法使用了相同来源、相同版本的预训练权重？ |
-| **超参搜索预算** | proposed method 是否享有更多的超参调优轮次？ |
-| **推理时计算** | 测试时间计算量是否等价？如有 ensemble 或 test-time augmentation，是否公平应用？ |
+| **Learning rate** | Are learning-rate schedules equivalent? Does the proposed method receive more carefully tuned warmup/decay? |
+| **Training duration** | Do all methods train for the same epochs/steps? Is one stopped early while others train longer? |
+| **Model capacity** | Are parameter counts comparable? Does the proposed method use a larger backbone? |
+| **Data augmentation** | Do all methods use the same augmentation strategy? Are some augmentations exclusive to the proposed method? |
+| **Pretrained weights** | Do all methods use weights from the same source and version? |
+| **Hyperparameter search budget** | Does the proposed method receive more tuning runs? |
+| **Inference compute** | Is test-time compute equivalent? Are ensembles and test-time augmentation applied fairly? |
 
-搜索策略:
-1. 用 `Grep` 搜索 `lr|learning_rate|num_epochs|batch_size|warmup|weight_decay` 等超参关键词
-2. 对比 proposed method 和每个 baseline 的配置差异
-3. 特别检查: 是否存在只对 baseline 设置的 `max_epochs` 限制
-4. 检查 baseline 代码是否来自官方实现（搜索 import 和 comment 中的来源信息）
+Search strategy:
+1. Use `Grep` to search hyperparameter terms such as `lr|learning_rate|num_epochs|batch_size|warmup|weight_decay`
+2. Compare configurations for the proposed method and every baseline
+3. Check especially for `max_epochs` restrictions applied only to baselines
+4. Check whether baseline code comes from official implementations (inspect imports and source comments)
 
-#### B.2 实现完整性
-
-```python
-# 反模式 1: Baseline 使用了简化版实现
-# 检查: baseline 代码中是否有 "simplified", "basic", "simple" 等注释
-# 检查: baseline 是否缺少原论文中的关键组件
-
-# 反模式 2: Baseline 使用了过时的超参
-# 检查: baseline 的超参是否与其原论文一致
-
-# 反模式 3: Baseline 缺少必要的 trick
-# 检查: 如 baseline 原论文使用了 label smoothing、mixup 等 trick，
-#       这里的实现是否也包含？
-
-# 反模式 4: 给 baseline 设置了不利的默认参数
-# 检查: baseline 的默认配置是否是其最优配置？
-```
-
-#### B.3 Baseline 代码来源验证
-
-```
-对每个 baseline:
-1. 检查是否有注释标明来源（官方 repo、第三方实现、自行实现）
-2. 如果是自行实现，标记为 WARNING: "Baseline [X] 为自行实现，非官方代码。
-   建议验证其性能是否与原论文报告一致。"
-3. 如果使用官方代码，检查版本是否为最新稳定版
-```
-
-### Module C: 评估协议合规性 (Evaluation Protocol Compliance)
-
-#### C.1 随机性控制
+#### B.2 Implementation Completeness
 
 ```python
-# 检查点:
-# 1. 是否设置了全局 random seed？
-#    搜索: seed, random_state, torch.manual_seed, np.random.seed, random.seed
-# 2. 是否运行了多个 seed？(至少 3 个，建议 5 个)
-#    搜索: seeds = [...], for seed in, --seed
-# 3. 是否报告了 mean ± std？
-#    搜索: mean, std, ±, standard deviation
-# 4. CUDA 随机性是否控制？
-#    搜索: torch.backends.cudnn.deterministic, torch.backends.cudnn.benchmark
-# 5. 是否有 seed shopping 的迹象？
-#    检查: 是否只报告了最好的 seed？seed 列表中的值是否有选择性？
+# Anti-pattern 1: Simplified baseline implementations
+# Check for baseline comments such as "simplified", "basic", or "simple"
+# Check whether key components from the original paper are missing
+
+# Anti-pattern 2: Outdated baseline hyperparameters
+# Check whether baseline hyperparameters match the original paper
+
+# Anti-pattern 3: Missing necessary baseline tricks
+# Check whether tricks from the baseline paper, such as label smoothing or mixup,
+# are included in this implementation
+
+# Anti-pattern 4: Unfavorable baseline defaults
+# Check whether baseline defaults reflect its best configuration
 ```
 
-#### C.2 Metric 合规性
+#### B.3 Baseline Source Verification
 
-```python
-# 检查点:
-# 1. 使用的 metric 是否是该任务的标准 metric？
-#    对照该领域的 benchmark 惯例
-# 2. 是否报告了所有标准 metric，还是只报告了有利的？
-#    标记: 只报告 1 个 metric 时为 WARNING
-# 3. 是否存在自定义 metric？
-#    如有，检查其定义是否合理，是否有利于 proposed method
-# 4. 高是好还是低是好？metric 方向是否一致？
-# 5. 是否有统计显著性检验？
-#    搜索: t-test, wilcoxon, bootstrap, p-value, significance
+```
+For each baseline:
+1. Check for source comments (official repository, third-party implementation, self-implementation)
+2. For self-implementations, flag WARNING: "Baseline [X] is self-implemented rather than official code.
+   Verify that its performance matches the original paper."
+3. For official code, check whether it is the latest stable version
 ```
 
-#### C.3 Checkpoint 选择
+### Module C: Evaluation Protocol Compliance
+
+#### C.1 Randomness Control
 
 ```python
-# 反模式: 用测试集选最优 checkpoint
-# 搜索: best_model, save_best, early_stopping
-# 检查: 选择 "best" checkpoint 的依据是验证集还是测试集？
-# 正确做法: 在验证集上选 checkpoint，然后在测试集上报告一次性结果
+# Checks:
+# 1. Is a global random seed set?
+#    Search: seed, random_state, torch.manual_seed, np.random.seed, random.seed
+# 2. Are multiple seeds run? (At least 3; 5 recommended)
+#    Search: seeds = [...], for seed in, --seed
+# 3. Is mean ± std reported?
+#    Search: mean, std, ±, standard deviation
+# 4. Is CUDA randomness controlled?
+#    Search: torch.backends.cudnn.deterministic, torch.backends.cudnn.benchmark
+# 5. Are there signs of seed shopping?
+#    Check whether only the best seed is reported or seed-list values were selectively chosen
+```
+
+#### C.2 Metric Compliance
+
+```python
+# Checks:
+# 1. Is the metric standard for this task?
+#    Compare with benchmark conventions in the field
+# 2. Are all standard metrics reported, or only favorable ones?
+#    Flag WARNING when only 1 metric is reported
+# 3. Are any metrics custom-defined?
+#    If so, check whether definitions are reasonable or favor the proposed method
+# 4. Is higher or lower better? Are metric directions consistent?
+# 5. Are statistical significance tests performed?
+#    Search: t-test, wilcoxon, bootstrap, p-value, significance
+```
+
+#### C.3 Checkpoint Selection
+
+```python
+# Anti-pattern: Choosing the best checkpoint using the test set
+# Search: best_model, save_best, early_stopping
+# Check whether the "best" checkpoint is selected on validation or test data
+# Correct practice: Select on validation data, then report a one-time test-set evaluation
 #
-# 反模式: 多次在测试集上评估并报告最好一次
-# 搜索: 测试集评估的调用频率和结果记录方式
+# Anti-pattern: Repeated test-set evaluation with only the best result reported
+# Search: Test-evaluation frequency and result-recording logic
 ```
 
-#### C.4 结果报告完整性
+#### C.4 Reporting Completeness
 
 ```python
-# 检查点:
-# 1. 所有实验的结果是否都被报告了？（不能只挑好的）
-# 2. 失败的实验或 negative result 是否被记录？
-# 3. 计算资源消耗是否被报告？（GPU 小时、内存使用）
-# 4. 推理延迟/吞吐量是否被报告（如果是效率相关的 contribution）？
+# Checks:
+# 1. Are results from all experiments reported, without cherry-picking?
+# 2. Are failed experiments and negative results recorded?
+# 3. Are computational resources reported (GPU hours, memory usage)?
+# 4. Are inference latency/throughput reported for efficiency-related contributions?
 ```
 
-### Module D: 代码特异性检测 (Code Specificity Detection)
+### Module D: Code Specificity Detection
 
-这是 LLM 生成代码最容易出问题的地方。LLM 倾向于为特定 instance 编写"刚好能用"的代码。
+This is a common failure point in LLM-generated code: implementations that "just work" for a particular instance.
 
-#### D.1 Hard-coded 值检测
+#### D.1 Hard-Coded Value Detection
 
 ```python
-# 搜索: 所有代码中的数字常量（非 0, 1, 2 等常见值）
-# 对每个 hard-coded 数字，问:
-# 1. 这个值是超参数吗？是否应该放在配置文件中？
-# 2. 这个值是 dataset-specific 的吗？（如 num_classes=10 只对 CIFAR-10 有效）
-# 3. 这个值是怎么得到的？是否有注释说明来源？
-# 4. 如果换一个数据集，这个值还成立吗？
+# Search: Numeric constants throughout the code, excluding common values such as 0, 1, and 2
+# For each hard-coded number, ask:
+# 1. Is it a hyperparameter that belongs in configuration?
+# 2. Is it dataset-specific (e.g., num_classes=10 applies only to CIFAR-10)?
+# 3. How was it obtained? Is its source documented?
+# 4. Would it remain valid on another dataset?
 #
-# 特别关注:
-# - 隐藏在代码中的阈值（如 if confidence > 0.73）
-# - 特定维度数（如 hidden_dim=768 直接 hardcode 而非从配置读取）
-# - Loss 权重（如 loss = 0.7 * loss_a + 0.3 * loss_b 中的 0.7 和 0.3）
+# Pay particular attention to:
+# - Hidden thresholds (e.g., if confidence > 0.73)
+# - Fixed dimensions (e.g., hard-coded hidden_dim=768 instead of reading configuration)
+# - Loss weights (e.g., 0.7 and 0.3 in loss = 0.7 * loss_a + 0.3 * loss_b)
 ```
 
-#### D.2 条件分支特异性
+#### D.2 Conditional-Branch Specificity
 
 ```python
-# 反模式: 针对特定数据集或特定样本的条件分支
-# 搜索: if.*dataset.*==, if.*name.*==, if.*"CIFAR", if.*"ImageNet"
-# 检查: 这些条件分支是否是合理的适配（如不同数据集的 num_classes）
-#       还是不合理的特殊处理（如特定数据集使用不同的 loss）？
+# Anti-pattern: Branches tailored to particular datasets or samples
+# Search: if.*dataset.*==, if.*name.*==, if.*"CIFAR", if.*"ImageNet"
+# Check whether these branches are legitimate adaptations (e.g., dataset-specific num_classes)
+# or unjustified special treatment (e.g., different losses for specific datasets)
 #
-# 反模式: 针对特定输入形状的硬编码
-# 搜索: reshape, view 中的具体数字
-# 检查: 这些形状变换是否与数据格式绑定？
+# Anti-pattern: Hard-coded input shapes
+# Search: Concrete numbers in reshape and view
+# Check whether shape transformations are tied to a particular data format
 ```
 
-#### D.3 配置外部化检查
+#### D.3 Configuration Externalization
 
 ```python
-# 检查所有应该是可配置的值是否确实从配置文件读取:
-# 1. 模型架构参数（层数、维度、头数等）
-# 2. 训练超参（学习率、batch size、epoch 数等）
-# 3. 数据路径
-# 4. 评估参数
-# 5. 硬件相关配置
+# Check that all configurable values are actually read from configuration:
+# 1. Architecture parameters (layers, dimensions, heads, etc.)
+# 2. Training hyperparameters (learning rate, batch size, epochs, etc.)
+# 3. Data paths
+# 4. Evaluation parameters
+# 5. Hardware-specific settings
 #
-# 标记: 在代码中直接写死但应该可配置的值
+# Flag hard-coded values that should be configurable
 ```
 
-#### D.4 泛化性结构检查
+#### D.4 Structural Generalizability
 
 ```python
-# 核心问题: 这份代码能否不经修改（或仅改配置）运行在另一个数据集上？
+# Key question: Can this code run on another dataset unchanged, or with configuration changes only?
 #
-# 检查:
-# 1. 数据加载是否参数化？(路径、格式、列名等可配置)
-# 2. 模型输入输出维度是否参数化？
-# 3. 预处理流程是否通用？
-# 4. 是否有 dataset-agnostic 的抽象层？
-# 5. 如果换一个相同 domain 但不同分布的数据集，代码能否直接运行？
+# Checks:
+# 1. Is data loading parameterized (paths, formats, column names, etc.)?
+# 2. Are model input/output dimensions parameterized?
+# 3. Is preprocessing general-purpose?
+# 4. Is there a dataset-agnostic abstraction layer?
+# 5. Can the code run directly on a dataset from the same domain but a different distribution?
 ```
 
-### Module E: Method-Code 一致性 (Method-Code Alignment)
+### Module E: Method-Code Alignment
 
-如果有 proposal 文件可供参照，逐项对比 proposal 描述的方法与代码实际实现。
+If a proposal is available, compare its method description with the implementation item by item.
 
-#### E.1 算法步骤对齐
+#### E.1 Algorithm-Step Alignment
 
 ```
-对 proposal 中描述的每个算法步骤:
-1. 找到对应的代码实现
-2. 检查代码是否忠实实现了描述的逻辑
-3. 标记缺失的步骤: proposal 中有但代码中没有
-4. 标记多余的步骤: 代码中有但 proposal 中没描述（"bonus step"）
+For every algorithmic step in the proposal:
+1. Find the corresponding implementation
+2. Check that it faithfully implements the described logic
+3. Flag missing steps: described in the proposal but absent from code
+4. Flag extra steps: present in code but undescribed in the proposal ("bonus steps")
 ```
 
-**"Bonus step" 是最危险的信号。** 如果代码中有 proposal 未描述的步骤，这些步骤可能:
-- 是让方法 work 的关键 trick（应该写进论文）
-- 是对特定数据集的 hack（应该删除）
-- 是 LLM 自作主张添加的"优化"（需要审查）
+**"Bonus steps" are the most dangerous signal.** Undocumented implementation steps may be:
+- Essential tricks that make the method work (must be described in the paper)
+- Dataset-specific hacks (should be removed)
+- Unrequested LLM-added "optimizations" (require scrutiny)
 
-#### E.2 Loss 函数对齐
+#### E.2 Loss-Function Alignment
 
 ```python
-# 检查:
-# 1. 代码中的 loss 公式是否与 proposal 中描述的一致？
-# 2. Loss 的各项权重是否与 proposal 一致？
-# 3. 是否有 proposal 未提及的正则化项？
-# 4. 是否有条件性 loss（某些情况下关闭某个 loss 项）？
+# Checks:
+# 1. Does the implemented loss match the proposal's equation?
+# 2. Do loss-component weights match the proposal?
+# 3. Are there undocumented regularization terms?
+# 4. Is the loss conditional, with some terms disabled in certain cases?
 ```
 
-#### E.3 架构对齐
+#### E.3 Architecture Alignment
 
 ```python
-# 检查:
-# 1. 模型架构（层数、维度、激活函数等）是否与 proposal 一致？
-# 2. 是否有 proposal 未提及的 skip connection、dropout、normalization？
-# 3. 推理路径是否与 proposal 描述一致？
-# 4. 训练 vs 推理模式是否有未说明的差异？
+# Checks:
+# 1. Does the architecture (layers, dimensions, activations, etc.) match the proposal?
+# 2. Are there undocumented skip connections, dropout, or normalization?
+# 3. Does the inference path match the proposal?
+# 4. Are training/inference differences fully documented?
 ```
 
-#### E.4 无 Proposal 模式
+#### E.4 No-Proposal Mode
 
-如果没有找到 proposal 文件:
-1. 跳过步骤对齐检查
-2. 仍然进行代码内部一致性检查:
-   - 代码注释与实际逻辑是否一致？
-   - README/docstring 描述与代码是否一致？
-   - 配置文件中的参数名与代码中的使用是否一致？
-3. 标记: "⚠️ 无 proposal 参照。Module E 仅执行代码内部一致性检查。建议提供 proposal 文件以启用完整对齐验证。"
+If no proposal is found:
+1. Skip algorithm-step alignment
+2. Still check internal consistency:
+   - Do comments match actual logic?
+   - Do README/docstring descriptions match code?
+   - Do configuration parameter names match their use in code?
+3. Flag: "⚠️ No proposal reference. Module E checked internal code consistency only. Provide a proposal to enable full alignment verification."
 
-### Module F: LLM 代码陷阱检测 (LLM Code Trap Detection)
+### Module F: LLM Code Trap Detection
 
-这是本 skill 最具特色的模块。专门检测 LLM 生成代码时常见的"看起来像在学习，实际上在作弊"的模式。
+This distinctive module detects common LLM-generated patterns that look like learning but actually cheat.
 
-#### F.1 Pattern Matching 伪装学习
+#### F.1 Pattern Matching Disguised as Learning
 
 ```python
-# 反模式: 用 if-else / 字符串匹配 / 正则 / lookup table 代替真正的模型学习
-# 搜索:
-#   - 大量 if-elif 链条（>5 个分支）在推理路径中
-#   - dict / hashmap 用于直接映射输入到输出
-#   - 字符串模板用于构造"预测"结果
-#   - 硬编码的答案列表
+# Anti-pattern: Replacing genuine model learning with if-else rules, string matching, regexes, or lookup tables
+# Search for:
+#   - Long if-elif chains (>5 branches) in the inference path
+#   - Dictionaries/hashmaps directly mapping inputs to outputs
+#   - String templates constructing "predictions"
+#   - Hard-coded answer lists
 #
-# 核心问题: 模型的预测是通过学习得到的，还是通过规则匹配得到的？
-# 如果去掉所有规则匹配部分，模型还能工作吗？
+# Key question: Are predictions learned or obtained through rule matching?
+# Would the model still work if all rule matching were removed?
 ```
 
-#### F.2 Memorization 检测
+#### F.2 Memorization Detection
 
 ```python
-# 反模式: 模型或代码记住了训练/测试样本
-# 检查:
-# 1. 是否有嵌入在代码中的数据样本？
-#    搜索: 长字符串常量、硬编码的向量/矩阵、json 中的样本数据
-# 2. 训练过程是否有 overfit 的迹象？
-#    检查: 是否有训练到 100% 训练精度才停止？
-# 3. 测试样本是否出现在训练代码中？
-#    搜索: test_data, eval_data 在训练循环中的引用
+# Anti-pattern: The model or code memorizes training/test samples
+# Checks:
+# 1. Are data samples embedded in code?
+#    Search: Long string constants, hard-coded vectors/matrices, sample data in JSON
+# 2. Are there signs of overfitting during training?
+#    Check whether training continues until 100% training accuracy
+# 3. Do test samples appear in training code?
+#    Search: References to test_data or eval_data in the training loop
 ```
 
-#### F.3 "Helper" 函数暗箱操作
+#### F.3 Hidden Behavior in "Helper" Functions
 
 ```python
-# 反模式: 看起来无害的 helper 函数实际上在做核心工作
-# 检查:
-# 1. utils.py 或 helpers.py 中是否有看似通用但实际上包含模型逻辑的函数？
-# 2. "post-processing" 步骤是否实际上是方法的核心组件？
-#    如果去掉 post-processing，性能下降多少？
-# 3. "数据预处理" 是否实际上在做特征工程？
-#    预处理应该对所有方法公平，而非只对 proposed method 有利
+# Anti-pattern: Apparently harmless helper functions perform the core work
+# Checks:
+# 1. Do generic-looking functions in utils.py or helpers.py actually contain model logic?
+# 2. Is "post-processing" actually a core method component?
+#    How much does performance drop without it?
+# 3. Is "data preprocessing" actually feature engineering?
+#    Preprocessing must treat all methods fairly, not favor only the proposed method
 ```
 
-#### F.4 训练时信息泄露
+#### F.4 Training-Time Information Leakage
 
 ```python
-# 反模式: 通过巧妙的抽象在训练时访问测试时信息
-# 检查:
-# 1. DataLoader 是否在某些模式下返回标签/答案？
-# 2. 模型的 forward() 方法在训练模式和评估模式下是否有不当差异？
-# 3. 是否存在 "teacher forcing" 在测试时仍然开启的情况？
-# 4. Global 变量或类属性是否在训练时存储了不应该存储的信息？
+# Anti-pattern: Clever abstractions expose test-time information during training
+# Checks:
+# 1. Does the DataLoader return labels/answers in certain modes?
+# 2. Are there inappropriate training/evaluation differences in forward()?
+# 3. Does "teacher forcing" remain enabled at test time?
+# 4. Do global variables or class attributes retain information they should not during training?
 ```
 
-#### F.5 代码克隆检测
+#### F.5 Code Clone Detection
 
 ```python
-# 反模式: 代码本质上是从已有 solution 复制的，只是变量名不同
-# 检查:
-# 1. 代码结构是否与某个知名开源实现高度相似？
-# 2. 注释或变量名中是否残留了其他项目的痕迹？
-# 3. 如果 proposed method 与 baseline 的代码高度相似，
-#    是否真的有本质性的方法差异？
+# Anti-pattern: Code copied from an existing solution with only variable names changed
+# Checks:
+# 1. Is the structure highly similar to a well-known open-source implementation?
+# 2. Do comments or variable names retain traces of another project?
+# 3. If proposed-method and baseline code are highly similar,
+#    is there a substantive methodological difference?
 ```
 
 ---
 
-## Phase 3: 独立交叉代码审计
+## Phase 3: Independent Cross-Audit
 
-将关键代码发送给外部 LLM 进行独立审计，避免"自己写的代码自己审"的 bias。
+Send key code to an external LLM for independent auditing to reduce the bias of reviewing one's own implementation.
 
-### Step 3.1: 准备审计材料
+### Step 3.1: Prepare Audit Material
 
-提取以下材料供外部 LLM 审计:
-1. **核心训练循环代码**（train loop + loss computation）
-2. **评估代码**（metric computation + result reporting）
-3. **数据处理代码**（data loading + preprocessing + splitting）
-4. **Baseline vs Proposed Method 的关键差异**
-5. **Phase 2 中本地 agent 发现的 CRITICAL 问题列表**（让外部 LLM 交叉验证）
+Extract the following for external review:
+1. **Core training loop** (training loop + loss computation)
+2. **Evaluation code** (metric computation + result reporting)
+3. **Data-processing code** (loading + preprocessing + splitting)
+4. **Key differences between baselines and the proposed method**
+5. **CRITICAL issues found by the local agent in Phase 2** (for cross-validation)
 
-如果代码量过大（> 500 行），只发送最关键的部分并附上代码结构摘要。
+If the code exceeds 500 lines, send only the most important parts and a structural summary.
 
-### Step 3.2: 外部 LLM 审计
+### Step 3.2: External LLM Audit
 
 ```
 mcp__codex__codex:
   model: REVIEWER_MODEL
   config: {"model_reasoning_effort": "xhigh"}
   prompt: |
-    你是一位顶级 ML 会议的 Reproducibility Chair。你的任务是审计以下实验代码，
-    检查是否存在影响学术诚信的问题。
+    You are the Reproducibility Chair of a top ML conference. Audit the experiment code below
+    for issues affecting academic integrity.
 
-    这些代码是由 LLM 生成的，因此要特别警惕以下 LLM 特有的代码陷阱:
-    1. 为特定数据集/样本量身定做的 hard-coded 值
-    2. 用规则匹配伪装成模型学习
-    3. 给 baseline 不公平的配置（更少的训练时间、更差的超参）
-    4. 数据泄露（预处理统计量使用了测试集、特征工程泄露标签）
-    5. 评估作弊（测试集选 checkpoint、seed shopping、只报告有利 metric）
-    6. "Bonus step"——代码中有但论文中没描述的步骤（可能是 hack）
+    This code was generated by an LLM. Pay special attention to these LLM-specific traps:
+    1. Hard-coded values tailored to specific datasets or samples
+    2. Rule matching disguised as model learning
+    3. Unfair baseline configurations (less training, worse hyperparameters)
+    4. Data leakage (test-set preprocessing statistics, label leakage through features)
+    5. Evaluation cheating (test-set checkpoint selection, seed shopping, favorable metrics only)
+    6. "Bonus steps": Code absent from the paper's description that may be a hack
 
-    ## 代码结构概览
+    ## Code Structure Overview
     [CODE_STRUCTURE_SUMMARY]
 
-    ## 核心训练代码
+    ## Core Training Code
     ```python
     [TRAINING_CODE]
     ```
 
-    ## 评估代码
+    ## Evaluation Code
     ```python
     [EVALUATION_CODE]
     ```
 
-    ## 数据处理代码
+    ## Data-Processing Code
     ```python
     [DATA_CODE]
     ```
 
-    ## Proposed Method vs Baseline 关键差异
+    ## Key Differences: Proposed Method vs Baselines
     [DIFF_SUMMARY]
 
-    ## 先前内部审计发现的问题（请交叉验证）
+    ## Prior Internal Audit Findings (Cross-Validate These)
     [LOCAL_AGENT_FINDINGS]
 
-    请输出:
+    Provide:
 
-    ### 1. 独立发现的问题
-    对每个问题:
-    - 严重级别: CRITICAL / WARNING / INFO
-    - 问题类别: 数据泄露 / Baseline不公 / 评估作弊 / 代码特异性 / LLM陷阱 / 其他
-    - 具体位置: 文件名 + 代码行或函数名
-    - 问题描述
-    - 影响评估: 这个问题会如何影响实验结果？能否让结果虚高？偏差有多大？
-    - 修复方案
+    ### 1. Independently Discovered Issues
+    For each issue:
+    - Severity: CRITICAL / WARNING / INFO
+    - Category: Data leakage / Baseline unfairness / Evaluation cheating / Code specificity / LLM traps / Other
+    - Location: File name + line or function
+    - Description
+    - Impact: How does it affect results? Could it inflate them, and by how much?
+    - Fix
 
-    ### 2. 对先前发现的交叉验证
-    对每个先前发现的问题:
-    - 是否同意？
-    - 如果不同意，理由是什么？
-    - 是否需要调整严重级别？
+    ### 2. Cross-Validation of Prior Findings
+    For each prior issue:
+    - Do you agree?
+    - If not, why?
+    - Should severity change?
 
-    ### 3. 泛化性评估
-    - 这份代码在其他数据集上能直接运行吗？
-    - 哪些部分是 dataset-specific 的？
-    - 需要修改什么才能泛化？
+    ### 3. Generalizability Assessment
+    - Can this code run directly on other datasets?
+    - Which parts are dataset-specific?
+    - What must change to generalize?
 
-    ### 4. 总体评估
+    ### 4. Overall Assessment
     - PASS / CONDITIONAL_PASS / FAIL
-    - 最大的 3 个风险点
-    - 如果是你审稿，你会因为代码质量提什么 concern？
+    - Top 3 risks
+    - As a reviewer, what concerns would you raise about code quality?
 ```
 
-**Codex MCP 失败处理**: 如果 `mcp__codex__codex` 不可用:
-1. 本地 agent 自行执行交叉审计（使用相同的审计维度）
-2. 日志记录: "⚠️ Codex MCP 不可用。交叉审计由本地 agent 执行（自审模式——客观性降低）。"
-3. 对自审发现的 CRITICAL 问题数量乘以 1.2 系数（补偿自审时可能的漏检）
-4. 继续流程，不中断。
+**Codex MCP failure handling**: If `mcp__codex__codex` is unavailable:
+1. Have the local agent perform the cross-audit using the same dimensions
+2. Log: "⚠️ Codex MCP unavailable. Cross-audit performed by the local agent (self-review mode; reduced objectivity)."
+3. Multiply the number of self-review CRITICAL findings by 1.2 to compensate for potential missed issues
+4. Continue without interruption.
 
-### Step 3.3: 整合发现
+### Step 3.3: Integrate Findings
 
-合并 Phase 2（本地 agent 审计）和 Phase 3（外部 LLM 审计）的发现:
-1. 去重: 两个来源发现的相同问题合并
-2. 交叉验证: 如果两个来源对同一问题的严重级别不同，取较高者
-3. 独立发现: 只有一方发现的问题标记来源
-4. 争议: 如果两方对某问题有不同判断，保留两种观点
+Merge Phase 2 (local-agent audit) and Phase 3 (external-LLM audit) findings:
+1. Deduplicate: Merge identical issues from both sources
+2. Cross-validate: If severity differs, use the higher level
+3. Attribute independent findings: Label issues found by only one source
+4. Preserve disagreements: Record both views when judgments differ
 
 ---
 
-## Phase 4: 综合评估与修复清单
+## Phase 4: Overall Assessment and Fix Checklist
 
-### Step 4.1: 计算模块得分
+### Step 4.1: Compute Module Scores
 
-对每个模块（A-F），计算得分:
+For each module (A-F), compute:
 
 ```
-模块得分 = 10 - (CRITICAL数 × 3) - (WARNING数 × 1) - (INFO数 × 0.2)
-下限为 0，上限为 10
+Module score = 10 - (CRITICAL count × 3) - (WARNING count × 1) - (INFO count × 0.2)
+Clamp to a minimum of 0 and maximum of 10
 ```
 
-### Step 4.2: 计算总体得分
+### Step 4.2: Compute the Overall Score
 
 ```
 AUDIT_SCORE = (
-    0.25 × Module_A_score  +   # 数据管线完整性
-    0.20 × Module_B_score  +   # Baseline 公平性
-    0.20 × Module_C_score  +   # 评估协议合规性
-    0.15 × Module_D_score  +   # 代码特异性
-    0.10 × Module_E_score  +   # Method-Code 一致性
-    0.10 × Module_F_score      # LLM 代码陷阱
+    0.25 × Module_A_score  +   # Data pipeline integrity
+    0.20 × Module_B_score  +   # Baseline fairness
+    0.20 × Module_C_score  +   # Evaluation protocol compliance
+    0.15 × Module_D_score  +   # Code specificity
+    0.10 × Module_E_score  +   # Method-code alignment
+    0.10 × Module_F_score      # LLM code traps
 )
 ```
 
-### Step 4.3: 确定总体裁决
+### Step 4.3: Determine the Overall Verdict
 
-| AUDIT_SCORE | CRITICAL 数 | 裁决 |
+| AUDIT_SCORE | CRITICAL Count | Verdict |
 |-------------|------------|------|
-| >= 7.0 且 CRITICAL = 0 | 0 | **PASS** — 代码通过审计，可以报告结果 |
-| >= 5.0 或 CRITICAL = 0 | 0 | **CONDITIONAL_PASS** — 修复 WARNING 后可报告 |
-| < 5.0 或 CRITICAL > 0 | > 0 | **FAIL** — 存在严重问题，必须修复后重新审计 |
+| >= 7.0 and CRITICAL = 0 | 0 | **PASS** — Code passes; results may be reported |
+| >= 5.0 or CRITICAL = 0 | 0 | **CONDITIONAL_PASS** — Report after fixing WARNING issues |
+| < 5.0 or CRITICAL > 0 | > 0 | **FAIL** — Serious issues; fix and rerun the audit |
 
-任何存在 CRITICAL 问题的代码自动 FAIL，无论总分如何。
+Any CRITICAL issue automatically produces FAIL, regardless of the total score.
 
-### Step 4.4: 生成修复清单
+### Step 4.4: Generate the Fix Checklist
 
-按优先级排序所有问题:
-1. **CRITICAL 问题（必须修复）**: 按影响范围从大到小
-2. **WARNING 问题（应当修复）**: 按修复难度从低到高（先解决容易的）
-3. **INFO 建议（可选改进）**: 按改善幅度排序
+Prioritize all issues:
+1. **CRITICAL (must fix)**: Largest impact first
+2. **WARNING (should fix)**: Lowest fix difficulty first
+3. **INFO (optional improvements)**: Rank by improvement potential
 
-对每个问题提供:
-- 具体的修复代码建议（不是笼统的方向）
-- 预估修复时间
-- 修复后的预期效果
+For each issue, provide:
+- Concrete code changes, not generic directions
+- Estimated fix time
+- Expected effect after fixing
 
 ---
 
-## Phase 5: 审计报告输出
+## Phase 5: Audit Report Output
 
-创建 `outputs/` 目录（如不存在）:
+Create `outputs/` if needed:
 ```bash
 mkdir -p outputs
 ```
 
 ### `outputs/AUDIT_REPORT.md`
 
-完整审计报告，包含所有模块的详细发现。
+A complete audit report with detailed findings for every module.
 
 ```markdown
-# 实验代码审计报告
+# Experiment Code Audit Report
 
-**审计目标**: [代码路径]
-**Proposal 参照**: [proposal 路径 / 无]
-**目标会议**: [venue]
-**审计日期**: [YYYY-MM-DD]
-**总体裁决**: PASS / CONDITIONAL_PASS / FAIL
-**总体得分**: X.X/10
+**Audit target**: [code path]
+**Proposal reference**: [proposal path / none]
+**Target venue**: [venue]
+**Audit date**: [YYYY-MM-DD]
+**Overall verdict**: PASS / CONDITIONAL_PASS / FAIL
+**Overall score**: X.X/10
 
 ## Executive Summary
 
-[2-3 段总结审计结果。发现了多少问题？最严重的问题是什么？总体代码质量如何？]
+[Summarize the audit in 2-3 paragraphs: issue count, most serious problems, and overall code quality.]
 
-## 得分概览
+## Score Overview
 
-| 模块 | 得分 | CRITICAL | WARNING | INFO |
+| Module | Score | CRITICAL | WARNING | INFO |
 |------|------|----------|---------|------|
-| A. 数据管线完整性 | X.X/10 | N | N | N |
-| B. Baseline 公平性 | X.X/10 | N | N | N |
-| C. 评估协议合规性 | X.X/10 | N | N | N |
-| D. 代码特异性 | X.X/10 | N | N | N |
-| E. Method-Code 一致性 | X.X/10 | N | N | N |
-| F. LLM 代码陷阱 | X.X/10 | N | N | N |
-| **总计** | **X.X/10** | **N** | **N** | **N** |
+| A. Data Pipeline Integrity | X.X/10 | N | N | N |
+| B. Baseline Fairness | X.X/10 | N | N | N |
+| C. Evaluation Protocol Compliance | X.X/10 | N | N | N |
+| D. Code Specificity | X.X/10 | N | N | N |
+| E. Method-Code Alignment | X.X/10 | N | N | N |
+| F. LLM Code Traps | X.X/10 | N | N | N |
+| **Total** | **X.X/10** | **N** | **N** | **N** |
 
-## Module A: 数据管线完整性
+## Module A: Data Pipeline Integrity
 
-### 发现
+### Findings
 
-#### A-01 [CRITICAL] 预处理统计量使用了全量数据
-- **位置**: `data_loader.py:45`
-- **问题**: `StandardScaler.fit()` 在 train/test 合并后的全量数据上调用
-- **影响**: 测试集信息泄入了预处理参数，测试集 metric 虚高
-- **修复**: 将 `scaler.fit(all_data)` 改为 `scaler.fit(train_data)`，然后用 `scaler.transform(test_data)`
+#### A-01 [CRITICAL] Preprocessing Statistics Use the Full Dataset
+- **Location**: `data_loader.py:45`
+- **Issue**: `StandardScaler.fit()` is called on combined train/test data
+- **Impact**: Test information leaks into preprocessing parameters, inflating test metrics
+- **Fix**: Replace `scaler.fit(all_data)` with `scaler.fit(train_data)`, then use `scaler.transform(test_data)`
 
 #### A-02 [WARNING] ...
 [...]
 
-## Module B: Baseline 公平性
-[同结构]
+## Module B: Baseline Fairness
+[Same structure]
 
-## Module C: 评估协议合规性
-[同结构]
+## Module C: Evaluation Protocol Compliance
+[Same structure]
 
-## Module D: 代码特异性
-[同结构]
+## Module D: Code Specificity
+[Same structure]
 
-## Module E: Method-Code 一致性
-[同结构]
+## Module E: Method-Code Alignment
+[Same structure]
 
-## Module F: LLM 代码陷阱
-[同结构]
+## Module F: LLM Code Traps
+[Same structure]
 
-## 交叉审计结果
+## Cross-Audit Results
 
-### 外部 LLM 独立发现
-[列出外部 LLM 独立发现但本地 agent 未发现的问题]
+### Independent External LLM Findings
+[List issues found by the external LLM but missed by the local agent]
 
-### 交叉验证结果
-[列出两方一致的发现和分歧]
+### Cross-Validation Results
+[List agreements and disagreements]
 
-### 泛化性评估
-[外部 LLM 对代码泛化性的评估]
+### Generalizability Assessment
+[External LLM assessment of code generalizability]
 
-## 总体评估
-- **裁决**: PASS / CONDITIONAL_PASS / FAIL
-- **CRITICAL 问题数**: N
-- **最大风险点**:
-  1. [风险1]
-  2. [风险2]
-  3. [风险3]
-- **如果你是审稿人**: [模拟审稿人会提出的关于代码/实验的具体 concern]
+## Overall Assessment
+- **Verdict**: PASS / CONDITIONAL_PASS / FAIL
+- **CRITICAL issue count**: N
+- **Top risks**:
+  1. [Risk 1]
+  2. [Risk 2]
+  3. [Risk 3]
+- **Reviewer perspective**: [Specific code/experiment concerns a reviewer would raise]
 ```
 
 ### `outputs/AUDIT_CHECKLIST.md`
 
-精简的可操作修复清单，供开发者直接执行。
+A concise, actionable fix checklist for developers.
 
 ```markdown
-# 实验代码修复清单
+# Experiment Code Fix Checklist
 
-**审计日期**: [YYYY-MM-DD]
-**总体裁决**: PASS / CONDITIONAL_PASS / FAIL
-**总体得分**: X.X/10
+**Audit date**: [YYYY-MM-DD]
+**Overall verdict**: PASS / CONDITIONAL_PASS / FAIL
+**Overall score**: X.X/10
 
-## CRITICAL — 必须修复（不修复则结果不可信）
+## CRITICAL — Must Fix (Results Are Unreliable Otherwise)
 
-- [ ] **A-01** `data_loader.py:45` — 预处理统计量用了全量数据
-  - 修复: `scaler.fit(all_data)` → `scaler.fit(train_data)`
-  - 预估时间: 10 分钟
+- [ ] **A-01** `data_loader.py:45` — Preprocessing statistics use all data
+  - Fix: `scaler.fit(all_data)` → `scaler.fit(train_data)`
+  - Estimated time: 10 minutes
 
-- [ ] **C-03** `eval.py:120` — 用测试集选 checkpoint
-  - 修复: 改为用验证集选 checkpoint，测试集仅在最终报告时使用一次
-  - 预估时间: 30 分钟
+- [ ] **C-03** `eval.py:120` — Test-set checkpoint selection
+  - Fix: Select checkpoints on validation data; use the test set only once for final reporting
+  - Estimated time: 30 minutes
 
-## WARNING — 应当修复（审稿人可能质疑）
+## WARNING — Should Fix (Reviewers May Object)
 
-- [ ] **B-02** `config.yaml:15` — Proposed method 训练 200 epochs，baseline 仅 100 epochs
-  - 修复: 统一训练轮次，或使用 early stopping
-  - 预估时间: 5 分钟
+- [ ] **B-02** `config.yaml:15` — Proposed method trains for 200 epochs; baseline only 100
+  - Fix: Equalize training duration or use early stopping
+  - Estimated time: 5 minutes
 
-- [ ] **C-01** `train.py:30` — 只使用了 1 个 random seed
-  - 修复: 运行 3-5 个 seed，报告 mean ± std
-  - 预估时间: N/A（需要多次运行）
+- [ ] **C-01** `train.py:30` — Only 1 random seed
+  - Fix: Run 3-5 seeds and report mean ± std
+  - Estimated time: N/A (requires multiple runs)
 
-## INFO — 建议改进（提升论文质量）
+## INFO — Suggested Improvements (Enhance Paper Quality)
 
-- [ ] **D-05** `model.py:78` — hidden_dim=768 硬编码
-  - 修复: 移至配置文件
-  - 预估时间: 5 分钟
+- [ ] **D-05** `model.py:78` — Hard-coded hidden_dim=768
+  - Fix: Move to configuration
+  - Estimated time: 5 minutes
 
-## 修复后重新审计
+## Rerun the Audit After Fixing
 
-修复完 CRITICAL 和 WARNING 问题后，建议重新运行 `/experiment-audit` 验证修复效果。
+After fixing CRITICAL and WARNING issues, rerun `/experiment-audit` to verify the changes.
 ```
 
 ### Large File Handling
 
-如果 `Write` 失败，使用 Bash heredoc:
+If `Write` fails, use a Bash heredoc:
 ```bash
 cat << 'AUDIT_EOF' > outputs/AUDIT_REPORT.md
 [content]
@@ -759,36 +759,36 @@ AUDIT_EOF
 
 ## Execution Order
 
-1. **Parse input**: 确定代码路径、proposal 路径、venue。
-2. **Phase 1**: 扫描代码文件，构建代码结构图和数据流图。
-3. **Phase 2**: 逐模块审计（Module A → B → C → D → E → F）。Module A-D 可以并行执行，Module E 依赖 proposal 文件。
-4. **Phase 3**: 整理 Phase 2 发现，发送给外部 LLM 交叉审计。
-5. **Phase 4**: 整合两方发现，计算得分，确定裁决，生成修复清单。
-6. **Phase 5**: 写入报告文件。
+1. **Parse input**: Identify code path, proposal path, and venue.
+2. **Phase 1**: Scan files and build code-structure and data-flow maps.
+3. **Phase 2**: Audit modules in order (A → B → C → D → E → F). Modules A-D may run in parallel; Module E depends on the proposal.
+4. **Phase 3**: Organize Phase 2 findings and send them to the external LLM for cross-auditing.
+5. **Phase 4**: Integrate findings, compute scores, determine the verdict, and generate the fix checklist.
+6. **Phase 5**: Write report files.
 
 ---
 
 ## Key Rules
 
-1. **所有输出使用中文。** AUDIT_REPORT.md 和 AUDIT_CHECKLIST.md 中的问题描述、影响分析、修复建议均使用中文。代码片段、文件路径、技术术语保留英文。
-2. **CRITICAL 问题零容忍。** 任何存在 CRITICAL 问题的代码必须判定为 FAIL，无论总分多高。学术诚信没有灰色地带。
-3. **给出具体修复代码。** 不要只说"这里有问题"，要说"把第 45 行的 `scaler.fit(all_data)` 改为 `scaler.fit(train_data)`"。可操作性是这个 skill 的生命线。
-4. **区分"合理适配"和"不当 hack"。** 不同数据集使用不同的 `num_classes` 是合理适配。不同数据集使用不同的 loss 函数是不当 hack（除非有充分理由）。
-5. **双模型交叉验证。** 本地 agent 的发现必须经过外部 LLM 交叉验证。两方独立发现的问题可信度更高。
-6. **不要过度报告。** INFO 级别的问题不要超过 10 个。审计报告应该聚焦于真正影响结果可信度的问题，而非代码风格偏好。
-7. **Fully autonomous operation.** 不要向用户提问、等待确认或提供选择。所有决策自主完成并记录。
-8. **Large file handling**: 如果 Write 工具失败，用 Bash heredoc 写入。不需要询问用户。
+1. **Write all output in English.** Use English for issue descriptions, impact analysis, and suggested fixes in AUDIT_REPORT.md and AUDIT_CHECKLIST.md, while preserving code snippets and file paths.
+2. **Zero tolerance for CRITICAL issues.** Any code with a CRITICAL issue must receive FAIL, regardless of its score. Academic integrity has no gray area.
+3. **Provide concrete code fixes.** Do not merely say "there is a problem"; say "replace `scaler.fit(all_data)` on line 45 with `scaler.fit(train_data)`". Actionability is essential.
+4. **Distinguish legitimate adaptation from improper hacks.** Dataset-specific `num_classes` is legitimate. Dataset-specific losses are improper unless well justified.
+5. **Dual-model cross-validation.** Local findings must be cross-checked by an external LLM. Independently corroborated findings are more credible.
+6. **Avoid over-reporting.** Limit INFO issues to 10. Focus on issues affecting result credibility, not style preferences.
+7. **Fully autonomous operation.** Do not ask questions, wait for confirmation, or offer choices. Make and record decisions autonomously.
+8. **Large file handling**: If Write fails, use a Bash heredoc without asking the user.
 9. **ALWAYS use `config: {"model_reasoning_effort": "xhigh"}`** for all Codex calls.
-10. **如果代码量过大（> MAX_FILES_DEEP_SCAN），优先审计高风险文件。** 训练循环 > 评估脚本 > 数据处理 > 配置 > 其余。
+10. **For large codebases (> MAX_FILES_DEEP_SCAN), prioritize high-risk files.** Training loops > evaluation scripts > data processing > configuration > other files.
 
 ## Composing with Other Skills
 
 ```
-/idea-refine → [代码编写] → /experiment-audit  ← you are here → [修复] → [实验执行]
+/idea-refine → [code implementation] → /experiment-audit  ← you are here → [fixes] → [experiment execution]
 ```
 
-- **Input from `/idea-refine`**: `refine-logs/FINAL_PROPOSAL.md` — 用于 Module E 的 Method-Code 一致性检查。
-- **This skill is independent**: 也可以独立使用，对任意实验代码进行审计。
-- **Output**: `outputs/AUDIT_REPORT.md` 和 `outputs/AUDIT_CHECKLIST.md` 供开发者参考和修复。
+- **Input from `/idea-refine`**: `refine-logs/FINAL_PROPOSAL.md` — Used for Module E's method-code alignment check.
+- **This skill is independent**: It can also audit arbitrary experiment code on its own.
+- **Output**: `outputs/AUDIT_REPORT.md` and `outputs/AUDIT_CHECKLIST.md` for developers to inspect and act on.
 
-审计 skill 是从 idea 到 paper 链条上的最后一道质量关卡。它的存在不是为了阻止研究，而是为了确保研究结果经得起审稿人的推敲。一份通过审计的代码，意味着研究者可以自信地报告结果，而不用担心被审稿人质疑实验设计。
+The audit skill is the final quality gate between idea and paper. Its purpose is not to obstruct research, but to ensure results withstand reviewer scrutiny. Passing the audit lets researchers report results confidently without worrying about challenges to experimental design.

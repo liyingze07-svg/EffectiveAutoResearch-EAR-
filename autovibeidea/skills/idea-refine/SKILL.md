@@ -1,6 +1,6 @@
 ---
 name: idea-refine
-description: "Iterative deep refinement of a research idea via Problem Anchor + skeleton extraction + external LLM review. Turns a rough idea into a venue-ready proposal. Use when user says \"refine idea\", \"打磨idea\", \"deepen this idea\", \"flesh out\", \"细化方案\", or wants to turn a rough idea into a focused, concrete proposal."
+description: "Iterative deep refinement of a research idea via Problem Anchor + skeleton extraction + external LLM review. Turns a rough idea into a venue-ready proposal. Use when user says \"refine idea\", \"polish an idea\", \"deepen this idea\", \"flesh out\", \"detail the proposal\", or wants to turn a rough idea into a focused, concrete proposal."
 argument-hint: "[idea description or reference to SCREENING_RANKED.md]"
 allowed-tools: Bash(*), Read, Write, Edit, Grep, Glob, WebSearch, WebFetch, Agent, mcp__codex__codex, mcp__codex__codex-reply
 ---
@@ -34,7 +34,7 @@ User input (idea + rough approach)
 
 ## Constants
 
-- **REVIEWER_MODEL = `gpt-5.4`** — 外部评审模型。（**模型可用性依赖账号**：用 ChatGPT 账号登录的 codex 只能用账号自带模型，指定不支持的模型会被 400 拒绝。走 `--codex-cli` 时**不要传 `--model`**，让 codex 用默认模型；走 `--gpt-only` 时该模型必须对你的 OpenAI API key 可用。）
+- **REVIEWER_MODEL = `gpt-5.4`** — External review model. (**Model availability depends on your account**: Codex signed in with a ChatGPT account can use only models available to that account; unsupported models return a 400 error. With `--codex-cli`, **do not pass `--model`**; let Codex use its default model. With `--gpt-only`, the model must be available to your OpenAI API key.)
 - **MAX_ROUNDS = 3** — Maximum review-revise rounds. Reduced from 5 to 3 to prevent context window overflow in autonomous mode. Each round accumulates significant context from proposals and reviews.
 - **SCORE_THRESHOLD = 9** — Minimum overall score to stop.
 - **OUTPUT_DIR = `refine-logs/`** — Directory for round files and final report.
@@ -44,12 +44,12 @@ User input (idea + rough approach)
 
 > Override via argument if needed, e.g. `/idea-refine "problem | approach" -- max rounds: 2, threshold: 9`.
 
-> **外部模型路径（三选一，按环境变量 `CODEX_MODE` 路由）**
-> - 未设置 → 优先 `mcp__codex__codex` / `mcp__codex__codex-reply`。**注意 codex CLI ≥0.158.0 已移除 `mcp-server` 子命令**，新版环境下这两个工具必然不可用，直接走下面两条之一，不要视为故障。
-> - `CODEX_MODE=codex-cli` → `bash tools/codex_call.sh --thread <thread文件> --output <输出文件> --phase <阶段> --model REVIEWER_MODEL --config '{"model_reasoning_effort":"xhigh"}' --prompt "..."`。新建线程时 thread 文件为空即可，脚本会把 thread_id 写回该文件；后续同线程调用传同一个文件即自动 `resume`。**无需 API key**。
-> - `CODEX_MODE=gpt-api` → `bash tools/gpt_call.sh`（同样的参数形态，需 `OPENAI_API_KEY`）。
+> **External model routes (choose one, routed by `CODEX_MODE`)**
+> - Unset → prefer `mcp__codex__codex` / `mcp__codex__codex-reply`. **Note: Codex CLI ≥0.158.0 removed the `mcp-server` subcommand**. In newer environments these two tools are unavailable; use one of the routes below instead of treating this as an error.
+> - `CODEX_MODE=codex-cli` → `bash tools/codex_call.sh --thread <thread-file> --output <output-file> --phase <phase> --model REVIEWER_MODEL --config '{"model_reasoning_effort":"xhigh"}' --prompt "..."`. For a new thread, leave the thread file empty; the script writes the thread_id into it. Pass the same file on later calls to automatically `resume` that thread. **No API key required**.
+> - `CODEX_MODE=gpt-api` → `bash tools/gpt_call.sh` (same argument format; requires `OPENAI_API_KEY`).
 >
-> 三条路径都不可用时，才降级为本地 agent 自评，并在节点上置 `scores.degraded=true`。
+> Only when all three routes are unavailable, fall back to local-agent self-evaluation and set `scores.degraded=true` on the node.
 
 ## Output Structure
 
@@ -373,7 +373,7 @@ Before starting external review, parse `$ARGUMENTS` for a `-- mode:` directive:
 
 - **MAX_DIALOGUE_TURNS = 5** — Maximum question-answer turns before forcing final score.
 - **SOCRATIC_SCORE_THRESHOLD = 9** — Same as SCORE_THRESHOLD. Stop when final score ≥ 9.
-- **UNDERSTANDING_SIGNAL** = `"我已充分理解这个方法"` — The exact phrase GPT must write to trigger final scoring. Do NOT trigger scoring until this phrase appears.
+- **UNDERSTANDING_SIGNAL** = `"I fully understand this method"` — The exact phrase GPT must write to trigger final scoring. Do NOT trigger scoring until this phrase appears.
 
 #### Socratic Turn 0: Open the Dialogue Thread
 
@@ -398,7 +398,7 @@ STRICT RULES you must follow at all times:
    (e.g., "In the Core Mechanism section, regarding component X...").
 4. Number your questions: 1., 2., 3., ...
 5. You may declare full understanding ONLY by writing this exact phrase:
-   "我已充分理解这个方法"
+   "I fully understand this method"
    Do NOT write this phrase unless you are genuinely ready to score the proposal.
    Do NOT score before writing this phrase.
 
@@ -429,7 +429,7 @@ For each turn T:
 
 **Step A: Check for Understanding Declaration**
 
-Parse the most recent GPT response for the exact phrase `"我已充分理解这个方法"`.
+Parse the most recent GPT response for the exact phrase `"I fully understand this method"`.
 - If found → proceed to **Socratic Final Scoring** below.
 - If T = MAX_DIALOGUE_TURNS - 1 and phrase not found → proceed to **Forced Final Scoring** below.
 
@@ -480,9 +480,9 @@ I have integrated these answers into the updated proposal:
 === END UPDATED PROPOSAL ===
 
 You may ask more specific mechanistic questions (3-5), OR declare
-"我已充分理解这个方法" if you have sufficient understanding of the method.
+"I fully understand this method" if you have sufficient understanding of the method.
 
-REMINDER: Do NOT score until you write "我已充分理解这个方法".
+REMINDER: Do NOT score until you write "I fully understand this method".
 ```
 
 Return to Step A for turn T+1.
@@ -496,7 +496,7 @@ Log: "⚠️ Socratic: MAX_DIALOGUE_TURNS (5) reached without understanding decl
 Call `mcp__codex__codex-reply` on the Socratic thread:
 
 ```
-We have reached the maximum dialogue turns. Please now write "我已充分理解这个方法"
+We have reached the maximum dialogue turns. Please now write "I fully understand this method"
 and immediately provide your final score using the standard 7-dimension format below.
 
 [Paste the standard 7-dimension scoring prompt from Phase 2 (Standard Review) below — the full prompt including all 7 dimensions, weights, and Verdict rule]
@@ -510,10 +510,10 @@ Parse the score and proceed to Phase 5.5.
 
 #### Socratic Final Scoring (triggered by understanding declaration)
 
-When GPT writes `"我已充分理解这个方法"`, call `mcp__codex__codex-reply` on the Socratic thread:
+When GPT writes `"I fully understand this method"`, call `mcp__codex__codex-reply` on the Socratic thread:
 
 ```
-你已经声明了充分理解。请立即进行最终评分。
+You have declared full understanding. Please perform the final scoring now.
 
 [Paste the standard 7-dimension scoring prompt from Phase 2 (Standard Review) below]
 
@@ -920,26 +920,26 @@ Also append to `outputs/PIPELINE_LOG.md`:
 ### Phase 5: Final Report and Logs
 
 
-#### Step 5.0: 写派生节点到 `outputs/IDEA_NODES.jsonl`
+#### Step 5.0: Write a Derived Node to `outputs/IDEA_NODES.jsonl`
 
-精炼产出的是原 idea 的**派生节点**，不是对原节点的覆盖——保留原节点才能看出精炼改变了什么。
+Refinement produces a **derived node**, not an overwrite of the original idea. Preserve the original node so the effects of refinement remain visible.
 
 ```bash
 python3 tools/idea_nodes.py add --file /tmp/refined_node.json
 ```
 
-节点内容要求（schema 见 `docs/IDEA_NODE_SCHEMA.md`）：
+Node requirements (schema: `docs/IDEA_NODE_SCHEMA.md`):
 
-- `id`: `<原 id>-r<最终轮次>`，Socratic 模式用 `<原 id>-socratic`
-- `parent_id`: 原 idea 的节点 id
-- `generator.phase`: `idea-refine/5.5`（经 Deep Expansion）或 `idea-refine/socratic`
-- `theory_claims`: **逐条**来自 Theory-Experiment Alignment Matrix，每条含 `claim` / `type` / `protocol` / `feasibility`。`feasibility` 取 `FEASIBLE` / `CAVEATS` / `NOT_FEASIBLE`，与矩阵中的判定一致
-- `review_log`: 每轮一条 `{round, overall, verdict, top2}`
-- `scores.composite`: 最终 overall 分；`scores.source` 写明打分者，`scores.degraded` 标明是否为自评降级
-- `hypothesis.falsifier`: 精炼后的否证条件（通常比 idea-gen 阶段更具体）
-- `cost`: 若 `outputs/COST_LOG.jsonl` 存在，把本次精炼相关的 token 与 wall-clock 汇总填入
+- `id`: `<original-id>-r<final-round>`; use `<original-id>-socratic` in Socratic mode.
+- `parent_id`: The original idea's node ID.
+- `generator.phase`: `idea-refine/5.5` (after Deep Expansion) or `idea-refine/socratic`.
+- `theory_claims`: Copy claims **individually** from the Theory-Experiment Alignment Matrix, each with `claim` / `type` / `protocol` / `feasibility`. Use `FEASIBLE` / `CAVEATS` / `NOT_FEASIBLE` consistently with the matrix.
+- `review_log`: One `{round, overall, verdict, top2}` entry per round.
+- `scores.composite`: Final overall score; identify the scorer in `scores.source` and record whether fallback self-evaluation was used in `scores.degraded`.
+- `hypothesis.falsifier`: Refined falsification condition (usually more specific than at idea-gen).
+- `cost`: If `outputs/COST_LOG.jsonl` exists, aggregate tokens and wall-clock time associated with this refinement.
 
-若 Theory-Experiment Alignment Matrix 中存在 `NOT_FEASIBLE` 的 claim，且提案最终未采纳三条出路中的任何一条，则该节点 `status` 保持 `pending` 并在 `PIPELINE_LOG.md` 记录未解决项——**不要因为分数达标就把它记为已完成**。
+If the Theory-Experiment Alignment Matrix contains a `NOT_FEASIBLE` claim and the final proposal adopts none of the three resolution options, keep the node's `status` as `pending` and record unresolved items in `PIPELINE_LOG.md`. **Do not mark it complete merely because the score meets the threshold.**
 
 ```bash
 python3 tools/idea_nodes.py validate && python3 tools/idea_nodes.py tree
@@ -1123,7 +1123,7 @@ Pipeline log: outputs/PIPELINE_LOG.md
 
 ## Key Rules
 
-- **所有输出使用中文。** FINAL_PROPOSAL.md、REFINEMENT_REPORT.md、round 文件、score-history.md 均使用中文撰写。Problem Anchor、Method Thesis 等核心内容用中文，技术术语和论文标题可保留英文。发给外部 LLM 的 review prompt 可用中英混合。
+- **Write all output in English.** Write FINAL_PROPOSAL.md, REFINEMENT_REPORT.md, round files, and score-history.md in English, including the Problem Anchor and Method Thesis. Send external-LLM review prompts in English.
 - **Fully autonomous operation.** This skill must run end-to-end without user interaction. Never ask the user a question, present options for the user to choose, wait for user confirmation, or suggest the user should decide something. All decisions are made autonomously and logged to `outputs/PIPELINE_LOG.md`. The pipeline is: freeze anchor, extract skeleton, build proposal, iterate review/revise up to MAX_ROUNDS, output best version.
 - **Large file handling**: If the Write tool fails due to file size, immediately retry using Bash (`cat << 'EOF' > file`) to write in chunks. Do NOT ask the user for permission — just do it silently.
 - **Anchor first, every round.** Always carry forward the same Problem Anchor.

@@ -1,59 +1,59 @@
-# CRAFT.md — rebuttal 共享大脑（每个策略、每次写作必读)
+# CRAFT.md — rebuttal Shared Brain (Required Reading for Every Strategy and Every Writing Pass)
 
-> 这是"rebuttal 写得好不好"的核心。3 个 MoE 姿态(s1/s2/s3)都**建立在本文件之上**;姿态只决定差异化的取舍,底层手艺一律照这里。蒸馏自 paper-rebuttal skill 的 `strategy_playbook.md` + `stance_playbook.md`(更全的案例见 skill `examples/case_library.md`)。
+> This is the core of "whether the rebuttal is well written." All 3 MoE stances (s1/s2/s3) are **built on this file**; stances determine only differentiated tradeoffs, while the underlying craft must follow this file without exception. Distilled from the paper-rebuttal skill's `strategy_playbook.md` + `stance_playbook.md` (for more comprehensive cases, see the skill's `examples/case_library.md`).
 
-## 0. 五条总则(适用所有 concern)
-1. **答心结,不答字面(Jiu-Jitsu)**:化解的是 r2 诊断出的 `real_concern`,不是 reviewer 那句原话。字面对了、心结没碰,不动分。
-2. **Clarify + Justify 混用**:别整篇认错(显得贡献站不住),也别整篇辩护(显得听不进)。每条回应"认合理部分 + 正面给证据"搭配。
-3. **给台阶**:reviewer 改分有心理成本。措辞让他能自然说"the authors clarified my concern",把误解框架化为"我们没写清楚",哪怕是他没细读。
-4. **先答后证**:第一句就是答案 → 证据(节/表/数字)→ 影响 → 怎么改。
-5. **data beats arguments**:能用数字解决别用形容词。没数字 → `[TBD]` + action,绝不编。
+## 0. Five Governing Rules (Apply to Every concern)
+1. **Address the real concern, not the literal wording (Jiu-Jitsu)**: Resolve the `real_concern` diagnosed by r2, not the reviewer's original sentence. Answering the literal wording while leaving the real concern untouched will not move the score.
+2. **Combine Clarify + Justify**: Do not concede throughout the entire response (it makes the contribution look indefensible), and do not defend throughout the entire response either (it makes the authors look unreceptive). Pair "acknowledge the reasonable part + directly present evidence" in every response.
+3. **Provide a face-saving path**: Changing a score carries a psychological cost for the reviewer. Word the response so the reviewer can naturally say "the authors clarified my concern"; frame the misunderstanding as "we did not explain this clearly," even if the reviewer did not read carefully.
+4. **Answer first, then substantiate**: The first sentence is the answer → evidence (section/table/numbers) → impact → what will change.
+5. **data beats arguments**: If numbers can resolve it, do not use adjectives. No numbers → `[TBD]` + action; fabrication is never allowed.
 
-## 1. 立场三分流(先判,再落笔)
-| 情形 | 立场 | 纪律 |
+## 1. Three-Way Stance Routing (Classify First, Then Write)
+| Situation | Stance | Discipline |
 |---|---|---|
-| **① 事实错误**(reviewer 说了论文没有/相反的) | 坚定纠正:"We respectfully clarify/note that ..." + 页码级证据 | 别怕冲突就把"他错了"说成"我们没写清楚"(除非确实是) |
-| **② 合理批评**(真问题) | 体面承认:只认到那一点 + 附具体修复,把"承认"转成"已解决" | 认 clarity ≠ 认 soundness 崩;认一个局限 ≠ 认贡献不成立 |
-| **③ 灰色地带**(设计选择/scope/偏好) | 辩护优先:有证据就辩,辩护是学术常态 | respectfully disagree 合法;别一 pushback 就退,真说服不了再退到"文中注明这不是唯一选择" |
+| **① Factual error** (the reviewer claims something the paper does not say or says the opposite) | Correct firmly: "We respectfully clarify/note that ..." + page-level evidence | Do not dilute "the reviewer is wrong" into "we did not explain this clearly" merely to avoid conflict (unless we genuinely did not explain it clearly) |
+| **② Valid criticism** (a real issue) | Make a professional honest concession: concede only that point + attach a concrete fix, turning "conceded" into "resolved" | Acknowledging a clarity issue ≠ conceding that soundness has collapsed; acknowledging one limitation ≠ conceding that the contribution is invalid |
+| **③ Gray area** (design choice/scope/preference) | Defend first: defend when evidence is available; defense is standard academic practice | respectfully disagree is legitimate; do not retreat at the first pushback, and only if persuasion truly fails, fall back to "state in the paper that this is not the only choice" |
 
-## 2. 🔴 不滑跪不自爆(= 诚实在实质不在表演;写作硬纪律)
-- ✗ **不回应 reviewer 没提的弱点**——rebuttal 是答辩不是忏悔。
-- ✗ **不把小问题升级**——clarity 别写成 soundness,typo 别上升到方法缺陷。
-- ✗ **不用自我定罪词**——`major weakness / fundamental limitation / our method fails`(真硬伤该在门口就 BLOCK,不写进 rebuttal)。
-- ✗ **不表演诚实**——`we honestly concede / will not manufacture / we did not spin it / (conceded) 标签 / 反复 fair criticism`。诚实是不谎报事实,不是把"我很诚实"写出来(显心虚、递软肋)。
-- ✓ **承认必同句兜底**:"we acknowledge X, **however** [证据表明影响有限/已缓解/属未来工作]",绝不留光秃秃的"我们承认 X"。
-- ✓ **一次 acknowledge 就够**,别每段道歉。
+## 2. 🔴 No Groveling, No Self-Sabotage (= Honesty in Substance, Not Performative Honesty; Hard Writing Discipline)
+- ✗ **Do not respond to weaknesses the reviewer did not raise**—a rebuttal is a defense, not a confession.
+- ✗ **Do not escalate a small issue**—do not turn clarity into soundness, or a typo into a methodological flaw.
+- ✗ **Do not use self-incriminating language**—`major weakness / fundamental limitation / our method fails` (a genuine fatal flaw should have caused a BLOCK at the gate; do not write it into the rebuttal).
+- ✗ **No performative honesty**—`we honestly concede / will not manufacture / we did not spin it / (conceded) tag / repeated fair criticism`. Honesty means not misrepresenting facts, not writing "I am very honest" (which signals insecurity and hands the reviewer ammunition).
+- ✓ **Every concession must contain its safeguard in the same sentence**: "we acknowledge X, **however** [evidence shows that its impact is limited/it has been mitigated/it belongs to future work]"; never leave a bare "we acknowledge X".
+- ✓ **One acknowledge is enough**; do not apologize in every paragraph.
 
-## 3. 14 种 concern type → canonical 打法(默认值;实际以 r2 心结为准)
-| concern | 心结 | 打法骨架 |
+## 3. 14 concern Types → Canonical Plays (Defaults; Follow the r2 Diagnosis of the real concern in Practice)
+| concern | The real concern | Response skeleton |
 |---|---|---|
-| Novelty/贡献 | Novelty/Substance | 先认最近邻 X 相关 → 列 **3 点本质区别**(task/assumption/evaluation,各带位置)。忌"X irrelevant"/"we are first" |
-| Related Work 缺 | Novelty/Evidence | 真漏→大方补 + 当场给区别;没漏→指位置。引用必先核实,绝不编 |
-| Motivation/意义 | Substance/Scope | 用**具体场景/数字**重建动机,忌一堆形容词 |
-| Soundness/正确性(常 P0) | Soundness | **正面刚不许绕**:推导铺开 + worked example + 引理/文献。含糊=默认他对 |
-| Method Clarity | 表面 Clarity 常掩 Soundness | 认表达 + **当场给 revised snippet**;背后是 soundness 就追加正面论证 |
-| Experiment/评测 | Evidence(常是某组件没被证明) | 诊断他真要什么(常是关键消融非更多数据)→ 补真数字或解释设计理由 |
-| Missing Baseline | Evidence/Novelty | 能跑就跑 apples-to-apples 进正文;赢→主文,不赢→转 robustness/efficiency;跑不完 `[TBD]`;不可比→给理由但先认相关 |
-| Ablation/分析 | Evidence/Substance | 给**组件级**证据(去掉该组件指标变化);已有的精确指位并复述数字 |
-| Reproducibility | Reproducibility | 指细节确切位置(超参表/伪码/代码链);只承诺能兑现的 |
-| Limitation/Scope | Scope | 诚实认 + "影响有限"证据 + 扩展=future work。认边界≠认核心失败;claim 过宽当场收缩 |
-| Writing/排版 | Clarity | 谦虚 + 具体修改清单。**P2,一小段带过**,别占主文火力 |
-| Ethics/合规 | 流程 | 严肃对待,指 checklist 位置,缺了当场补声明文本 + 具体依据 |
-| Reviewer 误读 | 任意 | 礼貌但坚定 + 给台阶:set stage → 指位置 → 框架化为表达问题。证据硬(页码级)语气软。忌"clearly stated"(打脸) |
-| Review 本身有问题 | — | 公开只做克制澄清,绝不指责;太模糊→请具体化;满足触发才走 AC 保密评论。不同意/要实验/嫌 novelty 弱都**不**构成 |
+| Novelty/contribution | Novelty/Substance | First acknowledge that the nearest neighbor X is relevant → list **3 substantive differences** (task/assumption/evaluation, each with a location). Avoid "X irrelevant"/"we are first" |
+| Missing Related Work | Novelty/Evidence | If genuinely omitted → add it candidly + state the differences immediately; if not omitted → cite its location. Verify every citation first; fabrication is never allowed |
+| Motivation/significance | Substance/Scope | Rebuild the motivation with a **specific scenario/number**; avoid a pile of adjectives |
+| Soundness/correctness (often P0) | Soundness | **Address it head-on; no evasion**: spell out the derivation + worked example + lemma/citation. Ambiguity means the reviewer is right by default |
+| Method Clarity | Surface Clarity often conceals Soundness | Acknowledge the presentation issue + **provide the revised snippet immediately**; if the underlying issue is soundness, add the direct argument |
+| Experiment/evaluation | Evidence (often a particular component remains unproven) | Diagnose what the reviewer actually needs (often a key ablation, not more data) → provide real numbers or explain the design rationale |
+| Missing Baseline | Evidence/Novelty | If it can be run, run an apples-to-apples comparison and put it in the main text; win → main text, no win → pivot to robustness/efficiency; if it cannot be completed, use `[TBD]`; if incomparable → explain why, but acknowledge its relevance first |
+| Ablation/analysis | Evidence/Substance | Provide **component-level** evidence (change in the metric when that component is removed); if it already exists, cite the exact location and repeat the numbers |
+| Reproducibility | Reproducibility | Cite the exact location of the details (hyperparameter table/pseudocode/code link); promise only what can be delivered |
+| Limitation/Scope | Scope | Make an honest concession + evidence that "the impact is limited" + extension=future work. Acknowledging a boundary ≠ conceding failure of the core contribution; narrow an over-broad claim immediately |
+| Writing/formatting | Clarity | Be humble + provide a concrete edit list. **P2, handle briefly in one short paragraph**; do not spend main-text firepower on it |
+| Ethics/compliance | Process | Treat it seriously, cite the checklist location, and if missing, immediately provide the statement text + specific basis |
+| Reviewer misreading | Any | Be polite but firm + provide a face-saving path: set stage → cite the location → frame it as a presentation problem. Keep the evidence hard (page-level) and the tone soft. Avoid "clearly stated" (which is confrontational) |
+| The Review itself is problematic | — | Publicly provide only restrained clarification; never accuse. If too vague → request specifics; use a confidential AC comment only when a trigger is satisfied. Disagreement/requests for experiments/a weak-novelty judgment **do not** qualify |
 
-## 4. Response action 措辞骨架(证据槽位必来自 evidence_map,不能编)
-Clarify: "We respectfully clarify that ... (Sec X)" · Correct: "We respectfully note [fact] + 页码证据" · Concede&Fix: "We agree this deserves improvement; we have revised ... to '...'" · Provide Existing: "This is in Table 3, where ... shows ..."(必须说在哪+说明什么) · Add Experiment: "We have run ...: [table]. This shows ..."(没跑用 `[TBD]`) · Compare: "We agree X is related. We differ in (1)..(2)..(3).." · Narrow Claim: "We have revised the claim to '...'" · Reframe Scope: "A full treatment of X warrants a separate study; our scope is ..., because ..." · Defend: "We chose ... because ...; empirically Table Y shows ..."(忌无出处 "standard practice") · Acknowledge Limitation: "We acknowledge ...; results suggest impact is limited (证据); future work: ..." · **Defer to Revision: 能现在做的别用这条**。
+## 4. Response action Wording Skeletons (Evidence Slots Must Come from evidence_map; Fabrication Is Forbidden)
+Clarify: "We respectfully clarify that ... (Sec X)" · Correct: "We respectfully note [fact] + page-level evidence" · Concede&Fix: "We agree this deserves improvement; we have revised ... to '...'" · Provide Existing: "This is in Table 3, where ... shows ..." (must say where it is + what it shows) · Add Experiment: "We have run ...: [table]. This shows ..." (if it has not been run, use `[TBD]`) · Compare: "We agree X is related. We differ in (1)..(2)..(3).." · Narrow Claim: "We have revised the claim to '...'" · Reframe Scope: "A full treatment of X warrants a separate study; our scope is ..., because ..." · Defend: "We chose ... because ...; empirically Table Y shows ..." (avoid the unsupported phrase "standard practice") · Acknowledge Limitation: "We acknowledge ...; results suggest impact is limited (evidence); future work: ..." · **Defer to Revision: Do not use this when the work can be done now**.
 
-## 5. 心结 → pattern 速查
-Substance→展示已有分量证据(规模/深度/消融)+ 必要时补一个最有说服力的关键实验。Soundness→正面论证铺开,绝不绕。Novelty→task/assumption/evaluation 三维区分,先认相关。Evidence→直接给数据。Clarity→认表达 + revised snippet + set stage。Scope→认大方向重要 + 论证本文 scope 合理 + 扩展=future。Reproducibility→精确指细节位置。
+## 5. The real concern → Pattern Quick Reference
+Substance→show the existing evidence of substance (scale/depth/ablation) + add the single most persuasive key experiment when necessary. Soundness→spell out the direct argument; never evade. Novelty→distinguish along task/assumption/evaluation; acknowledge relevance first. Evidence→provide the data directly. Clarity→acknowledge the presentation issue + revised snippet + set stage. Scope→acknowledge the importance of the broader direction + justify why this paper's scope is reasonable + extension=future. Reproducibility→cite the exact location of the details.
 
-## 6. 对外呈现 = 应答编译(主方法:`strategies/write-direct-rebuttals.md`)
-> §0–5 是**内部 logic**(想清楚该答什么心结、用什么证据、什么立场)。**最终 reviewer-facing 稿按 `write-direct-rebuttals.md` 的应答编译范式产出**:rebuttal = 对每个 reviewer slot 的**最小、字面、诚实直接应答**的编译,**directness 压倒一切修辞**。核心对外原则(细节读方法文件):
-- **不写致谢/复述好评段**,直接进 W1;给台阶靠答案内部的**正向框架化**("we did not state this upfront; in the camera-ready we will state it"),不靠开场恭维。
-- **W 标号 verbatim 引用 reviewer 原句**(不概括);每条**第一句字面槽位直答**、mirror 主谓宾(`What is X?`→`X is…`),机制/证据留后。
-- **多部分问题的每个 clause 必答**;礼貌语不当独立问题。
-- **时态三分**:理论现在时 / 完成实验完成时 / **手稿编辑将来时 "In the camera-ready we will…"**;⚠️**不许假装已改**("is now stated" / "the revised X reads")。编辑类 `we will` 合法,禁的只是"用承诺搪塞 reviewer 要的实质/实验工作"。
-- **边界写成正向技术条件**,不写 apology/limitation;不 volunteer 未问弱点,不把实质反对说成"only a clarity issue"。
-- **deletion test**:每句必须承担 answer-slot / 定义 / 连接 / 证据 / camera-ready-edit 之一,否则删。表格仅**多列对比**用,数字能内联就内联,不追求字数。
-- (原"谦卑/给台阶"精神保留在 §0.3、§1,但**由答案内部的正向框架化实现,不由开场恭维**;§2 不滑跪不自爆 = ammunition test。)
+## 6. External Presentation = Argument Compilation (Primary Method: `strategies/write-direct-rebuttals.md`)
+> §0–5 are **internal logic** (determine the real concern to answer, the evidence to use, and the stance to take). **The final reviewer-facing draft must follow the argument compilation paradigm in `write-direct-rebuttals.md`**: rebuttal = compilation of a **minimal, literal, honestly direct response** for every reviewer slot; **directness overrides all rhetoric**. Core principles for external presentation (read the method file for details):
+- **Do not write a paragraph thanking the reviewer or restating positive feedback**; go directly to W1. Provide a face-saving path through **positive framing** inside the answer ("we did not state this upfront; in the camera-ready we will state it"), not through flattering opening remarks.
+- **W numbering quotes the reviewer's original sentence verbatim** (do not paraphrase); for each item, **answer the literal slot directly in the first sentence** and mirror the subject-verb-object structure (`What is X?`→`X is…`); put mechanism/evidence afterward.
+- **Answer every clause in a multipart question**; politeness does not constitute a separate question.
+- **Three-way tense discipline**: present tense for theory / perfect tense for completed experiments / **future tense for manuscript edits: "In the camera-ready we will…"**; ⚠️ **never pretend an edit has already been made** ("is now stated" / "the revised X reads"). Editorial `we will` is legitimate; what is forbidden is "using a promise to brush off substantive/experimental work requested by the reviewer."
+- **Express boundaries as positive technical conditions**, not as apology/limitation; do not volunteer unasked-for weaknesses, and do not describe a substantive objection as "only a clarity issue."
+- **deletion test**: every sentence must serve one of answer-slot / definition / connection / evidence / camera-ready-edit; otherwise delete it. Use tables only for **multi-column comparisons**; inline numbers when possible, and do not optimize for word count.
+- (The spirit of the original "humility/provide a face-saving path" is preserved in §0.3 and §1, but **implemented through positive framing inside the answer, not through flattering opening remarks**; §2 no groveling, no self-sabotage = ammunition test.)

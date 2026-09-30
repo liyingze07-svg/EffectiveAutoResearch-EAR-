@@ -1,5 +1,5 @@
 {
-  "$comment": "REBUTTAL_CARD.json schema + 示例。每个 campaign 一张卡片,instantiate.py 从它渲染 CLAUDE/GOAL/SPEC/VERIFY/RESOURCE。缺卡片时 r0a 从 inputs/ 抽。这是 paper-agnostic 的关键:换 case = 换卡片,不改 harness。",
+  "$comment": "REBUTTAL_CARD.json schema + example. Each campaign has one card, and instantiate.py renders CLAUDE/GOAL/SPEC/VERIFY/RESOURCE from it. When the card is missing, r0a extracts it from inputs/. This is the key to being paper-agnostic: change case = change card, do not change harness.",
   "title": "Learning to Rebut: A First-Principles Argument Compiler",
   "venue": "ICLR 2026",
   "word_limit": "per-reviewer 5000 chars",
@@ -7,9 +7,9 @@
   "n_strategies": 3,
   "max_iter": 4,
   "paper_claims": [
-    "C1: 我们提出机制 M,把 A 和 B 的冲突解决,这是核心贡献",
-    "C2: 在 benchmark X 上相对最强 baseline 提升 13.6 分",
-    "C3: 理论分析给出 M 的收敛保证(Thm 1)"
+    "C1: We propose mechanism M, which resolves the conflict between A and B; this is the core contribution",
+    "C2: On benchmark X, it improves by 13.6 points over the strongest baseline",
+    "C3: The theoretical analysis provides a convergence guarantee for M (Thm 1)"
   ],
   "reviewers": [
     {"id": "R1", "initial_rating": 5, "confidence": 4,
@@ -23,10 +23,10 @@
      "review_ref": "inputs/reviews/R3.md"}
   ],
   "concern_seeds": [
-    "R2: 方法只是 A+B 的组合,创新有限",
-    "R1: 缺少和 SOTA 方法 Z 的比较",
-    "R1: 消融不充分,不知道 M 是否真的有用",
-    "R3: 表述可以更清楚,§3.2 难读"
+    "R2: The method is merely a combination of A+B, with limited novelty",
+    "R1: A comparison with SOTA method Z is missing",
+    "R1: The ablation study is insufficient, so it is unclear whether M is actually useful",
+    "R3: The presentation could be clearer, and §3.2 is difficult to read"
   ],
   "target": {"require_raise_on": ["R1", "R2"], "min_delta": 1}
 }

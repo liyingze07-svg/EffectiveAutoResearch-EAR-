@@ -1,15 +1,15 @@
 #!/bin/bash
-# EAR 快速启动脚本（Codex 版）
-# 用法:
-#   ./run.sh                           # 交互模式
-#   ./run.sh "研究方向"                  # 全流程
-#   ./run.sh "研究方向" VLDB             # 指定会议
-#   ./run.sh --survey "研究方向"         # 只跑文献调研
-#   ./run.sh --gen "研究方向"            # 只跑想点子
-#   ./run.sh --screen "idea描述" ICML    # 只跑筛选
-#   ./run.sh --refine "idea描述"         # 只跑精炼
-#   ./run.sh --daemon "研究方向" VLDB    # 后台运行 (nohup)
-#   ./run.sh --status                    # 查看运行状态
+# EAR quick-start script (Codex edition)
+# Usage:
+#   ./run.sh                           # interactive mode
+#   ./run.sh "research direction"                  # full pipeline
+#   ./run.sh "research direction" VLDB             # specified venue
+#   ./run.sh --survey "research direction"         # literature survey only
+#   ./run.sh --gen "research direction"            # idea generation only
+#   ./run.sh --screen "idea description" ICML    # screening only
+#   ./run.sh --refine "idea description"         # refinement only
+#   ./run.sh --daemon "research direction" VLDB    # run in the background (nohup)
+#   ./run.sh --status                    # Check run status
 
 set -e
 cd "$(dirname "$0")"
@@ -18,7 +18,7 @@ GREEN='\033[0;32m'
 YELLOW='\033[1;33m'
 NC='\033[0m'
 
-# 解析 --gpt-only flag（可出现在任意位置）
+# Parse the --gpt-only flag (allowed anywhere)
 GPT_ONLY=false
 CODEX_CLI_MODE=false
 FILTERED_ARGS=()
@@ -35,20 +35,20 @@ for arg in "$@"; do
 done
 set -- "${FILTERED_ARGS[@]}"
 if [ "$CODEX_CLI_MODE" = "true" ]; then
-    echo -e "${YELLOW}Codex CLI 模式已启用 (CODEX_MODE=codex-cli)${NC}"
-    echo "  外部模型调用将走 tools/codex_call.sh（本机 codex 登录态，无需 API key）"
+    echo -e "${YELLOW}Codex CLI mode enabled (CODEX_MODE=codex-cli)${NC}"
+    echo "  External model calls use tools/codex_call.sh (local Codex login; no API key required)"
     echo ""
 fi
 
 if [ "$GPT_ONLY" = "true" ]; then
-    echo -e "${YELLOW}GPT-only 模式已启用 (CODEX_MODE=gpt-api)${NC}"
-    echo "  skill 内部需要额外二次推理时将优先尝试 tools/gpt_call.sh"
+    echo -e "${YELLOW}GPT-only mode enabled (CODEX_MODE=gpt-api)${NC}"
+    echo "  Skills first try tools/gpt_call.sh when an additional reasoning pass is needed"
     echo ""
 fi
 
-# 检查 Codex CLI
+# Check Codex CLI
 if ! command -v codex &> /dev/null && ! command -v codex.exe &> /dev/null; then
-    echo "错误: 未找到 codex 命令。请先安装 Codex CLI:"
+    echo "Error: codex command not found. Install Codex CLI first:"
     echo "  npm install -g @openai/codex"
     exit 1
 fi
@@ -59,17 +59,17 @@ else
     CODEX_CMD="$(command -v codex)"
 fi
 
-# 确保 outputs 目录存在
+# Ensure the outputs directory exists
 mkdir -p outputs refine-logs
 
-# 辅助函数: 用 Codex 执行 skill
+# Helper: execute a skill with Codex
 run_skill() {
     local SKILL_FILE="$1"
     local ARGS="$2"
     bash tools/run_codex_skill.sh \
         --skill "$SKILL_FILE" \
         --args "$ARGS" \
-        --role "一个自动化科研 Agent"
+        --role "an automated research agent"
 }
 
 MODE="${1:---interactive}"
@@ -78,39 +78,39 @@ VENUE="${2:-ICML}"
 
 case "$MODE" in
     --interactive|-i)
-        echo -e "${GREEN}EAR Codex 交互模式${NC}"
-        echo "推荐优先使用这些 shell 入口命令:"
-        echo "  ./run.sh \"研究方向\" ICML                     全流程"
-        echo "  ./run.sh --survey \"研究方向\"                  文献调研"
-        echo "  ./run.sh --gen \"研究方向\"                     想点子"
-        echo "  ./run.sh --screen \"idea\" VLDB                多维筛选"
-        echo "  ./run.sh --refine \"idea\"                      深度精炼"
+        echo -e "${GREEN}EAR Codex interactive mode${NC}"
+        echo "Recommended shell entry points:"
+        echo "  ./run.sh \"research direction\" ICML                     full pipeline"
+        echo "  ./run.sh --survey \"research direction\"                  literature survey"
+        echo "  ./run.sh --gen \"research direction\"                     idea generation"
+        echo "  ./run.sh --screen \"idea\" VLDB                multidimensional screening"
+        echo "  ./run.sh --refine \"idea\"                      in-depth refinement"
         echo ""
         "$CODEX_CMD" --search "Read CODEX_COMPAT.md and README.md in the current workspace, then help operate this EAR repository in Codex-only mode."
         ;;
     --survey)
-        echo -e "${GREEN}运行文献调研: $2${NC}"
+        echo -e "${GREEN}Running literature survey: $2${NC}"
         run_skill "skills/lit-survey/SKILL.md" "$2"
         ;;
     --gen)
-        echo -e "${GREEN}运行想点子: $2${NC}"
+        echo -e "${GREEN}Running idea generation: $2${NC}"
         run_skill "skills/idea-gen/SKILL.md" "$2"
         ;;
     --screen)
-        echo -e "${GREEN}运行多维筛选 (venue: ${3:-ICML}): $2${NC}"
+        echo -e "${GREEN}Running multidimensional screening (venue: ${3:-ICML}): $2${NC}"
         run_skill "skills/idea-screen/SKILL.md" "$2 -- venue: ${3:-ICML}"
         ;;
     --refine)
-        echo -e "${GREEN}运行深度精炼: $2${NC}"
+        echo -e "${GREEN}Running in-depth refinement: $2${NC}"
         run_skill "skills/idea-refine/SKILL.md" "$2"
         ;;
     --daemon)
         DIRECTION="$2"
         VENUE="${3:-ICML}"
-        echo -e "${GREEN}EAR 后台模式${NC}"
-        echo -e "方向: $DIRECTION"
-        echo -e "会议: $VENUE"
-        echo "日志: outputs/pipeline.log"
+        echo -e "${GREEN}EAR background mode${NC}"
+        echo -e "Direction: $DIRECTION"
+        echo -e "Venue: $VENUE"
+        echo "Log: outputs/pipeline.log"
         echo ""
         cat > outputs/.run_pipeline.sh << 'RUNEOF_HEAD'
 #!/bin/bash
@@ -121,70 +121,70 @@ RUNEOF_HEAD
 bash tools/run_codex_skill.sh \
   --skill skills/idea-pipeline/SKILL.md \
   --args "\"${DIRECTION}\" -- venue: ${VENUE}" \
-  --role "一个自动化科研 Agent" \
+  --role "an automated research agent" \
   2>&1 | tee outputs/pipeline.log
 date -Iseconds > outputs/DONE
 RUNEOF_BODY
         chmod +x outputs/.run_pipeline.sh
         nohup bash outputs/.run_pipeline.sh > /dev/null 2>&1 &
         BGPID=$!
-        echo "后台进程 PID: $BGPID"
+        echo "Background process PID: $BGPID"
         echo $BGPID > outputs/pipeline.pid
-        echo -e "${GREEN}Pipeline 已在后台启动。${NC}"
-        echo "  查看进度: ./run.sh --status"
-        echo "  查看日志: tail -f outputs/pipeline.log"
-        echo "  停止运行: kill \$(cat outputs/pipeline.pid)"
+        echo -e "${GREEN}Pipeline started in the background.${NC}"
+        echo "  Check progress: ./run.sh --status"
+        echo "  View logs: tail -f outputs/pipeline.log"
+        echo "  Stop: kill \$(cat outputs/pipeline.pid)"
         ;;
     --status)
-        echo -e "${GREEN}EAR 状态${NC}"
+        echo -e "${GREEN}EAR status${NC}"
         echo ""
         if [ -f outputs/DONE ]; then
-            echo -e "${GREEN}✅ Pipeline 已完成${NC}"
+            echo -e "${GREEN}✅ Pipeline complete${NC}"
             cat outputs/DONE
         elif [ -f outputs/pipeline.pid ] && kill -0 "$(cat outputs/pipeline.pid)" 2>/dev/null; then
-            echo "🔄 Pipeline 运行中 (PID: $(cat outputs/pipeline.pid))"
+            echo "🔄 Pipeline running (PID: $(cat outputs/pipeline.pid))"
         else
-            echo "⏹ Pipeline 未在运行"
+            echo "⏹ Pipeline not running"
         fi
         echo ""
         if [ -f outputs/PIPELINE_STATE.json ]; then
-            echo "状态文件:"
+            echo "State file:"
             cat outputs/PIPELINE_STATE.json
         fi
         echo ""
         if [ -f outputs/PIPELINE_LOG.md ]; then
-            echo "最新日志:"
+            echo "Latest log entries:"
             tail -20 outputs/PIPELINE_LOG.md
         fi
         ;;
     --help|-h)
-        echo "EAR - AI 科研选题自动化工作流"
+        echo "EAR - automated AI research idea discovery workflow"
         echo ""
-        echo "用法:"
-        echo "  ./run.sh                              交互模式"
-        echo "  ./run.sh \"研究方向\"                    全流程 (默认 ICML)"
-        echo "  ./run.sh \"研究方向\" VLDB               全流程 (指定会议)"
-        echo "  ./run.sh --survey \"研究方向\"            只跑文献调研"
-        echo "  ./run.sh --gen \"研究方向\"               只跑想点子"
-        echo "  ./run.sh --screen \"idea\" ICML          只跑筛选"
-        echo "  ./run.sh --refine \"idea\"               只跑精炼"
-        echo "  ./run.sh --daemon \"研究方向\" VLDB      后台运行 (nohup)"
-        echo "  ./run.sh --status                       查看运行状态"
+        echo "Usage:"
+        echo "  ./run.sh                              interactive mode"
+        echo "  ./run.sh \"research direction\"                    full pipeline (default ICML)"
+        echo "  ./run.sh \"research direction\" VLDB               full pipeline (specified venue)"
+        echo "  ./run.sh --survey \"research direction\"            literature survey only"
+        echo "  ./run.sh --gen \"research direction\"               idea generation only"
+        echo "  ./run.sh --screen \"idea\" ICML          screening only"
+        echo "  ./run.sh --refine \"idea\"               refinement only"
+        echo "  ./run.sh --daemon \"research direction\" VLDB      run in the background (nohup)"
+        echo "  ./run.sh --status                       Check run status"
         echo ""
-        echo "选项:"
-        echo "  --gpt-only                              GPT-only 模式（仅影响 skill 内部二次推理降级策略）"
-        echo "  --codex-cli                             用本机 codex CLI 作为外部模型（无需 API key）"
-        echo "  在 --refine 中追加 -- mode: socratic    Socratic 对话精炼模式"
-        echo "  在 --refine 中追加 -- mode: socratic-human  人工参与 Socratic 精炼"
+        echo "Options:"
+        echo "  --gpt-only                              GPT-only mode (affects only the fallback policy for additional reasoning within skills)"
+        echo "  --codex-cli                             Use local Codex CLI as the external model (no API key required)"
+        echo "  Append -- mode: socratic to --refine for Socratic dialogue refinement"
+        echo "  Append -- mode: socratic-human to --refine for human-in-the-loop Socratic refinement"
         echo ""
-        echo "支持的会议: ICML, VLDB, NeurIPS, SIGMOD"
-        echo "输出目录: outputs/, refine-logs/"
+        echo "Supported venues: ICML, VLDB, NeurIPS, SIGMOD"
+        echo "Output directories: outputs/, refine-logs/"
         ;;
     *)
-        # 默认: 当第一个参数不是 flag 时，当作研究方向跑全流程
-        echo -e "${GREEN}EAR 全流程${NC}"
-        echo -e "方向: $DIRECTION"
-        echo -e "会议: $VENUE"
+        # Default: if the first argument is not a flag, treat it as a direction and run the full pipeline
+        echo -e "${GREEN}EAR full pipeline${NC}"
+        echo -e "Direction: $DIRECTION"
+        echo -e "Venue: $VENUE"
         echo ""
         run_skill "skills/idea-pipeline/SKILL.md" "\"$DIRECTION\" -- venue: $VENUE"
         ;;

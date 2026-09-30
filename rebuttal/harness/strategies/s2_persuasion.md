@@ -1,23 +1,23 @@
-# 策略 s2 — 审稿人说服 / 心理建模(最会移动人)
+# Strategy s2 — Reviewer Persuasion / Psychological Modeling (Best at Moving People)
 
-> **必须先读 `CRAFT.md`**。本文件只定这个姿态的差异化取舍。
+> **You must read `CRAFT.md` first**. This file defines only the differentiated tradeoffs for this stance.
 
-## 一句话理论
-**先想明白"这个 reviewer 到底要什么、哪一点能翻他",再对着那一点发力。** 靠精准命中心结 + 给台阶移动 reviewer,不是逐条答题。
+## One-Sentence Theory
+**First determine "what exactly does this reviewer want, and what single point can change their mind," then focus your effort on that point.** Move the reviewer by precisely targeting the real concern + giving them a graceful way to change position, rather than answering point by point.
 
-## 适配画像
-心结是 **Substance / Scope / Novelty / Motivation** 的 reviewer;或**高信心怀疑者**;或必须**主动移动**的 borderline。
+## Suitable Profiles
+A reviewer whose real concern is **Substance / Scope / Novelty / Motivation**; or a **high-confidence skeptic**; or a borderline reviewer who must be **actively moved**.
 
-## 差异化取舍(这才是本策略的核心)
-1. **落笔前先内部推断(不写进正文)**:① 他真正担心什么(r2 的 real_concern)?② 哪些是根本、哪些可解决?③ **哪一句/哪个证据能让他改分**?④ 模拟 reviewer-author-AC 讨论会怎么走。
-2. **开场直接打那个"翻他的点"**,不按 review 顺序流水账。
-3. **按 reviewer 画像调语气**(CRAFT 立场三分流之上再细化):
-   - 高信心怀疑者 → 先认深度/局限那一点(体面) → 立刻重构价值,把他的质疑变成你论点的注脚。
-   - 低信心困惑者 → 温和澄清心结 + set the stage 重建上下文 + 给台阶。
-4. **刻意给台阶**:让他能自然说"authors clarified/convinced me",不逼他承认看走眼。
+## Differentiated Tradeoffs (This Is the Core of This Strategy)
+1. **Before writing, first infer internally (do not include this in the response)**: ① What is the real concern (r2's real_concern)? ② Which concerns are fundamental, and which are resolvable? ③ **Which sentence/piece of evidence can make them change their score**? ④ Simulate how the reviewer-author-AC discussion will unfold.
+2. **Open by directly targeting the "point that will change their mind"**, rather than proceeding mechanically in review order.
+3. **Adjust the tone to the reviewer profile** (refining the three-way stance split in CRAFT):
+   - High-confidence skeptic → first acknowledge the point about depth/limitations (respectfully) → immediately reframe the value, turning their criticism into a supporting note for your argument.
+   - Low-confidence, confused reviewer → gently clarify the real concern + set the stage to rebuild the context + provide a graceful way to change position.
+4. **Deliberately provide a graceful way to change position**: enable them to say "authors clarified/convinced me" naturally, without forcing them to admit they misjudged the work.
 
-## 失败模式
-- 逐条流水账、答字面不答心结、辩护过冲("clearly mistaken")、给不出"翻他的那一点"。
+## Failure Modes
+- A mechanical point-by-point response, answering the literal wording rather than the real concern, overreaching in the defense ("clearly mistaken"), or failing to identify "the single point that will change their mind."
 
-## 与另两个的区别
-说服心理建模最强、raise 潜力最高——**主攻手**;但敢答的边界靠 CRAFT §2 不自爆 + 弹药门 grep==0 约束(敢答≠递软肋)。
+## Difference from the Other Two
+Persuasion-oriented psychological modeling is the strongest and has the highest raise potential—the **primary attacker**; but the boundary for answering boldly relies on CRAFT §2 to avoid self-sabotage + the ammunition gate's grep==0 constraint (answering boldly ≠ handing over a vulnerability).

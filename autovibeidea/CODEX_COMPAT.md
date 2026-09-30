@@ -1,32 +1,32 @@
-本仓库的 `SKILL.md` 最初为支持 Skill / Agent 工具的 agent 环境编写。当前运行环境改为 Codex CLI 时，请按下面的兼容规则执行：
+The repository's `SKILL.md` files were originally written for an agent environment supporting the Skill / Agent tools. When the runtime environment is Codex CLI, follow these compatibility rules:
 
-1. 没有 `Skill` 工具。
-遇到“调用 `/lit-survey`”“调用 `/idea-gen`”“调用 `/idea-screen`”“调用 `/idea-refine`”时，不要停下来，也不要把它当成普通文本输出。
-请直接读取对应的 `skills/<name>/SKILL.md`，然后在当前 Codex 会话中继续执行其等价步骤。
+1. There is no `Skill` tool.
+When instructed to "invoke `/lit-survey`," "invoke `/idea-gen`," "invoke `/idea-screen`," or "invoke `/idea-refine`," do not stop and do not emit the instruction as ordinary text.
+Read the corresponding `skills/<name>/SKILL.md` directly, then continue executing its equivalent steps in the current Codex session.
 
-2. 没有 `Agent` 工具。
-需要子代理或并行时，在当前会话中串行完成，并把降级记录到 `outputs/PIPELINE_LOG.md`。
+2. There is no `Agent` tool.
+When subagents or parallel work are required, complete the work sequentially in the current session and record the degradation in `outputs/PIPELINE_LOG.md`.
 
-3. 没有 `mcp__codex__codex` / `mcp__codex__codex-reply` 工具。
-这些调用表示“需要一次独立的外部审阅/复核/续写”。
-在 Codex-only 模式下，默认由当前 Codex 会话直接承担这一步，并保持前后文连续。
-如果环境变量 `CODEX_MODE=gpt-api` 且 `tools/gpt_call.sh` 可用、API key 可用，你可以选择用它模拟额外 thread；否则继续当前会话，不要因为缺少 MCP 而中止。
+3. There are no `mcp__codex__codex` / `mcp__codex__codex-reply` tools.
+These calls mean that "an independent external review / verification / continuation is required."
+In Codex-only mode, the current Codex session performs this step directly by default while maintaining continuity of context.
+If `CODEX_MODE=gpt-api`, `tools/gpt_call.sh` is available, and an API key is available, you may use it to simulate an additional thread; otherwise, continue in the current session and do not stop because MCP is missing.
 
-若 `CODEX_MODE=codex-cli`，改用 `bash tools/codex_call.sh --thread <file> --output <file> --prompt "..."`。
-它用本机 `codex exec` 提供等价的新建/续写线程语义，无需 API key。
-**注意 codex CLI ≥0.158.0 已移除 `mcp-server` 子命令**，因此 `mcp__codex__*` 工具在新版环境下必然不可用，这是预期情况，不是故障。
+If `CODEX_MODE=codex-cli`, use `bash tools/codex_call.sh --thread <file> --output <file> --prompt "..."` instead.
+It uses the local `codex exec` to provide equivalent new/continued-thread semantics and requires no API key.
+**Note that codex CLI ≥0.158.0 has removed the `mcp-server` subcommand**, so `mcp__codex__*` tools are necessarily unavailable in newer environments. This is expected, not a malfunction.
 
-4. 后台 `codex exec` 可能没有原生 `WebSearch / WebFetch`。
-如果原生网页搜索不可用，请用 shell 等价完成联网检索，例如：
+4. A background `codex exec` may lack native `WebSearch / WebFetch`.
+If native web search is unavailable, use shell equivalents for online retrieval, such as:
 - `python3 tools/arxiv_fetch.py search "query" --max 10`
-- `curl` / `wget` 抓取公开网页或 API
-- 必要时访问 arXiv、Semantic Scholar、会议信息页、项目主页
-不要因为缺少原生 WebSearch 工具而中止；优先保住 pipeline 的产物和证据链。
+- Fetch public webpages or APIs with `curl` / `wget`.
+- When necessary, visit arXiv, Semantic Scholar, conference information pages, and project homepages.
+Do not stop because the native WebSearch tool is missing; prioritize preserving the pipeline artifacts and chain of evidence.
 
-5. 自动化优先。
-整个 pipeline 不要等待用户输入；遇到需要 checkpoint 的地方，把决策写入 `outputs/PIPELINE_LOG.md`，然后继续。
+5. Prioritize automation.
+The entire pipeline must not wait for user input. At any checkpoint, write the decision to `outputs/PIPELINE_LOG.md` and continue.
 
-6. 保持既定产物路径。
+6. Preserve the established artifact paths.
 - `outputs/LANDSCAPE.md`
 - `outputs/LANDSCAPE.json`
 - `outputs/CRITICAL_ANALYSIS.md`
@@ -38,4 +38,4 @@
 - `outputs/PIPELINE_STATE.json`
 - `refine-logs/*`
 
-7. 所有报告与日志使用中文，技术术语可保留英文。
+7. All reports and logs must be written in English; technical terms may remain in their original English form.

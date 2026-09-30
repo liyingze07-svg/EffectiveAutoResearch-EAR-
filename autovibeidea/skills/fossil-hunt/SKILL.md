@@ -1,157 +1,157 @@
 ---
 name: fossil-hunt
-description: Systematically find high-value "fossil components" in a research domain — long-standing, consensus-layer building blocks that have never been fundamentally questioned but carry hidden improvement potential. Produces a ranked target list with improvement hypotheses for use as input to /idea-gen. Use when user says "where should I look", "find fossil components", "找化石组件", "找盲点", "which components to target", or wants a strategic map before brainstorming ideas.
+description: Systematically find high-value "fossil components" in a research domain — long-standing, consensus-layer building blocks that have never been fundamentally questioned but carry hidden improvement potential. Produces a ranked target list with improvement hypotheses for use as input to /idea-gen. Use when user says "where should I look", "find fossil components", "find fossil components", "find blind spots", "which components to target", or wants a strategic map before brainstorming ideas.
 argument-hint: [research-domain]
 allowed-tools: Bash(*), Read, Write, Grep, Glob, WebSearch, WebFetch, Agent, mcp__codex__codex, mcp__codex__codex-reply
 ---
 
 # Fossil Hunt
 
-在以下研究领域中系统性寻找"化石组件"：$ARGUMENTS
+Systematically search for "fossil components" in this research domain: $ARGUMENTS
 
-## 核心方法论
+## Core Methodology
 
-"化石组件"是指那些被广泛使用多年、社区默认为最优解、但实际上从未被根本性质疑过的基础模块。它们之所以是高价值靶子，是因为存在**认知套利空间**：社区共识认为它们已经最优，但现实中环境（规模、硬件、算法生态）已经发生了数量级的变化，而组件本身从未被重新审视。
+"Fossil components" are basic modules that have been widely used for years and treated as optimal by consensus without ever being fundamentally questioned. They are valuable targets because of an **epistemic arbitrage opportunity**: the community assumes they are already optimal, even though their environment (scale, hardware, algorithmic ecosystem) has changed by orders of magnitude and the components have never been reassessed.
 
-发现路径是从**症状**出发，而非从**组件列表**出发。
+Start discovery from **symptoms**, not a **list of components**.
 
 ---
 
 ## Constants
 
-- **REVIEWER_MODEL = `gpt-5.4`** — 用于外部评审的模型。（**模型可用性依赖账号**：用 ChatGPT 账号登录的 codex 只能用账号自带模型，指定不支持的模型会被 400 拒绝。走 `--codex-cli` 时**不要传 `--model`**，让 codex 用默认模型；走 `--gpt-only` 时该模型必须对你的 OpenAI API key 可用。）
-- **MIN_TARGETS = 3** — 最终输出的最少靶子数
-- **MAX_TARGETS = 8** — 最终输出的最多靶子数
-- **CONFIDENCE_THRESHOLD = 2** — 一个靶子至少需要被几条信号线交叉确认才能进入最终列表
+- **REVIEWER_MODEL = `gpt-5.4`** — External review model. (**Model availability depends on your account**: Codex signed in with a ChatGPT account can use only models available to that account; unsupported models return a 400 error. With `--codex-cli`, **do not pass `--model`**; let Codex use its default model. With `--gpt-only`, the model must be available to your OpenAI API key.)
+- **MIN_TARGETS = 3** — Minimum number of final targets
+- **MAX_TARGETS = 8** — Maximum number of final targets
+- **CONFIDENCE_THRESHOLD = 2** — Minimum independent signal streams confirming a target before it enters the final list
 
 ---
 
 ## Workflow
 
-### Phase 1: Domain Mapping — 竞争层 vs 共识层
+### Phase 1: Domain Mapping — Competitive Layer vs Consensus Layer
 
-**目标**：在指定的研究领域中，区分哪些方向是大家在卷的（竞争层），哪些是大家默认不动的（共识层）。共识层才是化石组件的藏身之处。
+**Goal**: Distinguish heavily contested directions (the competitive layer) from components everyone takes for granted (the consensus layer). Fossil components are found in the consensus layer.
 
-1. 用 2-3 次 WebSearch 建立该领域的基本认知：
+1. Use 2-3 WebSearch queries to establish a basic understanding of the field：
    - `"[domain] survey 2024 2025 open problems future work"`
    - `"[domain] state-of-the-art benchmark 2025 2026"`
    - `"[domain] architecture components modules standard"`
 
-2. 从搜索结果中识别：
-   - **竞争层**：大量论文在卷的方向（e.g., scaling, RLHF, MoE routing, architecture search）
-   - **共识层**：被当作胶水代码/标配的模块（e.g., normalization, activation, positional encoding, residual connections, loss function, tokenization, embedding lookup）
-   - **计算图中的"关节" vs "肌肉"**：
-     - 肌肉 = 承担主要计算的模块（大家盯得很紧）
-     - 关节 = 模块之间的连接与转换（被当作不重要的胶水）
+2. Identify the following from search results：
+   - **Competitive layer**: Directions pursued by many papers（e.g., scaling, RLHF, MoE routing, architecture search）
+   - **Consensus layer**: Modules treated as glue code or standard defaults（e.g., normalization, activation, positional encoding, residual connections, loss function, tokenization, embedding lookup）
+   - **"Joints" vs "muscles" in the computation graph**：
+     - Muscles = modules doing the main computation (closely scrutinized)
+     - Joints = connections and transformations between modules (dismissed as unimportant glue)
 
-3. 输出一个分类表（用于 Phase 2 的搜索聚焦）：
+3. Produce a classification table to focus the Phase 2 search：
    ```
-   竞争层（不搜）: [list]
-   共识层候选（重点搜）: [list]
-   关节位置（优先级高）: [list]
+   Competitive layer (do not search): [list]
+   Consensus-layer candidates (search focus): [list]
+   Joint locations (high priority): [list]
    ```
 
-**快速判断标准**：如果你跟同行说"我在研究 X 的替代方案"，对方的反应是"为什么要动这个？"——那 X 大概率就在共识层。
+**Quick test**: If telling a colleague "I am studying alternatives to X" prompts "Why change that?", X probably belongs to the consensus layer.
 
 ---
 
-### Phase 2: 三路信号收集
+### Phase 2: Three-Stream Signal Collection
 
-沿三条独立路线并行收集信号，每条路线都可以产出候选靶子。三条路线互相交叉验证，被多条路线指向的候选靶子置信度更高。
+Collect signals along three independent routes in parallel. Each route can produce candidate targets. Cross-validate across routes: candidates identified by multiple routes deserve greater confidence.
 
-#### 路线 A：症状聚类法（从补丁堆积反推根因组件）
+#### Route A: Symptom Clustering (Trace Accumulated Workarounds to Root-Cause Components)
 
-**原理**：当一个组件周围堆满了 workaround，说明问题出在组件本身。补丁越多，底层组件的设计债越重。
+**Principle**: When workarounds accumulate around a component, the component itself is implicated. More patches indicate greater underlying design debt.
 
-执行：
-1. 用 2-3 次 WebSearch 搜索该领域的 training tricks、hacks、workaround：
+Procedure:
+1. Use 2-3 WebSearch queries for training tricks, hacks, and workarounds in the field：
    - `"[domain] training tricks hacks instability workaround 2024 2025"`
    - `"[domain] loss spike gradient explosion clipping warmup 2024 2025"`
    - `"[domain] training recipe stabilization tips 2024 2025"`
 
-2. 对收集到的 tricks 进行聚类，每个 trick 都追问：**这个补丁在修复什么根因？**
-   - 例：`gradient clipping` + `learning rate warmup` + `Pre-Norm vs Post-Norm 之争` → 共同根因：残差连接导致的隐状态幅值不稳定
+2. Cluster the collected tricks and ask of each: **What root cause does this patch address?**
+   - Example: `gradient clipping` + `learning rate warmup` + `Pre-Norm vs Post-Norm debate` → shared root cause: residual connections destabilize hidden-state magnitudes
 
-3. 每个根因对应一个候选靶子，标注为 `Signal-A`
+3. Map each root cause to a candidate target labeled `Signal-A`
 
-#### 路线 B：强原语逆向扫描法（跨维度迁移盲区）
+#### Route B: Reverse Scan of Strong Primitives (Cross-Dimension Transfer Blind Spots)
 
-**原理**：一个在某个维度上被验证有效的强原语，往往还没有被系统性地应用到其他维度。Kimi 的核心洞察就是把 attention（在序列维度有效）扫描到了深度维度。
+**Principle**: A strong primitive proven effective along one dimension often has not been systematically applied to others. Kimi's central insight was to extend attention, effective along the sequence dimension, to the depth dimension.
 
-执行：
-1. 识别该领域中已被验证的**强原语**（已经成熟、overhead 可控）：
-   - 常见强原语：attention、gating（门控）、routing（MoE路由）、normalization flow、sparse selection、learned interpolation
+Procedure:
+1. Identify validated **strong primitives** in the field (mature and with manageable overhead)：
+   - Common strong primitives: attention, gating, routing (MoE routing), normalization flow, sparse selection, learned interpolation
 
-2. 对每个强原语，列举它目前被应用的维度：
+2. For each strong primitive, list the dimensions where it is currently applied：
    ```
-   原语: Attention
-   已应用维度: 序列(token之间) ✓
-   未应用维度: 深度(层之间)? 特征/通道之间? 注意力头之间? 词表维度?
+   Primitive: Attention
+   Applied dimension: sequence (between tokens) ✓
+   Unexplored dimensions: depth (between layers)? Between features/channels? Between attention heads? Vocabulary dimension?
    ```
 
-3. 每个"?"处都是一个候选靶子，标注为 `Signal-B`
+3. Each "?" identifies a candidate target; label it `Signal-B`
 
-   额外搜索确认这些"?"是否真的未被探索：
+   Run additional searches to verify that these "?" dimensions are genuinely unexplored：
    - `"[primitive] across [dimension] transformer 2024 2025 depth-wise channel-wise"`
 
-#### 路线 C：Ablation 挖矿法（意外敏感性信号）
+#### Route C: Ablation Mining (Unexpected Sensitivity Signals)
 
-**原理**：顶会论文的 ablation study 是社区对共识层的"无意探测"。当作者发现去掉某个"标准"组件效果出乎意料地差（隐藏瓶颈）或意料之外地好（可替换），这就是直接信号。
+**Principle**: Ablation studies in top-venue papers unintentionally probe the consensus layer. Unexpectedly poor results after removing a "standard" component indicate a hidden bottleneck; unexpectedly good results suggest replaceability. Both are direct signals.
 
-执行：
-1. 用 2-3 次搜索寻找包含 ablation 意外发现的论文：
+Procedure:
+1. Use 2-3 searches to find papers reporting surprising ablation findings：
    - `"[domain] ablation study surprising sensitivity normalization activation 2024 2025"`
    - `"[domain] ablation removing [component] unexpected significant impact 2024 2025"`
    - `"[domain] component analysis removing layernorm softmax residual 2024 2025"`
 
-2. 对每个"意外"发现分类：
-   - **意外地重要**（移除后性能大幅下降）→ 这个组件是瓶颈，改进它可能有大收益
-   - **意外地不重要**（移除后性能几乎不变）→ 这个组件可能是历史遗留，可以被更好的东西替换
+2. Classify each "surprising" finding：
+   - **Unexpectedly important** (large performance drop after removal) → the component is a bottleneck; improving it may yield large gains
+   - **Unexpectedly unimportant** (little performance change after removal) → the component may be a legacy artifact replaceable with something better
 
-3. 每个意外发现对应一个候选靶子，标注为 `Signal-C`
-
----
-
-### Phase 3: 候选靶子验证
-
-对每个候选靶子（来自路线 A/B/C）进行三项验证，判断是否是真正值得投入的高价值靶子。
-
-#### 3a. 尺度失配验证
-
-**核心问题**：这个问题是否随模型/数据规模增大而加剧？
-
-- 搜索该组件在大模型 vs 小模型中的表现差异
-- 如果问题会随规模自动放大 → 高价值（行业趋势会自动暴露问题）
-- 如果问题在小规模就存在且规模无关 → 中等价值
-- 如果问题只在小规模出现、大模型已经不是问题 → 低价值，排除
-
-#### 3b. 跨领域类比验证
-
-**核心问题**：在其他领域（信号处理、控制论、神经科学、运筹学），这个"固定"操作是否已经有成熟的"自适应"版本？
-
-- 在 ML 中某个组件的"固定"版本，在其他领域往往已经有"自适应"方案
-- 如果跨领域有成熟解 → 说明改进方向是有理论支撑的，可行性高
-- 如果跨领域也没有好的解 → 说明这可能是一个更基础的困难问题
-
-搜索示例：`"adaptive [component-concept] control theory signal processing 2020 2021 2022"`
-
-#### 3c. 时机成熟度验证
-
-**核心问题**：痛点是否足够尖锐？修复工具是否已经成熟？
-
-两个条件同时满足才算时机成熟：
-1. **痛点已足够尖锐**：社区已经广泛感知到这个问题，但还没有正确归因（正在归因 = 竞争激烈，归因完成但没解决 = 好时机）
-2. **修复原语已经成熟**：用来替换旧组件的新原语（如 attention、gating）已经在其他地方被验证可用，overhead 可控
-
-最好的时机是：**痛点正在被广泛感知但尚未被正确归因**。
+3. Map each surprising finding to a candidate target labeled `Signal-C`
 
 ---
 
-### Phase 4: 外部 LLM 交叉审查
+### Phase 3: Candidate Target Validation
 
-用外部 LLM 对候选靶子列表进行独立评审，验证是否遗漏了重要候选靶子，并对每个靶子的改进假设进行质量评估。
+Apply three checks to every candidate from routes A/B/C to determine whether it is a high-value target worth pursuing.
 
-**调用 `mcp__codex__codex`**，参数：
+#### 3a. Scale-Mismatch Check
+
+**Key question**: Does the problem worsen with model or data scale?
+
+- Search for differences in the component's behavior in large versus small models
+- If scale amplifies the problem → high value (industry trends will expose it)
+- If the problem exists at small scale and is scale-independent → moderate value
+- If the problem appears only at small scale and disappears in large models → low value; exclude
+
+#### 3b. Cross-Domain Analogy Check
+
+**Key question**: Does this "fixed" operation already have a mature "adaptive" version in another field (signal processing, control theory, neuroscience, operations research)?
+
+- A "fixed" ML component often already has an "adaptive" counterpart elsewhere
+- If a mature solution exists elsewhere → the improvement direction has theoretical support and high feasibility
+- If other fields also lack a good solution → this may be a more fundamental hard problem
+
+Example search：`"adaptive [component-concept] control theory signal processing 2020 2021 2022"`
+
+#### 3c. Timing Readiness Check
+
+**Key question**: Is the pain point acute enough, and are the tools to fix it mature?
+
+Timing is right only when both conditions hold：
+1. **Acute pain point**: The community widely recognizes the problem but has not correctly attributed it (active attribution = intense competition; attributed but unresolved = good timing)
+2. **Mature repair primitives**: Replacement primitives (such as attention or gating) are validated elsewhere and have manageable overhead
+
+The best timing is when **the pain point is becoming widely recognized but has not yet been correctly attributed**.
+
+---
+
+### Phase 4: External LLM Cross-Review
+
+Have an external LLM independently review the candidate list, check for important omissions, and evaluate the quality of each improvement hypothesis.
+
+**Call `mcp__codex__codex`** with：
 
 - **model**: REVIEWER_MODEL (i.e., `gpt-5.4`)
 - **config**: `{"model_reasoning_effort": "xhigh"}`
@@ -184,46 +184,46 @@ Evaluation criteria:
 Be critical. Many "fossil" hunts fail because the component WAS updated (just not widely cited) or because the update IS hard for a fundamental reason.
 ```
 
-**失败处理**：如果 Codex MCP 不可用，跳过此阶段，在输出中标注 "⚠️ Phase 4 skipped: Codex MCP unavailable. External cross-check not performed."，继续后续流程。
+**Failure handling**: If Codex MCP is unavailable, skip this phase, state "⚠️ Phase 4 skipped: Codex MCP unavailable. External cross-check not performed." in the output, and continue.
 
 ---
 
-### Phase 5: 改进算子映射
+### Phase 5: Map Improvement Operators
 
-对每个通过验证的靶子，系统性地套用改进算子，生成具体的改进假设。改进算子是历史成功工作中反复出现的模式：
+Systematically apply improvement operators to each validated target to generate concrete hypotheses. These operators are recurring patterns in successful prior work:
 
-| 算子 | 含义 | 适用信号 |
+| Operator | Meaning | Applicable Signal |
 |------|------|---------|
-| **Static → Adaptive** | 固定操作变为输入相关的（最常见的模式，Kimi 的 AttnRes 就是这个） | 操作与输入内容无关 |
-| **Global → Local** | 全局操作变为局部/稀疏的 | 全局操作在长序列/大规模下开销太高 |
-| **Local → Global** | 局部操作引入全局信息 | 局部操作无法捕获长程依赖 |
-| **Independent → Coupled** | 原本独立的单元引入交互 | 多个独立单元处理的信息有相关性 |
-| **Single-scale → Multi-scale** | 单一粒度变为多粒度操作 | 现象在不同尺度上有不同特性 |
-| **Uniform → Selective** | 均匀处理变为选择性处理 | 不同位置/特征重要性差异很大 |
+| **Static → Adaptive** | Make a fixed operation input-dependent (the most common pattern; Kimi's AttnRes is an example) | Operation ignores input content |
+| **Global → Local** | Make a global operation local or sparse | Global operation is too costly for long sequences or large scales |
+| **Local → Global** | Introduce global information into a local operation | Local operation cannot capture long-range dependencies |
+| **Independent → Coupled** | Introduce interactions among independent units | Independent units process correlated information |
+| **Single-scale → Multi-scale** | Replace one granularity with multiple granularities | Phenomena behave differently across scales |
+| **Uniform → Selective** | Replace uniform processing with selective processing | Importance varies substantially across positions/features |
 
-对每个靶子，选出最有理论依据的 1-2 个算子，生成具体的改进假设句（格式："将 [组件] 中的 [固定操作] 替换为 [自适应机制]，使其从 [静态特性] 变为 [动态特性]"）。
-
----
-
-### Phase 6: 验证指标设计
-
-对每个最终靶子，明确**正确的验证指标**。
-
-历史经验表明：Kimi 的核心论证不是"我在某个 benchmark 上高了几个点"，而是"同样的 loss 我少用 20% 算力"——这是一个 **scaling 论证**。在小规模实验中应关注：
-
-- **Loss-vs-compute 曲线的斜率变化**（核心指标）
-- 而非绝对 benchmark 分数（容易被各种因素稀释）
-
-对每个靶子指定：
-- 最小可行实验设计（skeleton experiment，< 1 周可完成）
-- 用什么指标验证（优先 scaling exponent，而非 top-1 accuracy）
-- 应该在什么规模上验证（足够小以快速迭代，足够大以见到规模效应）
+For each target, choose the 1-2 best theoretically grounded operators and formulate a concrete hypothesis: "Replace [fixed operation] in [component] with [adaptive mechanism], changing [static property] into [dynamic property]."
 
 ---
 
-### Phase 7: 输出
+### Phase 6: Design Validation Metrics
 
-确保 `outputs/` 目录存在，写入以下文件。
+Specify the **right validation metrics** for every final target.
+
+Historical experience: Kimi's central argument was not "a few more benchmark points", but "the same loss with 20% less compute"—a **scaling argument**. Small-scale experiments should emphasize:
+
+- **Changes in the loss-vs-compute curve's slope** (core metric)
+- Rather than absolute benchmark scores, which are easily diluted by other factors
+
+For each target, specify:
+- A minimum viable experiment (skeleton experiment, feasible in < 1 week)
+- The validation metric (prefer scaling exponent to top-1 accuracy)
+- The validation scale (small enough for fast iteration, large enough to reveal scale effects)
+
+---
+
+### Phase 7: Output
+
+Ensure `outputs/` exists and write the following file.
 
 #### File 1: `outputs/FOSSIL_TARGETS.md`
 
@@ -238,129 +238,129 @@ Be critical. Many "fossil" hunts fail because the component WAS updated (just no
 
 ---
 
-## 方法论简介
+## Methodology Overview
 
-本报告基于"化石组件"方法论，专注于找到深度学习领域中长期被默认为最优但从未被根本质疑的基础组件——即认知套利空间最大的地方。
+This report uses the "fossil component" methodology to identify basic deep-learning components long assumed optimal but never fundamentally questioned—where epistemic arbitrage opportunities are greatest.
 
-搜索路径：共识层组件 + 关节位置 → 三路信号验证（症状聚类 / 强原语逆向扫描 / Ablation挖矿）→ 尺度失配 × 跨领域类比 × 时机成熟度三重验证 → 改进算子映射
+Search path: consensus-layer components + joint locations → three-stream signals (symptom clustering / reverse primitive scan / ablation mining) → triple validation of scale mismatch × cross-domain analogies × timing readiness → improvement-operator mapping
 
 ---
 
-## Domain Map: 竞争层 vs 共识层
+## Domain Map: Competitive Layer vs Consensus Layer
 
-### 竞争层（大量人在卷，不是我们的目标）
+### Competitive Layer (Heavily Contested; Not Our Target)
 - [list]
 
-### 共识层（被默认为最优，是我们的搜索空间）
+### Consensus Layer (Assumed Optimal; Our Search Space)
 - [list]
 
-### 关节位置（计算图中的连接/转换模块，优先级最高）
+### Joint Locations (Connections/Transformations in the Computation Graph; Highest Priority)
 - [list]
 
 ---
 
-## Top [M] Fossil Targets（按综合置信度排序）
+## Top [M] Fossil Targets (Ranked by Overall Confidence)
 
 ---
 
-### Target #1: [组件名]
+### Target #1: [component name]
 
-**信号来源**: [Signal-A/B/C] × [validation results]
-**综合置信度**: HIGH / MEDIUM
-**外部LLM评分**: HIGH / MEDIUM / LOW
+**Signal sources**: [Signal-A/B/C] × [validation results]
+**Overall confidence**: HIGH / MEDIUM
+**External LLM rating**: HIGH / MEDIUM / LOW
 
-#### 核心问题诊断
-- **化石症状**: [具体的补丁堆积 / 尺度失配 / 固定性描述]
-- **隐含假设**: [当初设计时的假设是什么？为什么当时合理？]
-- **假设何时被打破**: [哪些环境变化使得原假设不再成立]
-- **尺度敏感性**: [问题是否随规模加剧？具体证据]
-- **跨领域类比**: [其他领域的对应"自适应"方案是什么？]
-- **时机判断**: [痛点尖锐度 + 修复工具成熟度]
+#### Core Problem Diagnosis
+- **Fossil symptoms**: [Specific workaround accumulation / scale mismatch / fixed behavior]
+- **Implicit assumption**: [What was assumed at design time, and why was it reasonable then?]
+- **When the assumption broke**: [Environmental changes that invalidated the original assumption]
+- **Scale sensitivity**: [Does the problem worsen with scale? Specific evidence]
+- **Cross-domain analogy**: [What corresponding "adaptive" solution exists elsewhere?]
+- **Timing assessment**: [Pain-point severity + maturity of repair tools]
 
-#### 改进假设
-- **算子**: [Static→Adaptive / Global↔Local / ...]
-- **改进假设**: 将 [组件] 中的 [固定操作] 替换为 [自适应机制]，使其从 [静态特性] 变为 [动态特性]
-- **Drop-in 可行性**: [是否可以直接替换，不改变接口]
+#### Improvement Hypothesis
+- **Operator**: [Static→Adaptive / Global↔Local / ...]
+- **Improvement hypothesis**: Replace [fixed operation] in [component] with [adaptive mechanism], changing [static property] into [dynamic property]
+- **Drop-in feasibility**: [Can it be substituted directly without changing interfaces?]
 
-#### 最小验证实验
-- **Skeleton experiment**: [< 1 周可完成的实验设计]
-- **验证指标**: [Loss-vs-compute 曲线斜率 / scaling exponent / ...]
-- **推荐验证规模**: [模型大小 × token数]
+#### Minimum Validation Experiment
+- **Skeleton experiment**: [Design feasible in < 1 week]
+- **Validation metric**: [Loss-vs-compute curve slope / scaling exponent / ...]
+- **Recommended validation scale**: [Model size × token count]
 
-#### 反方论点
-- [为什么这个方向可能不奏效？最强的反驳论点是什么？]
-
----
-
-### Target #2: [组件名]
-[同上结构]
+#### Counterargument
+- [Why might this direction fail? What is the strongest counterargument?]
 
 ---
 
-[重复至所有 M 个 targets]
+### Target #2: [component name]
+[Same structure as above]
+
+---
+
+[Repeat for all M targets]
 
 ---
 
 ## Eliminated Candidates
 
-| 候选 | 信号来源 | 排除原因 |
+| Candidate | Signal Source | Reason for Exclusion |
 |------|---------|---------|
-| [组件] | Signal-A | [e.g., 尺度不敏感：问题在大模型中反而消失] |
-| [组件] | Signal-B | [e.g., 已被 2025 年某论文解决，只是没有广泛传播] |
+| [component] | Signal-A | [e.g., Not scale-sensitive: the problem disappears in large models] |
+| [component] | Signal-B | [e.g., Solved by a 2025 paper that was not widely circulated] |
 
 ---
 
-## 建议的下一步
+## Recommended Next Steps
 
-1. 用 Top-1 target 作为方向，运行 `/lit-survey "[target] rethinking improvement adaptive 2024 2025"` 做深入文献调研
-2. 然后运行 `/idea-gen "[target] — [改进假设]"` 生成具体 idea
-3. 如果你想直接从这份报告生成 idea，可以直接运行 `/idea-gen` 并在 direction 中引用本报告的 Top-1 改进假设
+1. Use the top-1 target as the direction and run `/lit-survey "[target] rethinking improvement adaptive 2024 2025"` for an in-depth survey
+2. Then run `/idea-gen "[target] — [improvement hypothesis]"` to generate concrete ideas
+3. To generate ideas directly from this report, run `/idea-gen` with the report's top-1 improvement hypothesis in the direction
 
 ---
 
-## 方法论注记
+## Methodological Notes
 
-- **为什么从症状出发而不是从组件列表出发**: 暴力枚举组件是低效的，症状是组件有问题的直接证据
-- **为什么用 scaling exponent 而非 benchmark 分数**: 绝对分数依赖于太多因素；scaling exponent 的变化才说明基础组件确实被改进了
-- **认知套利空间的本质**: 环境变化速度 >> 组件重新评估速度。2015-2017 年的设计选择是在完全不同的硬件和规模约束下做出的。
+- **Why start from symptoms rather than component lists**: Brute-force enumeration is inefficient; symptoms provide direct evidence of a component problem
+- **Why use scaling exponents instead of benchmark scores**: Absolute scores depend on too many factors; changes in scaling exponents indicate genuine improvement to basic components
+- **The basis of epistemic arbitrage**: Environmental change is much faster than component reassessment. Design choices from 2015-2017 were made under entirely different hardware and scale constraints.
 ```
 
 #### Writing procedure:
-1. 确保 `outputs/` 目录存在：`mkdir -p outputs/`
-2. 用 Write tool 写入 `outputs/FOSSIL_TARGETS.md`
-3. 若 Write 失败（文件过大），改用 Bash heredoc 写入，不需要询问用户
+1. Ensure `outputs/` exists: `mkdir -p outputs/`
+2. Write `outputs/FOSSIL_TARGETS.md` with the Write tool
+3. If Write fails because the file is too large, use a Bash heredoc without asking the user
 
 ---
 
 ## Key Rules
 
-1. **所有输出使用中文。** 报告内容使用中文，组件名、技术术语、论文标题保留英文。
+1. **Write all output in English.** Use English for report content, component names, technical terms, and paper titles.
 
-2. **从症状出发，不要从组件列表出发。** 不要先列出所有可能的组件然后逐个问"这个能不能改"——那是暴力搜索，不是方法论。
+2. **Start from symptoms, not component lists.** Do not enumerate every possible component and ask "Can this be improved?" one by one; that is brute force, not a methodology.
 
-3. **三路信号交叉验证是核心。** 只被一条路线发现的候选靶子置信度低（除非外部 LLM 强烈推荐）。被两条或以上路线独立指向的靶子优先级高。
+3. **Three-stream cross-validation is essential.** A candidate found by only one route has low confidence unless strongly endorsed by the external LLM. Prioritize targets independently identified by at least two routes.
 
-4. **时机判断是差异化关键。** 一个组件有问题还不够，还需要修复它的工具已经成熟、且目前还没有人正在修复它。发现一个 2025 年刚被人发表的"化石组件"改进是没有意义的。
+4. **Timing is key to differentiation.** A problematic component is not enough: repair tools must be mature, and nobody should already be fixing it. Rediscovering a "fossil component" improvement published in 2025 has no value.
 
-5. **反方论点必须认真对待。** 每个靶子都必须包含一个最强的反驳论点。只有正向论据的靶子是不完整的。如果反方论点非常强（例如"这个组件在大模型中已经被自动解决了"），就把该靶子排除。
+5. **Take counterarguments seriously.** Every target needs its strongest counterargument. Positive evidence alone is incomplete. Exclude targets facing compelling objections, such as "the problem resolves itself in large models".
 
-6. **Drop-in 可行性决定影响力。** 改进越接近 drop-in replacement（不改变接口，可以直接替换），实际采用率越高，论文影响力越大。在设计改进假设时优先考虑 drop-in 方案。
+6. **Drop-in feasibility determines impact.** Improvements closer to a drop-in replacement (unchanged interfaces, direct substitution) are easier to adopt and yield greater paper impact. Prefer drop-in hypotheses.
 
-7. **验证指标要用 scaling exponent，不要用绝对 benchmark。** 基础组件的改进应该体现在 loss-vs-compute 曲线的斜率上，而不是某个 benchmark 上的点。
+7. **Use scaling exponents, not absolute benchmark scores, for validation.** Improvements to basic components should change the loss-vs-compute slope, not merely a benchmark point.
 
-8. **不要报告显而易见的东西。** 如果一个"候选靶子"出现在了近期大量论文的标题中（说明它已经是竞争层了），不要把它列为化石组件。
+8. **Do not report the obvious.** If a candidate appears in many recent paper titles, it already belongs to the competitive layer; do not label it a fossil component.
 
 ---
 
-## 在 Pipeline 中的位置
+## Position in the Pipeline
 
 ```
-/fossil-hunt "domain"     <- 你在这里（找到高价值靶子区域）
-/lit-survey "target"      -> 针对具体靶子做深入文献调研
-/idea-gen "target"        -> 生成具体 idea
-/idea-screen              -> 多维筛选
-/idea-refine              -> 迭代精炼
-/idea-pipeline            -> 一键全流程
+/fossil-hunt "domain"      <- You are here (identify high-value target areas)
+/lit-survey "target"      -> In-depth survey focused on a target
+/idea-gen "target"        -> Generate concrete ideas
+/idea-screen              -> Multidimensional screening
+/idea-refine              -> Iterative refinement
+/idea-pipeline            -> One-command end-to-end workflow
 ```
 
-`/fossil-hunt` 的产出（`FOSSIL_TARGETS.md` 中的改进假设）可以直接作为 `/lit-survey` 和 `/idea-gen` 的输入方向，使这两个技能的搜索更加精准。
+The output of `/fossil-hunt` (improvement hypotheses in `FOSSIL_TARGETS.md`) can directly supply research directions to `/lit-survey` and `/idea-gen`, focusing both skills' searches.

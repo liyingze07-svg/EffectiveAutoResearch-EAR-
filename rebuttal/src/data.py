@@ -10,7 +10,7 @@ import dspy
 
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 LABELS = ["raise", "same", "lower"]
-LABEL_ZH = {"raise": "涨", "same": "平", "lower": "降"}
+LABEL_ZH = {"raise": "raise", "same": "same", "lower": "lower"}
 
 
 def _review_text(t):

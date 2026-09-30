@@ -32,7 +32,7 @@ _ATOM_NS = "http://www.w3.org/2005/Atom"
 _API_BASE = "https://export.arxiv.org/api/query"
 _USER_AGENT = "EAR-arxiv/1.0 (arXiv API client; contact via repository issues)"
 _MAX_RETRIES = 3
-_BACKOFF_BASE = 10.0  # 秒；arXiv 建议请求间隔 >= 3s，实测被节流后需更长
+_BACKOFF_BASE = 10.0  # Seconds; arXiv recommends intervals >= 3s; observed throttling requires longer waits
 _MIN_PDF_BYTES = 10_240
 _NEW_STYLE_ID_RE = re.compile(r"^\d{4}\.\d{4,5}(v\d+)?$")
 _OLD_STYLE_ID_RE = re.compile(r"^[A-Za-z.-]+/\d{7}(v\d+)?$")
@@ -81,11 +81,11 @@ class ArxivFetchError(RuntimeError):
 def _fetch_atom(url: str) -> ET.Element:
     """Fetch an arXiv Atom feed, retrying on throttling, and return the parsed root.
 
-    arXiv 用 406 / 429 / 5xx 而非标准 rate-limit 头来节流，因此三者都视为可重试。
+    arXiv throttles using 406 / 429 / 5xx rather than standard rate-limit headers, so all three are retryable.
 
-    实测注意：某些网络环境下 arXiv 会对**新查询**持续返回 406（同一 IP 下已成功过的
-    URL 仍可返回 200），此时重试在数分钟内不会恢复。因此重试只是廉价的一次挽救，
-    **不是可靠路径**——调用方必须准备好回退到 WebSearch。
+    Observed caveat: on some networks, arXiv persistently returns 406 for **new queries** (previously successful
+    URLs can still return 200 from the same IP), and retries do not recover within minutes. Retrying is only a cheap recovery attempt,
+    **not a reliable path**; callers must be prepared to fall back to WebSearch.
     """
     headers = {"User-Agent": _USER_AGENT, "Accept": "application/atom+xml, application/xml, */*"}
     last = ""
@@ -108,16 +108,16 @@ def _fetch_atom(url: str) -> ET.Element:
             break
         delay = float(retry_after) if (retry_after or "").isdigit() else _BACKOFF_BASE * (2 ** (attempt - 1))
         print(
-            f"[arxiv_fetch] {last} — 第 {attempt}/{_MAX_RETRIES} 次尝试失败，{delay:.0f}s 后重试",
+            f"[arxiv_fetch] {last} — attempt {attempt}/{_MAX_RETRIES} failed; retrying in {delay:.0f}s",
             file=sys.stderr,
         )
         time.sleep(delay)
     raise ArxivFetchError(
-        f"arXiv 检索失败（{last}），已重试 {_MAX_RETRIES} 次。\n"
-        "406/429 是 arXiv 的节流响应。注意：在部分网络环境下它会对新查询持续返回 406，"
-        "等待数分钟也不会恢复，因此不要在此反复重试。\n"
-        "→ 改用 WebSearch / 公开网页作为本轮检索来源，并把这次降级记入 "
-        "outputs/PIPELINE_LOG.md。不要因此中止 pipeline。"
+        f"arXiv retrieval failed ({last}) after {_MAX_RETRIES} retries.\n"
+        "406/429 are arXiv throttling responses. On some networks, new queries persistently receive 406;"
+        "waiting several minutes does not resolve this, so do not keep retrying here.\n"
+        "-> Use WebSearch / public webpages for this retrieval round and record the fallback in "
+        "outputs/PIPELINE_LOG.md. Do not stop the pipeline because of this."
     )
 
 
@@ -276,7 +276,7 @@ if __name__ == "__main__":
     try:
         sys.exit(main())
     except ArxivFetchError as exc:
-        print(f"错误: {exc}", file=sys.stderr)
+        print(f"Error: {exc}", file=sys.stderr)
         sys.exit(2)
     except KeyboardInterrupt:
         sys.exit(130)

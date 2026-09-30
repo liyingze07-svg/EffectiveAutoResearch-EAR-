@@ -1,6 +1,6 @@
 ---
 name: lit-survey
-description: Search and analyze research papers across multiple sources to build a landscape map with identified gaps. Use when user says "literature survey", "文献调研", "find papers", "landscape map", "related work", "survey", or needs to understand the current state of a research area.
+description: Search and analyze research papers across multiple sources to build a landscape map with identified gaps. Use when user says "literature survey", "survey the literature", "find papers", "landscape map", "related work", "survey", or needs to understand the current state of a research area.
 argument-hint: [research-topic]
 allowed-tools: Bash(*), Read, Glob, Grep, WebSearch, WebFetch, Write, Agent, mcp__zotero__*, mcp__obsidian-vault__*
 ---
@@ -148,9 +148,9 @@ If `arxiv_fetch.py` is not found, fall back to WebSearch for arXiv (same results
 
 The arXiv API returns structured metadata (title, abstract, full author list, categories, dates) — richer than WebSearch snippets.
 
-> **arXiv 可靠性**：`tools/arxiv_fetch.py` 已对 406/429/5xx 做退避重试，但实测在部分网络环境下
-> arXiv 会对**新查询**持续返回 406（节流），数分钟内不恢复。遇到这种情况：**直接改用 WebSearch
-> 作为本轮主检索源**，不要反复重试，并把降级记入 `outputs/PIPELINE_LOG.md`。 Merge these results with WebSearch findings and de-duplicate.
+> **arXiv reliability**: `tools/arxiv_fetch.py` retries 406/429/5xx responses with backoff, but in some tested network environments
+> arXiv keeps returning 406 (throttling) for **new queries** without recovering within several minutes. In that case, **switch directly to WebSearch
+> as the main source for this round**, stop retrying, and record the fallback in `outputs/PIPELINE_LOG.md`. Merge these results with WebSearch findings and de-duplicate.
 
 **Search failure handling (autonomous mode)**:
 - If a single WebSearch query fails: retry once with a different query formulation
@@ -348,15 +348,15 @@ Write a machine-readable JSON file for consumption by downstream skills (`/idea-
 Validate the JSON is well-formed before writing. Use `python3 -c "import json; json.load(open('outputs/LANDSCAPE.json'))"` to verify.
 
 #### 4c: Trajectory Tracing (optional, if time permits)
-#### 4b-2: Claim Stance Table 与 Failure Modes（可选扩展字段）
+#### 4b-2: Claim Stance Table and Failure Modes (Optional Extension Fields)
 
-这两组字段供 `/idea-gen` Phase 2a 的**高熵区域**与**失效模式**挖掘使用。若跳过，`idea-gen` 仍按原四维批判运行，不受影响。
+These two sets of fields support **high-entropy region** and **failure-mode** mining in `/idea-gen` Phase 2a. If omitted, `idea-gen` continues using the original four-dimensional critique unchanged.
 
-在 `outputs/LANDSCAPE.json` 中追加：
+Append the following to `outputs/LANDSCAPE.json`:
 
 ```json
 "claims": [
-  {"id": "C1", "statement": "领域中被反复检验的一条具体主张",
+  {"id": "C1", "statement": "A specific claim repeatedly tested in this field",
    "observations": [
      {"paper": "P01", "stance": "supports",
       "setting": {"dataset": "GSM8K", "scale": "7B", "metric": "accuracy"}},
@@ -365,26 +365,26 @@ Validate the JSON is well-formed before writing. Use `python3 -c "import json; j
    ]}
 ],
 "papers": [
-  {"id": "P01", "limitations": ["在长上下文（>8k tokens）下性能显著退化"],
-   "negative_results": ["多数投票在数学题外无增益"]}
+  {"id": "P01", "limitations": ["Performance degrades substantially with long contexts (>8k tokens)"],
+   "negative_results": ["Majority voting brings no gains outside math problems"]}
 ]
 ```
 
-规则：
+Rules:
 
-1. **`stance` 只能取 `supports` / `refutes` / `conditional`。**
-2. **`setting` 必填 `dataset` / `scale` / `metric` 三项**，未知写 `"unknown"`。这三项决定可比性惩罚——缺失会被按"未记录"扣分，因为在不同设定下得到不同结论不构成领域分歧。
-3. 只为**至少被 2 篇论文直接检验过**的主张建 claim。单篇主张无法形成分歧。
-4. `limitations` / `negative_results` 从论文的 limitations 小节、negative results、附录中"我们观察到在 X 条件下退化"一类表述中抽取，**保留原始条件描述**（规模阈值、数据类型、任务族），不要概括成"性能有限"。
+1. **`stance` must be `supports` / `refutes` / `conditional`.**
+2. **`setting` must include `dataset` / `scale` / `metric`**; use `"unknown"` for unknown values. These fields determine the comparability penalty: missing values are penalized as unrecorded, because different conclusions under different settings do not establish disagreement within the field.
+3. Create claims only for statements **directly tested by at least 2 papers**. A single-paper claim cannot establish disagreement.
+4. Extract `limitations` / `negative_results` from limitations sections, negative results, and appendix statements such as "we observe degradation under condition X". **Preserve the original conditions** (scale thresholds, data types, task families); do not reduce them to "limited performance".
 
-然后执行：
+Then run:
 
 ```bash
-python3 tools/entropy_map.py outputs/LANDSCAPE.json           # 人读报告
+python3 tools/entropy_map.py outputs/LANDSCAPE.json           # Human-readable report
 python3 tools/entropy_map.py outputs/LANDSCAPE.json --json > outputs/ENTROPY_MAP.json
 ```
 
-把报告中的**高熵区域**与**跨论文失效模式**摘要写入 `outputs/LANDSCAPE.md` 的新小节 `## 高熵区域与失效模式`。对被标为**伪冲突嫌疑**（高熵但低可比性）的 claim，必须在该小节注明它们已被排除及原因。
+Summarize the report's **high-entropy regions** and **cross-paper failure modes** in a new `## High-Entropy Regions and Failure Modes` section in `outputs/LANDSCAPE.md`. For claims flagged as **suspected spurious conflicts** (high entropy but low comparability), state that they were excluded and why.
 
 
 After the main search is complete and the core outputs are written, perform trajectory tracing to identify where the field is heading. This step is optional — skip it if the user signals time pressure or if the paper set is too small (fewer than 10 papers).
@@ -430,7 +430,7 @@ After the main search is complete and the core outputs are written, perform traj
 
 ## Key Rules
 
-- **所有输出使用中文。** LANDSCAPE.md 中的 Executive Summary、主题分析、Gap 描述均使用中文撰写。论文标题、作者名、会议名保留英文。LANDSCAPE.json 中的 description 字段也使用中文。
+- **Write all output in English.** Write the Executive Summary, thematic analysis, and gap descriptions in LANDSCAPE.md in English. Retain original paper titles, author names, and venue names. Use English for description fields in LANDSCAPE.json as well.
 - Always include paper citations (authors, year, venue).
 - Distinguish between peer-reviewed papers and preprints (mark preprints explicitly).
 - Be honest about limitations of each paper.

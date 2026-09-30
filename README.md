@@ -1,47 +1,48 @@
 # EAR — Effective Auto Research
 
-面向科研全流程的自动化工具集。当前包含两个相互独立、可单独使用的子项目：
+An automation toolkit for the full research workflow. It currently contains two independent, standalone subprojects:
 
-| 子目录 | 做什么 |
+| Subdirectory | What it does |
 |---|---|
-| **[`autovibeidea/`](autovibeidea/)** | **从研究方向到提案。** 文献调研 → 批判分析 → idea 生成 → 多维筛选 → 深度精炼，输出可实施的 venue-ready 提案 |
-| **[`rebuttal/`](rebuttal/)** | **从审稿意见到回复。** 给定论文与审稿意见，产出逐位审稿人的回复与给 AC 的评论。面向 EMNLP / ACL Rolling Review |
+| **[`autovibeidea/`](autovibeidea/)** | **From research direction to proposal.** Literature survey → critical analysis → idea generation → multidimensional screening → in-depth refinement, producing an actionable, venue-ready proposal |
+| **[`rebuttal/`](rebuttal/)** | **From reviews to responses.** Given a paper and its reviews, produces a response to each reviewer and a comment to the AC. Designed for EMNLP / ACL Rolling Review |
 
-两者覆盖科研周期的两端——**投稿前**的选题与方案成形，**投稿后**的审稿应对——共用"外部模型独立评审 + 证据可追溯 + 不编造数字与引用"的设计取向，但不共享代码，可分别 clone 使用。
+Together they cover both ends of the research cycle—topic selection and plan development **before submission**, and responding to reviews **after submission**. They share the design principles of "independent review by an external model + traceable evidence + no fabricated numbers or citations," but do not share code and can each be cloned and used separately.
 
 ---
 
-## 快速开始
+## Quick Start
 
-### autovibeidea — 找 idea
+### autovibeidea — Find Ideas
 
 ```bash
 cd autovibeidea
-./run.sh --daemon "你的研究方向" NeurIPS   # 后台跑全流程
-./run.sh --status                          # 查看进度
+./run.sh --daemon "your research direction" NeurIPS   # run the full pipeline in the background
+./run.sh --status                                     # check progress
 ```
 
-产出 `outputs/LANDSCAPE.md`（文献地图 + gap 矩阵）、`outputs/CRITICAL_ANALYSIS.md`（批判清单）、
-`outputs/SCREENING_RANKED.md`（多维评分排名）、`refine-logs/FINAL_PROPOSAL.md`（最终提案）。
+Produces `outputs/LANDSCAPE.md` (literature map + gap matrix), `outputs/CRITICAL_ANALYSIS.md` (critique list),
+`outputs/SCREENING_RANKED.md` (multidimensional score ranking), and `refine-logs/FINAL_PROPOSAL.md` (final proposal).
 
-详见 [`autovibeidea/README.md`](autovibeidea/README.md)。
+See [`autovibeidea/README.md`](autovibeidea/README.md) for details.
 
-### rebuttal — 写 rebuttal
+### rebuttal — Write a Rebuttal
 
-给定论文与审稿意见，跑 18 个物化阶段的流水线，经四道 gate 产出回复。
-详见 [`rebuttal/README.md`](rebuttal/README.md)。
+Given a paper and its reviews, runs an 18-stage materialized pipeline and passes four gates to produce the responses.
+See [`rebuttal/README.md`](rebuttal/README.md) for details.
 
 ---
 
-## 共同的设计取向
+## Shared Design Principles
 
-- **外部模型承担评审角色。** 生成与评审分离，避免自评虚高
-- **证据可追溯。** 每条主张都要能指回文献、代码或实验记录
-- **不编造。** 不虚构实验数字与引用；检索不到就记录为检索不到
-- **降级而不中止。** 外部依赖不可用时自动降级并记录，流水线不停下来等人
+- **External models serve as reviewers.** Generation and review are separated to prevent inflated self-evaluation.
+- **Evidence is traceable.** Every claim must point back to literature, code, or experimental records.
+- **No fabrication.** Do not invent experimental numbers or citations; if a search finds nothing, record that it found nothing.
+- **Degrade without stopping.** When an external dependency is unavailable, automatically degrade and record the event; the pipeline does not stop to wait for a person.
 
 ---
 
 ## License
 
-MIT
+MIT. Copyright (c) 2026 Yingze Li, Dong Wang, Ben Wu.
+See [LICENSE](LICENSE).

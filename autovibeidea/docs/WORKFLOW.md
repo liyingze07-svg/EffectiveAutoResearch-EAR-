@@ -1,709 +1,693 @@
-# EAR 工作流详解
+# EAR Workflow Guide
 
-## 1. 全局流程图
+## 1. End-to-End Flow
 
 ```
-                        [研究方向输入]
+                        [Research topic input]
                              │
                              ▼
-                   ┌─────────────────┐
-                   │   Stage 1       │
-                   │   /lit-survey   │──→ LANDSCAPE.md + LANDSCAPE.json
-                   │   文献调研       │
-                   └────────┬────────┘
-                            │ Gap Matrix (5-15 gaps, 6 类型)
+                   ┌─────────────────────┐
+                   │   Stage 1           │
+                   │   /lit-survey       │──→ LANDSCAPE.md + LANDSCAPE.json
+                   │   Literature Survey │
+                   └────────┬────────────┘
+                            │ Gap Matrix (5-15 gaps, 6 types)
                             ▼
                       ◆ Checkpoint 1 ◆
                             │
                             ▼
-                   ┌─────────────────┐
-                   │   Stage 2       │
-                   │   /idea-gen     │──→ IDEAS_RAW.md + IDEAS_FILTERED.md
-                   │   想点子         │
-                   └────────┬────────┘
+                   ┌───────────────────┐
+                   │   Stage 2         │
+                   │   /idea-gen       │──→ IDEAS_RAW.md + IDEAS_FILTERED.md
+                   │   Idea Generation │
+                   └────────┬──────────┘
                             │ 4-6 surviving ideas
                             ▼
                       ◆ Checkpoint 2 ◆
                             │
                             ▼
-                   ┌─────────────────┐
-                   │   Stage 3       │
-                   │   /idea-screen  │──→ SCREENING_REPORT.md + SCREENING_RANKED.md
-                   │   多维筛选       │
-                   └────────┬────────┘
+                   ┌──────────────────────────────┐
+                   │   Stage 3                    │
+                   │   /idea-screen               │──→ SCREENING_REPORT.md + SCREENING_RANKED.md
+                   │   Multidimensional Screening │
+                   └────────┬─────────────────────┘
                             │ Top 1-2 ideas (Composite >= 7.0)
                             ▼
                       ◆ Checkpoint 3 ◆
                             │
                             ▼
-                   ┌─────────────────┐
-                   │   Stage 4       │
-                   │   /idea-refine  │──→ FINAL_PROPOSAL.md + REFINEMENT_REPORT.md
-                   │   深度精炼       │
-                   └────────┬────────┘
+                   ┌───────────────────┐
+                   │   Stage 4         │
+                   │   /idea-refine    │──→ FINAL_PROPOSAL.md + REFINEMENT_REPORT.md
+                   │   Deep Refinement │
+                   └────────┬──────────┘
                             │
                             ▼
                       ◆ Checkpoint 4 ◆
                             │
                             ▼
-              [IDEA_DISCOVERY_REPORT.md 汇总报告]
+              [IDEA_DISCOVERY_REPORT.md summary report]
 ```
 
 ---
 
-## 2. Stage 1: 文献调研 详解
+## 2. Stage 1: Literature Survey in Detail
 
-### 目标
-搜索并分析多来源论文，构建领域全景图并识别研究 Gap。
+### Goal
+Search and analyze papers from multiple sources to map the field and identify research gaps.
 
-### 内部流程图
+### Internal Flow
 
 ```
-[研究方向]
+[Research topic]
      │
-     ├──→ Step 0a: Zotero 搜索 (MCP)
-     │         │ 收藏夹、标签、批注、BibTeX
+     ├──→ Step 0a: Zotero search (MCP)
+     │         │ Collections, tags, annotations, BibTeX
      │         ▼
-     ├──→ Step 0b: Obsidian 搜索 (MCP)
-     │         │ 研究笔记、标签引用、WikiLinks
+     ├──→ Step 0b: Obsidian search (MCP)
+     │         │ Research notes, tag references, WikiLinks
      │         ▼
-     ├──→ Step 0c: 本地 PDF 扫描
-     │         │ papers/ 或 literature/ 目录
-     │         │ 每篇读前 3 页，上限 20 篇
+     ├──→ Step 0c: Local PDF scan
+     │         │ papers/ or literature/ directories
+     │         │ Read the first 3 pages per paper, up to 20 papers
      │         ▼
-     └──→ Step 1: Web 搜索
+     └──→ Step 1: Web search
                │ arXiv API + Semantic Scholar + Google Scholar
-               │ 去重 (跳过已有论文)
+               │ Deduplicate (skip known papers)
                ▼
-          Step 2: 逐篇分析
-               │ 提取: 问题/方法/结果/局限/关联
-               │ 分配 Paper ID: P01, P02, ...
-               │ 目标: 15-30 篇论文
+          Step 2: Analyze each paper
+               │ Extract: problem/method/results/limitations/connections
+               │ Assign Paper ID: P01, P02, ...
+               │ Goal: 15-30 papers
                ▼
-          Step 3: 综合与 Gap 识别
+          Step 3: Synthesis and Gap Identification
                │
-               ├── 3a: 主题综合 (3-7 个主题方向)
-               │       每个主题标注: active / mature / emerging
+               ├── 3a: Thematic synthesis (3-7 themes)
+               │       Label each theme: active / mature / emerging
                │
-               └── 3b: Gap 矩阵
+               └── 3b: Gap matrix
                        │
-                       │   6 种 Gap 类型:
+                       │   6 gap types:
                        │   ┌─────────────────────────────┐
                        │   │ cross-domain transfer       │
-                       │   │ untested assumption          │
-                       │   │ resolution opportunity       │
-                       │   │ scaling frontier              │
-                       │   │ missing diagnostic            │
-                       │   │ overlooked formulation        │
+                       │   │ untested assumption         │
+                       │   │ resolution opportunity      │
+                       │   │ scaling frontier            │
+                       │   │ missing diagnostic          │
+                       │   │ overlooked formulation      │
                        │   └─────────────────────────────┘
-                       │   置信度: HIGH / MEDIUM / LOW
-                       │   目标: 5-15 个 Gap
+                       │   Confidence: HIGH / MEDIUM / LOW
+                       │   Goal: 5-15 gaps
                        ▼
-          Step 4: 输出
-               ├── LANDSCAPE.md  (叙述 + 表格 + Gap 矩阵)
-               └── LANDSCAPE.json (结构化, 供下游消费)
+          Step 4: Output
+               ├── LANDSCAPE.md  (Narrative + tables + gap matrix)
+               └── LANDSCAPE.json (Structured, for downstream use)
 
-          (可选) Step 4c: 轨迹追踪
-               ├── Top 3 作者的发表弧线
-               └── 共著者集群映射 (2-4 个研究组)
+          (Optional) Step 4c: Trajectory tracking
+               ├── Publication trajectories of the top 3 authors
+               └── Coauthor cluster map (2-4 research groups)
 ```
 
-### 数据源优先级
+### Data Source Priority
 
-| 优先级 | 来源 | 提供内容 |
+| Priority | Source | Content |
 |--------|------|----------|
-| 1 | Zotero (MCP) | 收藏、标签、PDF 高亮、BibTeX |
-| 2 | Obsidian (MCP) | 研究笔记、纸间链接 |
-| 3 | 本地 PDF | 原始 PDF 内容 (前 3 页) |
-| 4 | Web 搜索 | arXiv、Semantic Scholar、Google Scholar |
+| 1 | Zotero (MCP) | Collections, tags, PDF highlights, BibTeX |
+| 2 | Obsidian (MCP) | Research notes, links between papers |
+| 3 | Local PDFs | Original PDF content (first 3 pages) |
+| 4 | Web search | arXiv, Semantic Scholar, Google Scholar |
 
-> 优雅降级: 若 MCP 未配置，自动跳过并使用本地 PDF + Web 搜索。
+> Graceful degradation: if MCP is not configured, skip it and use local PDFs + web search.
 
-### 输出文件
+### Output Files
 
-- **`outputs/LANDSCAPE.md`** -- 包含 Executive Summary、Paper Table、Thematic Analysis、Gap Matrix、Trajectory Analysis、References
-- **`outputs/LANDSCAPE.json`** -- 结构化 JSON，字段: `papers[]`, `themes[]`, `gaps[]`, `trajectory{}`
+- **`outputs/LANDSCAPE.md`** -- Includes Executive Summary, Paper Table, Thematic Analysis, Gap Matrix, Trajectory Analysis, and References
+- **`outputs/LANDSCAPE.json`** -- Structured JSON with fields: `papers[]`, `themes[]`, `gaps[]`, `trajectory{}`
 
 ---
 
-## 3. Stage 2: 想点子 详解
+## 3. Stage 2: Idea Generation in Detail
 
-### 目标
-基于文献全景生成 8-12 个想法，经多层过滤保留 4-6 个高质量方向。
+### Goal
+Generate 8-12 ideas from the literature landscape and apply multiple filters to retain 4-6 strong directions.
 
-### 漏斗图 (v2: 两段式生成)
+### Funnel (v2: Two-Phase Generation)
 
 ```
-         ┌────────────────────────────────────────┐
-         │      Phase 1: 全景验证                   │
-         │  读取 LANDSCAPE.json (或快速 inline 调研)  │
-         └───────────────────┬────────────────────┘
+         ┌─────────────────────────────────────────────────────┐
+         │      Phase 1: Landscape validation                  │
+         │  Read LANDSCAPE.json (or run a quick inline survey) │
+         └───────────────────┬─────────────────────────────────┘
                              ▼
-         ┌────────────────────────────────────────┐
-         │   Phase 2a: 景观批判分析 ← v2 新增       │
-         │  gpt-5.4 · xhigh · 新建 thread          │
-         │  系统性批判当前 landscape 的结构性弱点:    │
-         │    ① Unverified Assumptions             │
-         │    ② Incorrectly Generalized Methods    │
-         │    ③ Experimental Design Flaws          │
-         │    ④ Cross-Domain Misfits               │
-         │  输出: CRITIQUE-01...N 批判清单           │
-         │  保存: outputs/CRITICAL_ANALYSIS.md     │
-         └───────────────────┬────────────────────┘
+         ┌──────────────────────────────────────────────────────────────────┐
+         │   Phase 2a: Landscape critique ← new in v2                       │
+         │  gpt-5.4 · xhigh · New thread                                    │
+         │  Systematically critique structural weaknesses in the landscape: │
+         │    ① Unverified Assumptions                                      │
+         │    ② Incorrectly Generalized Methods                             │
+         │    ③ Experimental Design Flaws                                   │
+         │    ④ Cross-Domain Misfits                                        │
+         │  Output: CRITIQUE-01...N critique list                           │
+         │  Save: outputs/CRITICAL_ANALYSIS.md                              │
+         └───────────────────┬──────────────────────────────────────────────┘
                              │ CRITIQUE manifest
                              ▼
-         ┌────────────────────────────────────────┐
-         │   Phase 2b: 基于批判的 Idea 生成 ← v2   │
-         │  gpt-5.4 · codex-reply (同一 thread)    │
-         │  每个 idea 必须锚定至少一个 CRITIQUE-ID   │
-         │  每个 idea 包含 11 个字段:                 │
-         │    Title / Anchored Critique (v2新增)    │
-         │    Thesis / Problem / Mechanism          │
-         │    Non-obvious                           │
-         │    Theorem/Conjecture Scaffold (v2新增)  │
-         │    Contribution type / Risk              │
-         │    Effort / Closest work                 │
-         │  多样性约束: ≥50% idea 锚定不同批判条目    │
-         └───────────────────┬────────────────────┘
+         ┌────────────────────────────────────────────────────────┐
+         │   Phase 2b: Critique-grounded idea generation ← v2     │
+         │  gpt-5.4 · codex-reply (Same thread)                   │
+         │  Each idea must anchor to at least one CRITIQUE-ID     │
+         │  Each idea contains 11 fields:                         │
+         │    Title / Anchored Critique (new in v2)               │
+         │    Thesis / Problem / Mechanism                        │
+         │    Non-obvious                                         │
+         │    Theorem/Conjecture Scaffold (new in v2)             │
+         │    Contribution type / Risk                            │
+         │    Effort / Closest work                               │
+         │  Diversity: ≥50% of ideas anchor to distinct critiques │
+         └───────────────────┬────────────────────────────────────┘
                              │ 8-12 ideas
-              ╔══════════════╧══════════════╗
-              ║    Phase 3: 初筛 (三重过滤)   ║
-              ╚══════════════╤══════════════╝
+              ╔══════════════╧════════════════════════════════╗
+              ║    Phase 3: Initial screening (three filters) ║
+              ╚══════════════╤════════════════════════════════╝
                              │
-              ┌──────────────┼──────────────┐
-              ▼              ▼              ▼
-       ┌────────────┐ ┌────────────┐ ┌────────────┐
-       │ 3a 可行性   │ │ 3b 新颖性   │ │ 3c 影响力   │
-       │            │ │ 快速检查    │ │ "So What?" │
-       │ FEASIBLE / │ │ LIKELY      │ │ HIGH /     │
-       │ CAVEATS /  │ │ NOVEL /     │ │ MEDIUM /   │
-       │ INFEASIBLE │ │ NEEDS CHECK │ │ LOW        │
-       └─────┬──────┘ │ / ALREADY   │ └─────┬──────┘
-             │        │ DONE        │       │
-             │        └─────┬──────┘       │
-             └──────────────┼──────────────┘
-                            │ 淘汰: INFEASIBLE / ALREADY DONE / LOW IMPACT
-                            │ 剩余: 5-8 ideas
+┌───────────────────┐ ┌───────────────────┐ ┌───────────────────┐
+│ 3a Feasibility    │ │ 3b Novelty        │ │ 3c Impact         │
+│                   │ │ Quick check       │ │ "So What?"        │
+│ FEASIBLE /        │ │ LIKELY NOVEL /    │ │ HIGH /            │
+│ CAVEATS /         │ │ NEEDS CHECK /     │ │ MEDIUM /          │
+│ INFEASIBLE        │ │ ALREADY DONE      │ │ LOW               │
+└───────────────────┘ └───────────────────┘ └───────────────────┘
+          └──────────────────┬──────────────────┘
+                            │ Eliminated: INFEASIBLE / ALREADY DONE / LOW IMPACT
+                            │ Remaining: 5-8 ideas
                             ▼
-              ┌────────────────────────────┐
-              │ Phase 4: 何老师四维度评分     │
-              │                            │
-              │  Longevity     (1-5)       │
-              │  Passion       (1-5)       │
-              │  Application   (1-5)       │
-              │  Uniqueness    (1-5)       │
-              │                            │
-              │  阈值: >= 12/20 通过        │
-              └─────────────┬──────────────┘
+              ┌────────────────────────────────────────────────┐
+              │ Phase 4: Professor He's four-dimension scoring │
+              │                                                │
+              │  Longevity     (1-5)                           │
+              │  Passion       (1-5)                           │
+              │  Application   (1-5)                           │
+              │  Uniqueness    (1-5)                           │
+              │                                                │
+              │  Pass threshold: >= 12/20                      │
+              └─────────────┬──────────────────────────────────┘
                             │ 4-6 ideas
                             ▼
-              ┌────────────────────────────┐
-              │ Phase 5: 反模式检查          │
-              │                            │
-              │  1. Overly trendy (过度跟风) │
-              │  2. Overly niche  (过度小众) │
-              │  3. A+B stitching (缝合怪)  │
-              │  4. Scale-dependent(规模依赖)│
-              │                            │
-              │  标记警告，不自动淘汰         │
-              └─────────────┬──────────────┘
+              ┌────────────────────────────────────────────────┐
+              │ Phase 5: Anti-pattern check                    │
+              │                                                │
+              │  1. Overly trendy (Trend chasing)              │
+              │  2. Overly niche  (Too narrow)                 │
+              │  3. A+B stitching (Stitched combination)       │
+              │  4. Scale-dependent(Scale dependence)          │
+              │                                                │
+              │  Flag warnings; do not automatically eliminate │
+              └─────────────┬──────────────────────────────────┘
                             │
                             ▼
               ┌────────────────────────────┐
-              │ Phase 6: 输出               │
-              │  IDEAS_RAW.md (全部 8-12)   │
+              │ Phase 6: Output            │
+              │  IDEAS_RAW.md (All 8-12)   │
               │  IDEAS_FILTERED.md (4-6)   │
               └────────────────────────────┘
 ```
 
-### 输出文件
+### Output Files
 
-- **`outputs/IDEAS_RAW.md`** -- 全部生成想法 (含淘汰记录)
-- **`outputs/IDEAS_FILTERED.md`** -- 存活想法按 He Score 排名 + 淘汰表 + 风险分布
-
----
-
-## 4. Stage 3: 多维筛选 详解 (核心创新)
-
-### 目标
-通过三模块并行评估，为每个 idea 产出综合评分和行动建议。
-
-### 三模块架构
-
-```
-                    ┌──────────────────────┐
-                    │   输入: 4-6 个 Ideas  │
-                    └──────────┬───────────┘
-                               │
-                ┌──────────────┼──────────────┐
-                ▼              ▼              ▼
-       ┌──────────────┐ ┌──────────────┐ ┌──────────────┐
-       │  Module A    │ │  Module B    │ │  Module C    │
-       │  新颖性评估   │ │  审稿人模拟   │ │  战略评估     │
-       │              │ │              │ │              │
-       │  4 阶段流程   │ │  3人审稿     │ │  5 个维度     │
-       │  多源搜索     │ │  + Meta      │ │  本地直评    │
-       │  交叉验证     │ │  Review      │ │              │
-       └──────┬───────┘ └──────┬───────┘ └──────┬───────┘
-              │                │                │
-              ▼                ▼                ▼
-         Novelty 0-10    Venue 0-10      Strategic 0-10
-              │                │                │
-              └────────────────┼────────────────┘
-                               ▼
-                    ┌────────────────────┐
-                    │   Composite Score  │
-                    │   综合加权评分       │
-                    │                    │
-                    │   + Feasibility    │
-                    │     0-10           │
-                    └────────┬───────────┘
-                             │
-                             ▼
-                    ┌────────────────────┐
-                    │   Rank + Recommend │
-                    │   排名与推荐        │
-                    └────────────────────┘
-```
-
-> **执行依赖**: Module A 必须先于 Module B 完成 (B 需要 A 的新颖性评分和最近工作)。Module C 与 B 可并行。
+- **`outputs/IDEAS_RAW.md`** -- All generated ideas (including elimination records)
+- **`outputs/IDEAS_FILTERED.md`** -- Surviving ideas ranked by He Score + elimination table + risk distribution
 
 ---
 
-### Module A: 新颖性评估 (4 阶段)
+## 4. Stage 3: Multidimensional Screening in Detail (Core Innovation)
+
+### Goal
+Evaluate each idea across three modules to produce a composite score and recommended action, parallelizing where dependencies allow.
+
+### Three-Module Architecture
 
 ```
-Phase A: 提取核心声明
-    │  识别 3-5 个需要具备新颖性的技术声明
+Input: 4-6 ideas
+    │
+    ├── Module A: Novelty assessment
+    │      4-phase workflow; multisource search; cross-validation
+    │      → Novelty 0-10
+    │
+    ├── Module B: Reviewer simulation (after Module A)
+    │      3 reviewers + Meta Review
+    │      → Venue 0-10
+    │
+    └── Module C: Strategic assessment (can run alongside Module B)
+           5 dimensions; local assessment
+           → Strategic 0-10
+
+Novelty + Venue + Strategic + Feasibility (0-10)
+    │
     ▼
-Phase B: 多源文献搜索
-    │  Web搜索 (arXiv/Scholar) + LANDSCAPE.json 交叉引用
-    │  每个声明至少 3 种检索策略
-    │  年份过滤 2024-2026
+Composite Score: weighted composite scoring
+    │
     ▼
-Phase C: 跨模型验证
+Rank + Recommend
+```
+
+> **Execution dependency**: Module A must finish before Module B (B needs A's novelty score and closest prior work). Module C can run in parallel with B.
+
+---
+
+### Module A: Novelty assessment (4 Phases)
+
+```
+Phase A: Extract core claims
+    │  Identify 3-5 technical claims that must be novel
+    ▼
+Phase B: Multisource literature search
+    │  Web search (arXiv/Scholar) + cross-references to LANDSCAPE.json
+    │  At least 3 search strategies per claim
+    │  Year filter 2024-2026
+    ▼
+Phase C: Cross-model verification
     │  gpt-5.4 · xhigh reasoning
-    │  对每个声明回答:
-    │    1. 完全相同的机制是否已发表?
-    │    2. 是否存在密切相关的替代路径?
-    │    3. 目标会议审稿人是否认为足够新颖?
+    │  For each claim, answer:
+    │    1. Has the exact mechanism already been published?
+    │    2. Are there closely related alternative approaches?
+    │    3. Would reviewers at the target venue consider it sufficiently novel?
     ▼
-Phase D: 新颖性报告
+Phase D: Novelty report
     │  Score: 0-10
     │  Recommendation: PROCEED / CAUTION / ABANDON
-    │  每个声明: HIGH / MEDIUM / LOW
-    └──→ 最近工作对比表
+    │  Each claim: HIGH / MEDIUM / LOW
+    └──→ Closest-prior-work comparison table
 ```
 
-### Module B: 审稿人模拟
+### Module B: Reviewer simulation
 
 ```
-Step 1: 加载会议 Profile
+Step 1: Load venue profile
     │  venue-profiles/{VENUE}.md
-    │  提取: 校准标准 + 审稿人画像 + 裁决选项
+    │  Extract: calibration tiers + reviewer profiles + verdict options
     ▼
-Step 2: 构造审稿 Prompt (中文)
-    │  注入: Idea 描述 + 新颖性评分 (来自 Module A)
+Step 2: Build review prompt (English)
+    │  Inject: idea description + novelty score (from Module A)
     │  gpt-5.4 · xhigh reasoning
     ▼
-Step 3: 三位审稿人独立评审
+Step 3: Three independent reviewers
     │
-    │  Reviewer 1 (应用研究者): 效率/可扩展/现实影响
-    │  Reviewer 2 (实证主义者): 实验严谨性/Baseline/可复现
-    │  Reviewer 3 (理论家):     新颖性/数学深度/洞察
+    │  Reviewer 1 (Applied researcher): Efficiency/scalability/real-world impact
+    │  Reviewer 2 (Empiricist): Experimental rigor/baselines/reproducibility
+    │  Reviewer 3 (Theorist):     Novelty/mathematical depth/insight
     │
-    │  每位输出:
-    │    校准层级 (Tier 1/2/3) + 优点 + 弱点 + Verdict + "如何让我 Accept"
+    │  Each reviewer provides:
+    │    Calibration tier (Tier 1/2/3) + strengths + weaknesses + verdict + "What would make me accept"
     ▼
 Step 4: Meta Review
-    │  核心争议 (审稿人之间应有分歧)
-    │  最终裁决 + 执行 Top 3 风险
+    │  Key disputes (reviewers should disagree)
+    │  Final verdict + top 3 execution risks
     ▼
-Step 5: Verdict → 数值映射
+Step 5: Verdict → Numeric mapping
     │  Strong Reject=1, Reject=3, Weak Reject=4
     │  Weak Accept=6, Accept=8, Strong Accept=10
     │
-    └──→ Venue Score = 三人平均 (保留 1 位小数)
+    └──→ Venue Score = Mean of three reviewers (1 decimal place)
 ```
 
-### Module C: 战略评估 (5 个维度)
+### Module C: Strategic assessment (5 dimensions)
 
-| 维度 | 评分范围 | 核心问题 |
+| Dimension | Score Range | Key Question |
 |------|---------|----------|
-| **Longevity** 持久性 | 1-10 | 5 年后研究者是否还关心这个问题? |
-| **Roadmap Viability** 路线图 | 1-10 | Paper 1 之后，Paper 2 和 3 是什么? |
-| **Application Grounding** 应用落地 | 1-10 | 学术界之外谁会关心这个结果? |
-| **Execution Uniqueness** 执行独特性 | 1-10 | 为什么是这个团队而非 Google/DeepMind/FAIR? |
-| **Iteration Readiness** 迭代速度 | 1-10 | 多快能知道这个 idea 是否可行? |
+| **Longevity** Durability | 1-10 | Will researchers still care about this problem in 5 years? |
+| **Roadmap Viability** Roadmap | 1-10 | After Paper 1, what are Papers 2 and 3? |
+| **Application Grounding** Practical grounding | 1-10 | Who outside academia would care about this result? |
+| **Execution Uniqueness** Execution uniqueness | 1-10 | Why this team rather than Google/DeepMind/FAIR? |
+| **Iteration Readiness** Iteration speed | 1-10 | How quickly can we determine whether this idea works? |
 
-**Strategic Score** = 5 维平均分 (保留 1 位小数)
+**Strategic Score** = Mean across 5 dimensions (1 decimal place)
 
 ---
 
-### 综合评分公式
+### Composite Scoring Formula
 
 ```
 COMPOSITE = 0.25 * Novelty + 0.35 * Venue + 0.20 * Strategic + 0.20 * Feasibility
 ```
 
-| 权重 | 模块 | 来源 |
+| Weight | Module | Source |
 |------|------|------|
-| 0.25 | Novelty (新颖性) | Module A |
-| 0.35 | Venue (会议审稿) | Module B |
-| 0.20 | Strategic (战略契合) | Module C |
-| 0.20 | Feasibility (可行性) | 继承自 idea-gen 或本地 agent 估算 |
+| 0.25 | Novelty (Novelty) | Module A |
+| 0.35 | Venue (Venue review) | Module B |
+| 0.20 | Strategic (Strategic fit) | Module C |
+| 0.20 | Feasibility (Feasibility) | Inherited from idea-gen or estimated by the local agent |
 
-> 权重可通过 `-- weights:` 指令覆盖。
+> Override weights with the `-- weights:` directive.
 
-### 决策阈值
+### Decision Thresholds
 
 ```
- COMPOSITE >= 7.0  ──→  PROCEED         进入 /idea-refine 深度精炼
- 5.0 <= COMP < 7.0 ──→  PROCEED WITH CAUTION  先修补弱项再精炼
- COMPOSITE < 5.0   ──→  ABANDON         归档，不再投入
+ COMPOSITE >= 7.0  ──→  PROCEED         Enter /idea-refine for deep refinement
+ 5.0 <= COMP < 7.0 ──→  PROCEED WITH CAUTION  Address weaknesses before refinement
+ COMPOSITE < 5.0   ──→  ABANDON         Archive; stop investing effort
 ```
 
-### 输出文件
+### Output Files
 
-- **`outputs/SCREENING_REPORT.md`** -- 每个 idea 三模块完整报告 + Composite 计算
-- **`outputs/SCREENING_RANKED.md`** -- 排名表 + 精简版报告 + Next Steps
+- **`outputs/SCREENING_REPORT.md`** -- Full three-module report per idea + composite calculation
+- **`outputs/SCREENING_RANKED.md`** -- Ranked table + concise reports + next steps
 
 ---
 
-## 5. Stage 4: 深度精炼 详解
+## 5. Stage 4: Deep Refinement in Detail
 
-### 目标
-将粗略 idea 打磨为可投稿的具体提案，通过 Problem Anchor + Skeleton + 迭代审稿实现。
+### Goal
+Develop a rough idea into a concrete, submission-ready proposal using a Problem Anchor, Skeleton, and iterative review.
 
-### 迭代精炼循环 (v2: 含理论接地 + Socratic 模式 + Deep Expansion)
+### Iterative Refinement Loop (v2: Theoretical Grounding + Socratic Mode + Deep Expansion)
 
 ```
-Phase 0: Problem Anchor (锚定)
-    │  冻结不可变的底线问题:
-    │    底线问题 / 必须解决的瓶颈 / 非目标 / 约束 / 成功条件
+Phase 0: Problem Anchor (Anchoring)
+    │  Freeze the immutable core problem:
+    │    Core problem / required bottleneck / non-goals / constraints / success criteria
     ▼
-Phase 0.5: Skeleton Extraction (骨架提取)
-    │  State A: 审稿人当前相信什么?
-    │  State B: 审稿人读完后必须相信什么?
-    │  Skeleton Path: 3-5 个不可跳过的逻辑步骤
-    │  保存至 refine-logs/skeleton.md
+Phase 0.5: Skeleton Extraction (Skeleton extraction)
+    │  State A: What does the reviewer currently believe?
+    │  State B: What must the reviewer believe after reading?
+    │  Skeleton Path: 3-5 indispensable logical steps
+    │  Save to refine-logs/skeleton.md
     ▼
-Phase 1: Build Proposal (构建初始提案)
-    │  1.1 扫描基础材料 (本地论文 + Web)
-    │  1.2 识别技术 Gap
-    │  1.3 选择最锐利路线 (Route A: 最小优雅 vs Route B: 前沿原生)
-    │  1.4 具体化方法 (11 个必答项)
-    │  1.4.T ← v2 理论接地:
-    │      T1 Formalizability Scan — 识别可形式化机制，起草公式草稿
-    │      T2 Assumption Inventory — 列出假设并标注 STANDARD/RESTRICTIVE/UNVERIFIED
+Phase 1: Build Proposal (Build initial proposal)
+    │  1.1 Scan source material (local papers + web)
+    │  1.2 Identify technical gaps
+    │  1.3 Choose the sharpest route (Route A: minimal and elegant vs Route B: frontier-native)
+    │  1.4 Specify the method (11 required items)
+    │  1.4.T ← v2 Theoretical grounding:
+    │      T1 Formalizability Scan — Identify formalizable mechanisms and draft equations
+    │      T2 Assumption Inventory — List assumptions and label STANDARD/RESTRICTIVE/UNVERIFIED
     │  1.4.TE ← v2 Theory-Experiment Alignment Matrix:
-    │      对每条理论 claim 映射标准验证协议 (ML 子领域规律)
-    │      ┌───────────────────────────────────────────────────────────┐
-    │      │ Convergence bound → 训练曲线 + 学习率敏感性 (≥3 seeds)    │
-    │      │ Generalization bound → 数据缩放实验 (≥4 scales)          │
-    │      │ Sample complexity → 标签效率实验 (≥5 fractions)          │
-    │      │ Approximation ratio → 合成实例与精确解对比 (≥20)         │
-    │      │ Computational complexity → wall-clock + FLOP (≥5 sizes)  │
-    │      │ Expressivity → 构造证明 + 合成任务实证分离                │
-    │      │ ...                                                       │
-    │      └───────────────────────────────────────────────────────────┘
-    │      NOT FEASIBLE claim → ⚠️ Theory-Experiment Gap (提供三条出路)
-    │  1.5 评估草图
-    │  1.6 写入 round-0-initial-proposal.md
+    │      Map each theoretical claim to a standard validation protocol (ML subfield conventions)
+    │      ┌───────────────────────────────────────────────────────────────────────────────┐
+    │      │ Convergence bound → Training curves + learning-rate sensitivity (≥3 seeds)    │
+    │      │ Generalization bound → Data-scaling experiments (≥4 scales)                   │
+    │      │ Sample complexity → Label-efficiency experiments (≥5 fractions)               │
+    │      │ Approximation ratio → Synthetic instances compared with exact solutions (≥20) │
+    │      │ Computational complexity → wall-clock + FLOP (≥5 sizes)                       │
+    │      │ Expressivity → Constructive proof + empirical separation on synthetic tasks   │
+    │      │ ...                                                                           │
+    │      └───────────────────────────────────────────────────────────────────────────────┘
+    │      NOT FEASIBLE claim → ⚠️ Theory-Experiment Gap (Provide three alternatives)
+    │  1.5 Evaluation outline
+    │  1.6 Write round-0-initial-proposal.md
     ▼
-Phase 2 Entry: 模式选择 ← v2 新增
+Phase 2 Entry: Mode selection ← new in v2
     │
-    ├── 默认 (无 -- mode) ──→ 标准 review 循环 (见下)
-    ├── -- mode: socratic-auto ──→ Socratic 对话循环 (全自动)
-    └── -- mode: socratic-human ──→ Socratic 对话循环 (人工参与)
+    ├── Default (no -- mode) ──→ Standard review loop (below)
+    ├── -- mode: socratic-auto ──→ Socratic dialogue loop (fully automatic)
+    └── -- mode: socratic-human ──→ Socratic dialogue loop (human-in-the-loop)
 
 ────────────────────────────────────────────────────────
-标准路径 (默认):
+Standard path (default):
 ────────────────────────────────────────────────────────
 
-┌─→ Phase 2: External Review (外部审稿)
-│       │  gpt-5.4 · xhigh reasoning · 7 维度评分
+┌─→ Phase 2: External Review (External review)
+│       │  gpt-5.4 · xhigh reasoning · 7-dimension scoring
 │       │
-│       │  7 个评分维度:
-│       │  ┌────────────────────────────────────────────┐
-│       │  │ Problem Fidelity     问题忠实度     15%    │
-│       │  │ Method Specificity   方法具体度     25%    │
-│       │  │ Contribution Quality 贡献质量       25%    │
-│       │  │ Frontier Leverage    前沿利用度     15%    │
-│       │  │ Feasibility          可行性         10%    │
-│       │  │ Validation Focus     验证聚焦度      5%    │
-│       │  │ Venue Readiness      会议就绪度      5%    │
-│       │  └────────────────────────────────────────────┘
+│       │  7 scoring dimensions:
+│       │  ┌─────────────────────────────────────────────────────┐
+│       │  │ Problem Fidelity     Problem fidelity     15%       │
+│       │  │ Method Specificity   Method specificity     25%     │
+│       │  │ Contribution Quality Contribution quality       25% │
+│       │  │ Frontier Leverage    Frontier leverage     15%      │
+│       │  │ Feasibility          Feasibility         10%        │
+│       │  │ Validation Focus     Validation focus      5%       │
+│       │  │ Venue Readiness      Venue readiness      5%        │
+│       │  └─────────────────────────────────────────────────────┘
 │       │  Verdict: READY (>=9) / REVISE / RETHINK
 │       ▼
-│   Phase 3: Top-2 Diagnosis + Revise (诊断与修订)
-│       │  3.1 解析审稿反馈 → 更新 score-history.md
-│       │  3.2 Top-2 诊断 (只修最大的 2 个问题)
-│       │      ├── 读者会在哪里困惑?
-│       │      ├── 敌意审稿人会写什么?
-│       │      └── 骨架的哪一步断裂了?
-│       │  3.3 Skeleton Gap Check (骨架完整性检查)
-│       │  3.4 修订 (附带 Anchor Check + Simplicity Check)
+│   Phase 3: Top-2 Diagnosis + Revise (Diagnosis and revision)
+│       │  3.1 Parse review feedback → update score-history.md
+│       │  3.2 Top-2 diagnosis (fix only the 2 biggest problems)
+│       │      ├── Where will readers become confused?
+│       │      ├── What would a hostile reviewer write?
+│       │      └── Which skeleton step is broken?
+│       │  3.3 Skeleton Gap Check (Skeleton completeness check)
+│       │  3.4 Revise (with Anchor Check + Simplicity Check)
 │       ▼
-│   Phase 4: Re-evaluation (同一线程复审)
-│       │  gpt-5.4 · codex-reply (同线程)
-│       │  重评 7 维度 + Drift Warning
+│   Phase 4: Re-evaluation (Re-review in the same thread)
+│       │  gpt-5.4 · codex-reply (Same thread)
+│       │  Re-score 7 dimensions + Drift Warning
 │       │
-│       ├── Score >= 9 且 READY 且无 Drift? ──Yes──┐
+│       ├── Score >= 9 and READY and no drift? ──Yes──┐
 │       │                                          │
-│       └── No (且轮次 < 3) ──→ 回到 Phase 3      │
+│       └── No (and round < 3) ──→ Return to Phase 3      │
 │                                                  │
-└── (最多 3 轮迭代)                                 │
+└── (Up to 3 revision rounds)                                 │
                                                    ▼
 ────────────────────────────────────────────────────────
-Socratic 路径 (-- mode: socratic):     ← v2 新增
+Socratic path (-- mode: socratic):     ← new in v2
 ────────────────────────────────────────────────────────
 
-    Phase 2S: GPT 主动提问 (Turn 0, 新建 thread)
-        │  规则: 禁止评分直到宣称完全理解
-        │  每轮: 3-5 个具体机制问题 (非模糊批评)
-        │    Good: "Step2 的 loss 是 supervised 还是 self-supervised?"
-        │    Bad:  "方法不够清晰"
+    Phase 2S: GPT asks questions (Turn 0, New thread)
+        │  Rule: no scoring until it declares full understanding
+        │  Per turn: 3-5 concrete mechanism questions (not vague criticism)
+        │    Good: "Is the Step2 loss supervised or self-supervised?"
+        │    Bad:  "The method is unclear"
         ▼
-    Turn Handler (最多 5 轮):
+    Turn Handler (Up to 5 turns):
         │
-        ├── 检测"我已充分理解这个方法" ──Yes──→ 最终评分 ──┐
+        ├── Detect "I fully understand this method" ──Yes──→ Final scoring ──┐
         │                                                  │
-        ├── 提取问题 → [socratic-human 模式: PAUSE 等人工]  │
-        │             [socratic-auto 模式: 本地 agent 自动回答] │
+        ├── Extract questions → [socratic-human mode: PAUSE for human input]  │
+        │             [socratic-auto mode: local agent answers automatically] │
         │                                                  │
-        └── 整合答案 + 扩写提案 → 继续对话                   │
+        └── Integrate answers + expand proposal → continue dialogue                   │
                                                            │
-    (到达 MAX_TURNS=5 时强制评分)                            │
+    (Force scoring at MAX_TURNS=5)                            │
                                                            │
-    单次评分 (7维度) → 直接进入 Phase 5.5 ◄────────────────┘
+    One scoring pass (7 dimensions) → go directly to Phase 5.5 ◄────────────────┘
 
 ────────────────────────────────────────────────────────
-两条路径汇合:
+Both paths converge:
 ────────────────────────────────────────────────────────
 
-Phase 5.5: Deep Expansion Pass ← v2 新增 (两条路径都执行)
-    │  扫描当前最优提案中的 [EXPAND] 章节:
-    │    ├── 方法组件只有散文，无公式/伪代码 → [EXPAND]
-    │    ├── Loss 只提名字未展开 → [EXPAND]
-    │    ├── 模块无输入/输出维度 → [EXPAND]
-    │    └── 训练 recipe 无具体超参 → [EXPAND]
-    │  gpt-5.4 · codex-reply (同线程)
-    │  每个 [EXPAND] 节要求:
-    │    ① 完整 loss 公式 (所有项定义)
-    │    ② 5-15 行伪代码
-    │    ③ 模块接口 (输入/输出维度和类型)
-    │    ④ 超参范围 + 依据
-    │  重跑 Theory-Experiment Alignment 检查 (捕获新增理论 claim)
-    │  输出: refine-logs/round-N-expanded.md
+Phase 5.5: Deep Expansion Pass ← new in v2 (Run on both paths)
+    │  Scan the best current proposal for [EXPAND] sections:
+    │    ├── Method component has prose only, no equations/pseudocode → [EXPAND]
+    │    ├── Loss is named but not defined → [EXPAND]
+    │    ├── Module lacks input/output dimensions → [EXPAND]
+    │    └── Training recipe lacks concrete hyperparameters → [EXPAND]
+    │  gpt-5.4 · codex-reply (Same thread)
+    │  Each [EXPAND] section requires:
+    │    ① Complete loss equation (all terms defined)
+    │    ② 5-15 lines of pseudocode
+    │    ③ Module interfaces (input/output dimensions and types)
+    │    ④ Hyperparameter ranges + rationale
+    │  Rerun Theory-Experiment Alignment checks (catch new theoretical claims)
+    │  Output: refine-logs/round-N-expanded.md
     ▼
-Phase 5: Final Report (最终输出)
+Phase 5: Final Report (Final output)
     ├── refine-logs/skeleton.md
-    ├── refine-logs/round-N-expanded.md  ← v2 新增 (Deep Expansion 产物)
+    ├── refine-logs/round-N-expanded.md  ← new in v2 (Deep Expansion output)
     ├── refine-logs/REVIEW_SUMMARY.md
-    ├── refine-logs/FINAL_PROPOSAL.md    (来自 expanded 版本)
+    ├── refine-logs/FINAL_PROPOSAL.md    (From the expanded version)
     ├── refine-logs/REFINEMENT_REPORT.md
     └── refine-logs/score-history.md
 ```
 
-### Skeleton 骨架提取概念
+### Skeleton Extraction Concept
 
-骨架定义了提案的逻辑脊柱——从审稿人的当前认知 (State A) 到目标认知 (State B) 的最短路径。
+The skeleton defines the proposal's logical spine: the shortest path from the reviewer's current understanding (State A) to the target understanding (State B).
 
 ```
 State A                          State B
-审稿人当前相信什么              审稿人读完后必须相信什么
-(传统智慧/不知道的)              (认知转变/新信念/新工具)
+What the reviewer currently believes              What the reviewer must believe after reading
+(Conventional wisdom/unknowns)              (Changed understanding/new beliefs/new tools)
         │                              ▲
         │    Skeleton Path             │
         └──→ Step 1 → Step 2 → ... → Step N
-             每一步不可跳过: 跳过则读者无法抵达 State B
+             Every step is indispensable: skipping one prevents the reader from reaching State B
 ```
 
-每轮修订时执行 Skeleton Gap Check: 提案的每个章节必须映射到骨架的某一步。无映射的章节要么多余，要么骨架不完整。
+Run a Skeleton Gap Check in every revision round: each proposal section must map to a skeleton step. An unmapped section is either unnecessary or evidence of an incomplete skeleton.
 
-### Top-2 诊断纪律
+### Top-2 Diagnosis Discipline
 
-每轮只修最大的 2 个问题，不试图一次解决所有审稿意见。这防止了提案在多方反馈间震荡，保持修改的聚焦性。
+Fix only the 2 biggest problems per round instead of addressing every review comment at once. This prevents the proposal from oscillating between conflicting suggestions and keeps revisions focused.
 
-### 四项核心检查 (每轮必做)
+### Four Core Checks (Every Round)
 
-1. **Anchor Check** -- 修改是否仍然在解决原始问题?
-2. **Simplicity Check** -- 主贡献是否仍然聚焦? 能否删除/合并组件?
-3. **Skeleton Gap Check** -- 每个骨架步骤是否有对应章节?
-4. **Drift Warning** -- 审稿建议是否导致问题偏移?
+1. **Anchor Check** -- Do the revisions still address the original problem?
+2. **Simplicity Check** -- Is the main contribution still focused? Can components be removed or merged?
+3. **Skeleton Gap Check** -- Does each skeleton step have a corresponding section?
+4. **Drift Warning** -- Do review suggestions cause drift from the original problem?
 
 ---
 
-## 6. 多模型协作
+## 6. Multimodel Collaboration
 
 ```
-    本地 agent (执行层)                         External LLM / gpt-5.4 (评审/生成层)
+    Local agent (execution layer)                         External LLM / gpt-5.4 (Review/generation layer)
     ─────────────────                       ──────────────────────────────────────
-    文献搜索 / PDF / Zotero / Obsidian       景观批判分析 Phase 2a (xhigh) ← v2
-    Gap 识别 & 主题综合                      批判锚定 idea 生成 Phase 2b (xhigh) ← v2
-    初筛: 可行性 / 新颖性快检 / 影响力        新颖性交叉验证 (Phase C)
-    何老师四维度评分                          审稿人模拟: 3 人 + Meta Review (xhigh)
-    反模式检查                               标准迭代审稿: 7 维度评分 (xhigh)
-    骨架提取 / Problem Anchor               复审: 同一线程 codex-reply (xhigh)
-    理论接地分析 (Phase 1.4.T) ← v2          Socratic 对话 (主动提问模式) ← v2
-    Theory-Experiment Matrix ← v2           Deep Expansion (填充公式/伪代码) ← v2
-    提案撰写 & 修订
-    战略契合度评估 (Module C)
-    维护简洁性 / 推回过度复杂化
+    Literature search / PDF / Zotero / Obsidian       Landscape critique Phase 2a (xhigh) ← v2
+    Gap identification & thematic synthesis                      Critique-anchored idea generation Phase 2b (xhigh) ← v2
+    Initial screening: feasibility / quick novelty check / impact        Novelty cross-validation (Phase C)
+    Professor He's four-dimension scoring                          Reviewer simulation: 3 reviewers + meta-review (xhigh)
+    Anti-pattern check                               Standard iterative review: 7-dimension scoring (xhigh)
+    Skeleton extraction / Problem Anchor               Re-review: same thread codex-reply (xhigh)
+    Theoretical grounding analysis (Phase 1.4.T) ← v2          Socratic dialogue (active-questioning mode) ← v2
+    Theory-Experiment Matrix ← v2           Deep Expansion (Fill in equations/pseudocode) ← v2
+    Proposal drafting & revision
+    Strategic-fit assessment (Module C)
+    Maintain simplicity / push back on overcomplication
 
     ◄──────── Codex MCP (mcp__codex__codex / codex-reply) ────────►
-                或 (--gpt-only) tools/gpt_call.sh → OpenAI API ← v2
+                Or (--gpt-only) tools/gpt_call.sh → OpenAI API ← v2
 
-    设计原则:
-    • 本地 agent 负责结构化推理、搜索、过滤、撰写、理论对齐检查
-    • External LLM 负责批判性分析、发散性创作、对抗性审稿、Socratic 追问
-    • 所有外部 LLM 调用使用 xhigh reasoning effort
-    • Phase 2a 的 threadId 贯穿 Phase 2b、review 轮次、Phase 5.5 全流程
-    • GPT-only 路径: CODEX_MODE=gpt-api (./run.sh --gpt-only) ← v2
+    Design principles:
+    • The local agent handles structured reasoning, search, filtering, drafting, and theory-alignment checks
+    • The external LLM handles critique, divergent ideation, adversarial review, and Socratic questioning
+    • All external LLM calls use xhigh reasoning effort
+    • Phase 2a's threadId is reused throughout Phase 2b, review rounds, and Phase 5.5
+    • GPT-only path: CODEX_MODE=gpt-api (./run.sh --gpt-only) ← v2
 ```
 
 ---
 
-## 7. 数据流图
+## 7. Data Flow
 
 ```
 Stage 1: /lit-survey
     │
-    ├──→ outputs/LANDSCAPE.md        (叙述 + 表格 + Gap 矩阵)
-    └──→ outputs/LANDSCAPE.json      (结构化数据, 供下游消费)
+    ├──→ outputs/LANDSCAPE.md        (Narrative + tables + gap matrix)
+    └──→ outputs/LANDSCAPE.json      (Structured data for downstream use)
               │
-              │ 读取 gaps[] + papers[]
+              │ Read gaps[] + papers[]
               ▼
 Stage 2: /idea-gen
     │
-    ├──→ outputs/CRITICAL_ANALYSIS.md (景观批判清单 CRITIQUE-XX) ← v2
-    ├──→ outputs/IDEAS_RAW.md         (全部 8-12 个 idea，含 Anchored Critique + Theorem Scaffold)
-    └──→ outputs/IDEAS_FILTERED.md    (4-6 个存活 idea + 淘汰表)
+    ├──→ outputs/CRITICAL_ANALYSIS.md (Landscape critique list CRITIQUE-XX) ← v2
+    ├──→ outputs/IDEAS_RAW.md         (All 8-12 ideas, including Anchored Critique + Theorem Scaffold)
+    └──→ outputs/IDEAS_FILTERED.md    (4-6 surviving ideas + elimination table)
               │
-              │ 读取存活 ideas + feasibility
+              │ Read surviving ideas + feasibility
               ▼
 Stage 3: /idea-screen
     │
-    ├──→ outputs/SCREENING_REPORT.md (三模块完整报告)
-    └──→ outputs/SCREENING_RANKED.md (排名表 + 精简报告)
+    ├──→ outputs/SCREENING_REPORT.md (Full three-module report)
+    └──→ outputs/SCREENING_RANKED.md (Ranked table + concise report)
               │
-              │ Top 1-2 ideas + 审稿反馈
+              │ Top 1-2 ideas + Review feedback
               ▼
 Stage 4: /idea-refine
     │
     ├──→ refine-logs/skeleton.md
-    ├──→ refine-logs/round-0-initial-proposal.md  (含 Theoretical Grounding + T-E Matrix) ← v2
+    ├──→ refine-logs/round-0-initial-proposal.md  (Includes Theoretical Grounding + T-E Matrix) ← v2
     ├──→ refine-logs/round-N-review.md
     ├──→ refine-logs/round-N-refinement.md
-    ├──→ refine-logs/round-N-expanded.md          (Deep Expansion Pass 产物) ← v2
-    ├──→ refine-logs/socratic-turn-T-*.md         (Socratic 对话模式时) ← v2
+    ├──→ refine-logs/round-N-expanded.md          (Deep Expansion Pass output) ← v2
+    ├──→ refine-logs/socratic-turn-T-*.md         (In Socratic dialogue mode) ← v2
     ├──→ refine-logs/REVIEW_SUMMARY.md
-    ├──→ refine-logs/FINAL_PROPOSAL.md            (来自 expanded 版本)
+    ├──→ refine-logs/FINAL_PROPOSAL.md            (From the expanded version)
     ├──→ refine-logs/REFINEMENT_REPORT.md
     └──→ refine-logs/score-history.md
               │
               ▼
-Final: outputs/IDEA_DISCOVERY_REPORT.md (全流程汇总)
+Final: outputs/IDEA_DISCOVERY_REPORT.md (End-to-end summary)
 ```
 
 ---
 
-## 8. Checkpoint 机制
+## 8. Checkpoint Mechanism
 
-Pipeline (`/idea-pipeline`) 在每个 Stage 之间设置检查点，让用户有机会介入或调整。
+The pipeline (`/idea-pipeline`) places checkpoints between stages so users can intervene or adjust the process.
 
 ```
   Stage 1 ──→ Checkpoint 1 ──→ Stage 2 ──→ Checkpoint 2 ──→ Stage 3 ──→ Checkpoint 3 ──→ Stage 4 ──→ Checkpoint 4
-               "文献调研完成"                "Idea 生成完成"              "筛选完成"                  "精炼完成"
+               "Literature survey complete"                "Idea generation complete"              "Screening complete"                  "Refinement complete"
 ```
 
-| Checkpoint | 呈现内容 | 用户选项 | AUTO_PROCEED 行为 |
+| Checkpoint | Presented Content | User Options | AUTO_PROCEED Behavior |
 |------------|---------|---------|-------------------|
-| **1 (文献后)** | 论文数、Gap 数、Top 3 主题 | 确认 / 调整范围 / 重新搜索 | 基于当前结果自动继续 |
-| **2 (生成后)** | 存活 idea 列表 + He Score + Risk | 选择 idea / 换方向 / 重新生成 | 对所有过滤后 idea 进行筛选 |
-| **3 (筛选后)** | 排名表 + Composite Score + 审稿共识 | 确认精炼 / 选择特定 idea / 换 venue | 精炼排名前 REFINE_TOP_N 个 |
-| **4 (精炼后)** | 最终得分 + Verdict + 方法论文 | 接受 / 继续迭代 / 手动调整 | 输出最终报告 |
+| **1 (After survey)** | Paper count, gap count, top 3 themes | Confirm / adjust scope / search again | Continue automatically with current results |
+| **2 (After generation)** | Surviving ideas + He Score + Risk | Select ideas / change direction / regenerate | Screen all filtered ideas |
+| **3 (After screening)** | Ranked table + Composite Score + reviewer consensus | Confirm refinement / select specific ideas / change venue | Refine the top REFINE_TOP_N ideas |
+| **4 (After refinement)** | Final score + Verdict + method paper | Accept / continue iterating / adjust manually | Produce final report |
 
-### AUTO_PROCEED 机制
+### AUTO_PROCEED Mechanism
 
-- **默认值**: `true`
-- 当 `AUTO_PROCEED = true` 时，若用户在 Checkpoint 未作回应，Pipeline 自动选择最优选项继续。
-- 通过 `-- auto: false` 可强制在每个 Checkpoint 等待用户确认。
+- **Default**: `true`
+- When `AUTO_PROCEED = true`, if the user does not respond at a checkpoint, the pipeline automatically selects the best option and continues.
+- Use `-- auto: false` to require user confirmation at every checkpoint.
 
 ---
 
-## 9. 会议 Profile 系统
+## 9. Venue Profile System
 
-### 存放位置
+### Location
 ```
 venue-profiles/
-├── _template.md     模板
-├── ICML.md          ICML 配置
-├── NeurIPS.md       NeurIPS 配置
-└── VLDB.md          VLDB 配置
+├── _template.md     Template
+├── ICML.md          ICML Configuration
+├── NeurIPS.md       NeurIPS Configuration
+└── VLDB.md          VLDB Configuration
 ```
 
 ### Profile Schema
 
 ```
-┌──────────────────────────────────────────────────┐
-│               Venue Profile                      │
-├──────────────────────────────────────────────────┤
-│ Metadata                                         │
-│   name:            会议缩写 (ICML)               │
-│   full_name:       完整名称                       │
-│   type:            ML | systems | NLP | ...      │
-│   acceptance_rate: ~25%                          │
-│   verdict_options: Strong Reject → Strong Accept │
-│   allows_revision: true | false                  │
-├──────────────────────────────────────────────────┤
-│ Calibration Tiers (校准标准)                      │
-│                                                  │
-│   Tier 1: 顶级工作                               │
-│     characteristics + attitude (严格的肯定)       │
-│                                                  │
-│   Tier 2: 中上等 (Solid-Incremental)             │
-│     characteristics + attitude (怀疑的审视)       │
-│                                                  │
-│   Tier 3: 平庸/瑕疵                              │
-│     characteristics + attitude (严格的底线审查)    │
-├──────────────────────────────────────────────────┤
-│ Reviewer Profiles (审稿人画像)                    │
-│                                                  │
-│   Reviewer 1: [角色名]                           │
-│     focus / accept_when / reject_when            │
-│                                                  │
-│   Reviewer 2: [角色名]                           │
-│     focus / accept_when / reject_when            │
-│                                                  │
-│   Reviewer 3: [角色名]                           │
-│     focus / accept_when / reject_when            │
-├──────────────────────────────────────────────────┤
-│ Idea Evaluation Adaptation                       │
-│   核心问题: "如果这个 idea 被正确执行，              │
-│            产出的论文能发这个会议吗?"               │
-└──────────────────────────────────────────────────┘
+┌─────────────────────────────────────────────────────────────────┐
+│               Venue Profile                                     │
+├─────────────────────────────────────────────────────────────────┤
+│ Metadata                                                        │
+│   name:            Venue abbreviation (ICML)                    │
+│   full_name:       Full name                                    │
+│   type:            ML | systems | NLP | ...                     │
+│   acceptance_rate: ~25%                                         │
+│   verdict_options: Strong Reject → Strong Accept                │
+│   allows_revision: true | false                                 │
+├─────────────────────────────────────────────────────────────────┤
+│ Calibration Tiers (Calibration criteria)                        │
+│                                                                 │
+│   Tier 1: Top-tier work                                         │
+│     characteristics + attitude (Rigorous affirmation)           │
+│                                                                 │
+│   Tier 2: Above average (Solid-Incremental)                     │
+│     characteristics + attitude (Skeptical scrutiny)             │
+│                                                                 │
+│   Tier 3: Mediocre/flawed                                       │
+│     characteristics + attitude (Strict minimum-standard checks) │
+├─────────────────────────────────────────────────────────────────┤
+│ Reviewer Profiles (Reviewer profiles)                           │
+│                                                                 │
+│   Reviewer 1: [Role name]                                       │
+│     focus / accept_when / reject_when                           │
+│                                                                 │
+│   Reviewer 2: [Role name]                                       │
+│     focus / accept_when / reject_when                           │
+│                                                                 │
+│   Reviewer 3: [Role name]                                       │
+│     focus / accept_when / reject_when                           │
+├─────────────────────────────────────────────────────────────────┤
+│ Idea Evaluation Adaptation                                      │
+│   Key question: "If this idea is executed correctly,            │
+│            would the resulting paper fit this venue?"           │
+└─────────────────────────────────────────────────────────────────┘
 ```
 
-### 在 Module B 中的使用方式
+### Use in Module B
 
 ```
 /idea-screen "ideas" -- venue: ICML
          │
          ▼
-读取 venue-profiles/ICML.md
+Read venue-profiles/ICML.md
          │
-         ├── 提取 Calibration Tiers → 注入审稿 Prompt
-         ├── 提取 Reviewer Profiles → 定义 3 位审稿人角色
-         └── 提取 Verdict Options  → 限定评分选项
-         │
-         ▼
-构造中文审稿 Prompt → gpt-5.4 (xhigh)
+         ├── Extract Calibration Tiers → inject into review prompt
+         ├── Extract Reviewer Profiles → define 3 reviewer roles
+         └── Extract Verdict Options → restrict verdict options
          │
          ▼
-3 位审稿人独立评审 + Meta Review
+Build English review prompt → gpt-5.4 (xhigh)
+         │
+         ▼
+3 independent reviewers + Meta Review
 ```
 
-> **Fallback**: 若 Profile 文件不存在，自动使用内置的通用 "Top ML Venue" 配置。
-> **`-- venue: all`**: 同时使用所有可用 Profile 进行对比评审。
+> **Fallback**: If the profile file is missing, automatically use the built-in generic "Top ML Venue" configuration.
+> **`-- venue: all`**: Use all available profiles for comparative review.

@@ -226,7 +226,7 @@ for i in "${!TASKS[@]}"; do
         CODEX_BIN="$CODEX_BIN" bash tools/run_codex_skill.sh \
             --skill skills/idea-pipeline/SKILL.md \
             --args "\"${direction}\" -- venue: ${venue}" \
-            --role "一个自动化科研 Agent"
+            --role "an automated research agent"
     ) >> "$task_log" 2>&1; then
         status="success"
         success_count=$((success_count + 1))
@@ -252,4 +252,3 @@ log "Batch finished. Success: $success_count, Failed: $fail_count"
 for archive_dir in "${ARCHIVES[@]}"; do
     log "Archive: $archive_dir"
 done
-

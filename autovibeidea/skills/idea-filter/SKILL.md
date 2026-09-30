@@ -1,6 +1,6 @@
 ---
 name: idea-filter
-description: "Pre-filter and crystallize research directions before running the full idea-pipeline. Narrows broad interests into 1-3 concrete, well-scoped ideas through constraint-driven exploration, direction deep-dive, and idea crystallization. Use when user says \"filter ideas\", \"narrow directions\", \"选方向\", \"筛方向\", \"锁题\", \"帮我定个方向\", \"what should I work on\", or wants to go from vague research interests to a focused, pipeline-ready idea."
+description: "Pre-filter and crystallize research directions before running the full idea-pipeline. Narrows broad interests into 1-3 concrete, well-scoped ideas through constraint-driven exploration, direction deep-dive, and idea crystallization. Use when user says \"filter ideas\", \"narrow directions\", \"choose a direction\", \"screen directions\", \"settle on a topic\", \"help me choose a direction\", \"what should I work on\", or wants to go from vague research interests to a focused, pipeline-ready idea."
 argument-hint: "[constraints-and-interests] [-- venue: ICML|NeurIPS|ICLR|AISTATS|all] [-- top: N]"
 allowed-tools: Bash(*), Read, Write, Grep, Glob, WebSearch, WebFetch, Agent, mcp__codex__codex, mcp__codex__codex-reply
 ---
@@ -11,7 +11,7 @@ Pre-filter research directions for: **$ARGUMENTS**
 
 ## Constants
 
-- **REVIEWER_MODEL** = `gpt-5.4` — 外部模型，用于方向探索与 idea 收敛。（**模型可用性依赖账号**：用 ChatGPT 账号登录的 codex 只能用账号自带模型，指定不支持的模型会被 400 拒绝。走 `--codex-cli` 时**不要传 `--model`**，让 codex 用默认模型；走 `--gpt-only` 时该模型必须对你的 OpenAI API key 可用。）
+- **REVIEWER_MODEL** = `gpt-5.4` — External model for exploring directions and narrowing down ideas. (**Model availability depends on your account**: Codex signed in with a ChatGPT account can use only models available to that account; unsupported models return a 400 error. With `--codex-cli`, **do not pass `--model`**; let Codex use its default model. With `--gpt-only`, the model must be available to your OpenAI API key.)
 - **DEFAULT_VENUE** = `NeurIPS` — Default target venue when none is specified.
 - **MAX_DIRECTIONS** = `5` — Maximum number of broad directions to explore in Phase 1.
 - **SURVIVING_DIRECTIONS** = `3` — Number of directions that survive into Phase 2 deep-dive.
@@ -28,15 +28,15 @@ The core insight: running `/idea-pipeline` on a broad direction produces diverse
 ```
 
 **When to use this skill vs. `/idea-pipeline` directly:**
-- Use `/idea-filter` when you have **constraints and interests** but no concrete idea yet (e.g., "低资源、偏理论、CPU 友好")
-- Use `/idea-pipeline` directly when you already have a **specific research topic** (e.g., "ICL 泛化界 under prompt shift")
+- Use `/idea-filter` when you have **constraints and interests** but no concrete idea yet (e.g., "low-resource, theory-oriented, CPU-friendly")
+- Use `/idea-pipeline` directly when you already have a **specific research topic** (e.g., "ICL generalization bounds under prompt shift")
 
 ## Input
 
 1. **`$ARGUMENTS`** — The user's constraints, interests, and preferences. Examples:
-   - "纯 AI 方向，理论公式多，CPU 友好，能冲顶会"
+   - "An AI topic with substantial theory and equations, CPU-friendly, with top-venue potential"
    - "low-resource theory work on Transformer mechanisms, no GPU needed"
-   - "我想做 conformal prediction 相关的，要稳、快、容易闭环"
+   - "I want to work on conformal prediction: reliable, fast, and easy to take through a complete research cycle"
    - "something publishable at NeurIPS in 6 months, theory-heavy, small experiments"
 2. **`-- venue:` directive** — Target venue. Default: `NeurIPS`.
 3. **`-- top: N` directive** — Number of crystallized ideas to output. Default: `2`.
@@ -66,34 +66,34 @@ Call REVIEWER_MODEL via Codex MCP (`mcp__codex__codex`) with xhigh reasoning eff
 mcp__codex__codex:
   config: {"model_reasoning_effort": "xhigh"}
   prompt: |
-    你是一位资深 ML 研究顾问。用户有以下研究约束和偏好：
+    You are a senior ML research advisor. The user has the following constraints and preferences:
 
-    === 用户约束 ===
+    === User Constraints ===
     [INJECT PARSED CONSTRAINTS FROM $ARGUMENTS]
     === END ===
 
-    目标会议: [VENUE]
+    Target venue: [VENUE]
 
-    请推荐 [MAX_DIRECTIONS] 个最适合用户的研究方向。每个方向必须满足用户的所有约束。
+    Recommend [MAX_DIRECTIONS] research directions that best suit the user. Every direction must satisfy all user constraints.
 
-    对于每个方向，请提供：
-    1. **方向名称**: 简洁的中英文名称
-    2. **为什么适合用户**: 逐条对照用户约束解释为什么这个方向符合
-    3. **当前活跃度**: 近 1-2 年（2024-2026）是否有顶会论文在推进？列出 2-3 篇代表性工作
-    4. **创新空间**: 这个方向还有哪些未解决的理论/方法问题？
-    5. **公式/理论密度**: 这个方向的典型论文有多少定理/证明？(低/中/高)
-    6. **最小资源需求**: 做出可投稿成果需要什么最低配置？
-    7. **典型论文结构**: 一篇该方向的强论文长什么样？(e.g., "主定理 + 下界 + toy 实验")
-    8. **风险点**: 这个方向最容易踩的坑是什么？
-    9. **适合度评分**: 1-10，综合所有约束后的推荐度
+    For each direction, provide:
+    1. **Direction Name**: A concise English name
+    2. **Why It Fits**: Explain the fit against each user constraint
+    3. **Current Activity**: Have top-venue papers advanced this direction in the past 1-2 years (2024-2026)? List 2-3 representative works
+    4. **Room for Innovation**: Which theoretical or methodological problems remain unresolved?
+    5. **Equation/Theory Density**: How many theorems/proofs does a typical paper contain? (low/medium/high)
+    6. **Minimum Resources**: What minimum setup is needed for a submission-ready result?
+    7. **Typical Paper Structure**: What does a strong paper in this direction look like? (e.g., "main theorem + lower bound + toy experiments")
+    8. **Risks**: What are the most common pitfalls?
+    9. **Fit Score**: 1-10 recommendation score considering all constraints
 
-    请按适合度从高到低排列。
+    Rank directions by fit, from highest to lowest.
 
-    重要：
-    - 不要推荐需要大规模 GPU 训练的方向（如果用户标明低资源）
-    - 不要推荐已经过于拥挤的方向（除非用户有明确的差异化优势）
-    - 每个方向必须有近 2 年的活跃论文支撑，不要推荐冷门死方向
-    - 优先推荐那些"小模型、合成数据、纯理论也能做出成果"的方向
+    Important:
+    - Do not recommend directions requiring large-scale GPU training if the user specifies low resources
+    - Do not recommend overcrowded directions unless the user has a clear differentiating advantage
+    - Every direction must be supported by active papers from the past 2 years; do not recommend inactive niches
+    - Prefer directions where small models, synthetic data, or pure theory can yield results
 ```
 
 **Save the threadId** for follow-up in later phases.
@@ -140,25 +140,25 @@ mcp__codex__codex-reply:
   threadId: [threadId from Phase 1]
   config: {"model_reasoning_effort": "xhigh"}
   prompt: |
-    请深入分析方向「[DIRECTION NAME]」，生成 3-5 个可直接开题的具体论文题目。
+    Analyze the direction "[DIRECTION NAME]" in depth and generate 3-5 concrete paper topics ready to pursue.
 
-    对于每个题目，请提供：
-    1. **论文标题**: 一个像样的英文标题（像真的论文标题一样）
-    2. **一句话描述**: 这篇论文要证明/发现/解决什么
-    3. **核心问题**: 用 1-2 段话把研究问题讲清楚
-    4. **主定理/主结果长什么样**: 给出定理 statement 的大致形式（可以用伪公式）
-    5. **你能堆的公式/数学工具**: 列出需要的数学工具箱
-    6. **CPU 可做法**: 实验怎么做才能 CPU 友好
-    7. **为什么有顶会潜力**: 为什么审稿人会觉得这个题有价值
-    8. **最近相关工作**: 2-3 篇最直接相关的论文
-    9. **风险与难点**: 这个题最可能卡在哪里
-    10. **预估周期**: 做出可投稿成果需要多久
+    For each topic, provide:
+    1. **Paper Title**: A credible English title resembling an actual paper title
+    2. **One-Sentence Description**: What will this paper prove, discover, or solve?
+    3. **Core Problem**: Explain the research problem in 1-2 paragraphs
+    4. **Main Theorem/Result Shape**: Sketch the theorem statement (informal equations are acceptable)
+    5. **Equations and Mathematical Tools**: List the required mathematical toolkit
+    6. **CPU-Friendly Approach**: How can experiments run efficiently on CPUs?
+    7. **Top-Venue Potential**: Why would reviewers consider this topic valuable?
+    8. **Closest Related Work**: 2-3 directly related papers
+    9. **Risks and Difficulties**: Where is this topic most likely to get stuck?
+    10. **Estimated Timeline**: How long to reach a submission-ready result?
 
-    质量要求：
-    - 每个题目必须足够具体，能直接写 problem statement
-    - 不要只说"研究 X"，要说"证明 X 在 Y 条件下满足 Z"
-    - 不要推荐"把 A 方法应用到 B 领域"这种低创新度的题
-    - 优先推荐能做出"上界 + 下界 + 小实验"或"主定理 + 推论 + 反例"这种完整结构的题
+    Quality requirements:
+    - Every topic must be concrete enough to write a problem statement immediately
+    - Do not merely say "study X"; say "prove that X satisfies Z under conditions Y"
+    - Do not recommend low-novelty topics such as "apply method A to domain B"
+    - Prefer complete structures such as "upper bound + lower bound + small experiment" or "main theorem + corollary + counterexample"
 ```
 
 If the `mcp__codex__codex-reply` call fails, fall back to a new `mcp__codex__codex` call (or the local agent if Codex is unavailable). Include the direction context in the prompt.
@@ -203,54 +203,54 @@ mcp__codex__codex-reply:
   threadId: [threadId from Phase 1]
   config: {"model_reasoning_effort": "xhigh"}
   prompt: |
-    请帮我把以下研究题目精炼成一个完整的 idea 卡片。
+    Refine the following research topic into a complete idea card.
 
-    题目: [TOPIC TITLE]
-    核心问题: [CORE PROBLEM from Phase 2]
+    Topic: [TOPIC TITLE]
+    Core problem: [CORE PROBLEM from Phase 2]
 
-    请输出：
+    Provide:
 
-    ## 1. 正式问题定义
-    用数学语言写出问题 setup。包括：
-    - 输入/输出空间
-    - 假设条件
-    - 目标量（要优化/界定的东西）
+    ## 1. Formal Problem Definition
+    Define the problem setup mathematically, including:
+    - Input/output spaces
+    - Assumptions
+    - Target quantity (what to optimize or bound)
 
-    ## 2. 主定理路线图
-    列出你预期的定理链：
-    - 主定理 (Main Theorem): 核心结果的 formal statement
-    - 推论 1-2 个 (Corollary): 主定理的直接推论
-    - 下界/不可能性结果 (Lower Bound / Impossibility): 说明主定理的 sharpness
-    - 每个定理的证明难度估计 (容易/中等/困难)
+    ## 2. Main Theorem Roadmap
+    List the anticipated theorem chain:
+    - Main Theorem: Formal statement of the core result
+    - 1-2 Corollaries: Direct consequences of the main theorem
+    - Lower Bound / Impossibility: Establish the sharpness of the main theorem
+    - Estimated proof difficulty for each theorem (easy/moderate/hard)
 
-    ## 3. 数学工具箱
-    做这个题需要哪些数学工具？按"必须掌握"和"最好会"分类。
+    ## 3. Mathematical Toolkit
+    Which mathematical tools are needed? Separate "must know" from "helpful to know".
 
-    ## 4. 最小可行实验
-    - 实验 1: [描述] — 验证什么？
-    - 实验 2: [描述] — 验证什么？
-    - 实验 3: [描述] — 验证什么？
-    - 技术栈: 需要什么软件/库？
-    - 预计 CPU 时间: 总共多少小时？
+    ## 4. Minimum Viable Experiments
+    - Experiment 1: [description] — What does it validate?
+    - Experiment 2: [description] — What does it validate?
+    - Experiment 3: [description] — What does it validate?
+    - Technology stack: What software/libraries are required?
+    - Estimated CPU time: How many hours in total?
 
-    ## 5. 论文骨架
-    - Section 1 (Introduction): 讲什么故事？
-    - Section 2 (Problem Setup): 正式定义
-    - Section 3 (Main Results): 主定理 + 推论
-    - Section 4 (Lower Bounds / Impossibility): 紧性讨论
-    - Section 5 (Experiments): 验证定理趋势
-    - Section 6 (Discussion): 局限性 + 扩展方向
+    ## 5. Paper Skeleton
+    - Section 1 (Introduction): What story does it tell?
+    - Section 2 (Problem Setup): Formal definitions
+    - Section 3 (Main Results): Main theorem + corollaries
+    - Section 4 (Lower Bounds / Impossibility): Tightness discussion
+    - Section 5 (Experiments): Validate trends predicted by the theorems
+    - Section 6 (Discussion): Limitations + extensions
 
-    ## 6. 风险清单
-    - 技术风险: 证明可能卡在哪里？fallback 是什么？
-    - 新颖性风险: 最可能被谁 scoop？如何差异化？
-    - 审稿人风险: 审稿人最可能的 objection 是什么？如何预防？
+    ## 6. Risk Register
+    - Technical risk: Where might proofs fail? What is the fallback?
+    - Novelty risk: Who might scoop this result? How can it be differentiated?
+    - Reviewer risk: What objections are most likely? How can they be anticipated?
 
-    ## 7. 执行路线图
-    给出按周的推进计划，目标是在 [ESTIMATED TIMELINE] 内出可投稿初稿。
+    ## 7. Execution Roadmap
+    Give a week-by-week plan targeting a submission-ready draft within [ESTIMATED TIMELINE].
 
-    ## 8. 必读论文
-    列出 5-8 篇必读论文，按阅读顺序排列。每篇写一句话说明为什么要读。
+    ## 8. Required Reading
+    List 5-8 essential papers in reading order, with one sentence explaining why each matters.
 ```
 
 ### Step 3.2: Crystallization Validation
@@ -275,25 +275,25 @@ Flag any issues and annotate the idea card.
 For each top idea (TOP_IDEAS, default 2), construct a pipeline prompt following this template:
 
 ```
-/idea-pipeline "研究主题：[IDEA TITLE]。
-这次任务的目标不是发散找新方向，而是对这条候选主线做完整的 novelty gate、同题变体生成、多维筛选与最终精炼。
+/idea-pipeline "Research topic: [IDEA TITLE].
+The goal is not to explore unrelated directions, but to run a full novelty gate, generate same-topic variants, screen them across multiple dimensions, and refine this candidate research direction.
 
-Phase 1 / survey 的重点：
+Phase 1 / survey focus:
 [SPECIFIC SURVEY INSTRUCTIONS — what to search for, what NOT to repeat, what gaps to map]
 
-Phase 2 / gen 的重点：
-不要发散到其他方向，只围绕同一候选题生成若干个可投稿版本。优先覆盖以下主线：
+Phase 2 / gen focus:
+Do not branch into unrelated directions. Generate several submission-ready versions of the same candidate topic, prioritizing the following approaches:
 [LIST 4-6 VARIANT AXES derived from the crystallized idea]
-要求：[STYLE CONSTRAINTS from user, e.g., 偏理论、实验极轻量]
+Requirements: [STYLE CONSTRAINTS from user, e.g., theory-oriented, extremely lightweight experiments]
 
-Phase 3 / screen 的重点：
-重点比较每个版本的：
+Phase 3 / screen focus:
+Compare each version on:
 [LIST SPECIFIC SCREENING CRITERIA derived from the idea's risk profile]
 
-Phase 4 / refine 的重点：
-只精炼最优的 1-2 个版本，形成可投稿的论文骨架，明确 problem formalization、main theorem roadmap、minimal experiment、novelty risk 与 fallback plan。
+Phase 4 / refine focus:
+Refine only the best 1-2 versions into submission-ready paper skeletons, specifying problem formalization, main theorem roadmap, minimal experiment, novelty risk, and fallback plan.
 
-总体要求：[AGGREGATE CONSTRAINTS]" -- venue: [VENUE]
+Overall requirements: [AGGREGATE CONSTRAINTS]" -- venue: [VENUE]
 ```
 
 ### Step 4.2: Generate jobs.sh Entry (Optional)
@@ -380,37 +380,37 @@ Full report of the filtering process.
 
 ### Idea 1: [Title]
 
-#### 正式问题定义
+#### Formal Problem Definition
 [formal problem setup]
 
-#### 主定理路线图
+#### Main Theorem Roadmap
 - **Main Theorem**: [statement]
 - **Corollary 1**: [statement]
 - **Lower Bound**: [statement]
 
-#### 数学工具箱
-**必须掌握**: [list]
-**最好会**: [list]
+#### Mathematical Toolkit
+**Must know**: [list]
+**Helpful to know**: [list]
 
-#### 最小可行实验
+#### Minimum Viable Experiments
 1. [Experiment 1]
 2. [Experiment 2]
 3. [Experiment 3]
-- 技术栈: [tools]
-- CPU 时间: [estimate]
+- Technology stack: [tools]
+- CPU time: [estimate]
 
-#### 论文骨架
+#### Paper Skeleton
 [section outline]
 
-#### 风险清单
-- 技术风险: [description + fallback]
-- 新颖性风险: [description + mitigation]
-- 审稿人风险: [description + prevention]
+#### Risk Register
+- Technical risk: [description + fallback]
+- Novelty risk: [description + mitigation]
+- Reviewer risk: [description + prevention]
 
-#### 执行路线图
+#### Execution Roadmap
 [week-by-week plan]
 
-#### 必读论文
+#### Required Reading
 1. [Paper 1] — [why read]
 2. [Paper 2] — [why read]
 ...
@@ -449,13 +449,13 @@ TASKS=(
 
 ## Recommendation
 
-**首选**: [Idea title] — [1-2 sentences why this is #1]
-**备选**: [Idea title] — [1-2 sentences why this is backup]
+**First choice**: [Idea title] — [1-2 sentences why this is #1]
+**Backup**: [Idea title] — [1-2 sentences why this is backup]
 
-### 如果你想最快出成果
+### For the Fastest Results
 [Which idea to pick and why]
 
-### 如果你想冲最强会议
+### To Target the Strongest Venue
 [Which idea to pick and why]
 ```
 
@@ -513,14 +513,14 @@ FILTER_EOF
 
 ## Key Rules
 
-1. **所有输出使用中文。** FILTER_REPORT.md 中的分析、评估、建议均使用中文撰写。论文标题、技术术语、数学公式可保留英文。发给外部 LLM 的 prompt 使用中文。
-2. **这不是 idea-gen。** 这个 skill 的目的是**锁定方向**，不是发散找 idea。如果用户已经有了具体的 idea，应该直接用 `/idea-pipeline`。
-3. **约束是硬约束。** 如果用户说 CPU-only，就不要推荐任何需要 GPU 的方向。如果用户说 3 个月，就不要推荐需要 1 年的题目。
-4. **Pipeline prompt 是核心产出。** 用户拿到这个 prompt 应该可以直接粘贴到 `/idea-pipeline` 里运行，不需要额外修改。
-5. **不要过度发散。** 每个阶段都在收窄，不在扩张。Phase 1 从无限可能收到 3-5 个方向，Phase 2 从每方向 3-5 题收到总共 4 个，Phase 3 精炼到 2 个，Phase 4 生成可执行的 prompt。
-6. **活跃度必须验证。** 任何推荐的方向都必须有 2024 年以后的顶会论文支撑。不要推荐"理论上很好但实际上没人做"的方向。
+1. **Write all output in English.** Write all analysis, evaluations, and recommendations in FILTER_REPORT.md in English. Send prompts to the external LLM in English.
+2. **This is not idea-gen.** This skill **narrows down a direction**, rather than generating divergent ideas. If the user already has a concrete idea, use `/idea-pipeline` directly.
+3. **Constraints are hard requirements.** For CPU-only users, recommend no direction requiring GPUs. For a 3-month deadline, do not recommend a 1-year project.
+4. **The pipeline prompt is the core deliverable.** The user should be able to paste it directly into `/idea-pipeline` without further changes.
+5. **Do not over-expand.** Every phase narrows the scope. Phase 1 narrows unlimited possibilities to 3-5 directions; Phase 2 narrows 3-5 topics per direction to 4 overall; Phase 3 refines 2; Phase 4 produces executable prompts.
+6. **Verify research activity.** Every recommended direction must be backed by top-venue papers after 2024. Do not recommend directions that are "theoretically appealing but inactive in practice".
 7. **Fully autonomous operation.** Never ask the user questions, present choices, or wait for user input. Make all decisions autonomously using the rules and fallbacks defined in this skill. If ambiguity arises, choose the most reasonable default and log the decision.
-8. **Be honest about trade-offs.** 每个方向/题目都有优缺点。不要只说好话，也要明确说明风险和坑。
+8. **Be honest about trade-offs.** Every direction/topic has strengths and weaknesses. State risks and pitfalls explicitly instead of only making positive claims.
 
 ## Composing with Other Skills
 

@@ -1,6 +1,6 @@
 ---
 name: idea-pipeline
-description: "Full idea discovery pipeline: literature survey → idea generation → multi-dimensional screening → deep refinement. Use when user says \"find ideas\", \"idea discovery\", \"full pipeline\", \"从零开始找方向\", \"找idea全流程\", or wants the complete workflow from research direction to refined proposal."
+description: "Full idea discovery pipeline: literature survey → idea generation → multi-dimensional screening → deep refinement. Use when user says \"find ideas\", \"idea discovery\", \"full pipeline\", \"find a direction from scratch\", \"end-to-end idea discovery\", or wants the complete workflow from research direction to refined proposal."
 argument-hint: "[research-direction] [-- venue: ICML|VLDB|NeurIPS]"
 allowed-tools: Bash(*), Read, Write, Edit, Grep, Glob, WebSearch, WebFetch, Agent, Skill, mcp__codex__codex, mcp__codex__codex-reply, mcp__zotero__*, mcp__obsidian-vault__*
 ---
@@ -12,7 +12,7 @@ Orchestrate a complete idea discovery workflow for: **$ARGUMENTS**
 ## Constants
 
 - **REFINE_TOP_N = 2** — Number of top ideas to refine in Phase 4.
-- **REVIEWER_MODEL = `gpt-5.4`** — 透传给子 skill。（**模型可用性依赖账号**：用 ChatGPT 账号登录的 codex 只能用账号自带模型，指定不支持的模型会被 400 拒绝。走 `--codex-cli` 时**不要传 `--model`**，让 codex 用默认模型；走 `--gpt-only` 时该模型必须对你的 OpenAI API key 可用。）
+- **REVIEWER_MODEL = `gpt-5.4`** — Pass through to child skills. (**Model availability depends on your account**: Codex signed in with a ChatGPT account can use only models available to that account; unsupported models return a 400 error. With `--codex-cli`, **do not pass `--model`**; let Codex use its default model. With `--gpt-only`, the model must be available to your OpenAI API key.)
 - **DEFAULT_VENUE = ICML** — Default venue for screening when `-- venue:` is not specified.
 
 > Override defaults by telling the skill, e.g., `/idea-pipeline "topic" -- venue: NeurIPS`.
@@ -245,7 +245,7 @@ Aggregate all outputs into `outputs/IDEA_DISCOVERY_REPORT.md`:
 
 ## Key Rules
 
-- **所有输出使用中文。** 所有报告 (IDEA_DISCOVERY_REPORT.md, PIPELINE_LOG.md)、Checkpoint 日志、idea 描述、评审摘要均使用中文撰写。技术术语和论文标题可保留英文。
+- **Write all output in English.** Write all reports (IDEA_DISCOVERY_REPORT.md, PIPELINE_LOG.md), checkpoint logs, idea descriptions, and review summaries in English.
 - **Log decisions, never ask.** All checkpoint summaries go to `outputs/PIPELINE_LOG.md`. Never ask the user questions, present options, or wait for confirmation.
 - **If a sub-skill fails, log the error and continue with degraded quality.** Append the error details to `outputs/PIPELINE_LOG.md` and proceed to the next phase with whatever data is available. Do not stop the pipeline.
 - **Always produce a final report, even if some phases failed.** Mark failed phases clearly in the report with `[PHASE FAILED]` and include the error details.

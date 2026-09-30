@@ -1,30 +1,30 @@
 {
-  "_doc": "MoE 策略注册表。moe_loop 读它 → 每个 enabled 策略跑一版 → 门选最优。所有策略先读共享大脑 CRAFT.md(总则+立场+concern 打法+措辞),再叠本策略姿态。加/合并策略 = 放一个 strategies/<id>.md(引用 CRAFT)+ 在此注册。引擎无关。",
+  "_doc": "MoE strategy registry. moe_loop reads it → runs one version for each enabled strategy → the gate selects the best. All strategies first read the shared brain CRAFT.md(general rules+position+concern tactics+wording),then layer on this strategy's posture. Add/merge a strategy = place a strategies/<id>.md(referencing CRAFT)+ register it here. Engine-agnostic.",
   "shared_brain": "CRAFT.md",
   "presentation_method": "write-direct-rebuttals.md",
-  "_presentation_doc": "对外呈现主方法(应答编译):CRAFT 是内部 logic(想清楚该答什么),write-direct-rebuttals 管最终 reviewer-facing 稿怎么写(逐 slot 字面直答/verbatim 标号/不寒暄/时态三分/deletion+ammunition)。ground truth 来自 lyzHandCraft 人工手改。",
+  "_presentation_doc": "Primary external-facing presentation method(argument compilation):CRAFT is the internal logic(think through exactly what to answer),write-direct-rebuttals governs how the final reviewer-facing draft is written(literal direct answer for each slot/verbatim numbering/no pleasantries/three-way tense distinction/deletion+ammunition). ground truth comes from manual edits in lyzHandCraft.",
   "strategies": [
     {
       "id": "s1_evidence_locked",
-      "name": "证据锁定·结构化",
+      "name": "Evidence-locked·structured",
       "prompt_file": "s1_evidence_locked.md",
-      "posture": "低风险锚",
+      "posture": "Low-risk anchor",
       "risk": "low",
       "enabled": true
     },
     {
       "id": "s2_persuasion",
-      "name": "审稿人说服·讨论预判",
+      "name": "Reviewer persuasion·discussion anticipation",
       "prompt_file": "s2_persuasion.md",
-      "posture": "高 raise 潜力",
+      "posture": "High raise potential",
       "risk": "medium",
       "enabled": true
     },
     {
       "id": "s3_multistage",
-      "name": "补证据规划·多阶段",
+      "name": "Supplementary-evidence planning·multistage",
       "prompt_file": "s3_multistage.md",
-      "posture": "弱稿翻盘",
+      "posture": "Weak-draft turnaround",
       "risk": "medium",
       "enabled": true
     }
@@ -39,14 +39,14 @@
     "gate": "consensus_gate"
   },
   "route": {
-    "_doc": "策略阶梯(③ 路由 + ④ 成本优化,合并为同一问题)。reviewer_loop 按此顺序写第一个策略 → 过门即停;不过才写下一个。收益来自'少写',不来自'挑对'。依据 campaigns/01-wdData/ledger/cost.jsonl 实测:写作 447k in/次 vs 判官 16k in/次(写作占 94% 的 token);9/9 全清分区 bar(判据饱和,质量挑不出高下);策略间成本只差 8%(成本也挑不出高下)。故不假装能挑最优,只用可辩护的默认顺序。",
+    "_doc": "Strategy ladder(③ routing + ④ cost optimization,merged into the same problem). reviewer_loop writes the first strategy in this order → stops as soon as it clears the gate;writes the next only if it does not. The gain comes from 'writing less',not from 'choosing correctly'. Based on empirical measurements in campaigns/01-wdData/ledger/cost.jsonl:writer 447k in/run vs judge 16k in/run(writer accounts for 94% of the token);9/9 all clear the zone bar(criterion saturation,quality cannot distinguish them);costs across strategies differ by only 8%(cost cannot distinguish them either). Therefore,do not pretend we can choose the best;use only a defensible default order.",
     "default_ladder": [
       "s1_evidence_locked",
       "s2_persuasion",
       "s3_multistage"
     ],
-    "_ladder_why": "s1 在本 MANIFEST 里自述 risk=low(低风险锚)→ 当默认首选;s2(高 raise 潜力)次之;s3(弱稿翻盘)兜底。这是**姿态声明**推出的顺序,不是实测出来的最优 —— 实测目前分不出高下。",
+    "_ladder_why": "s1 declares itself in this MANIFEST as risk=low(low-risk anchor)→ the default first choice;s2(high raise potential)next;s3(weak-draft turnaround)as fallback. This order is derived from the **posture declaration**,not the empirically measured optimum —— current measurements cannot distinguish them.",
     "by_zone": {},
-    "_by_zone_why": "故意留空:9/9 全过,没有证据支持按 reviewer 分区差异化排序,不编。要填它需要的证据是'同一分区下某策略的过门率显著更高',而这要先让门产生区分度(当前饱和)。"
+    "_by_zone_why": "Intentionally left empty:9/9 all pass,so no evidence supports differentiated ordering by reviewer zone;do not fabricate. Populating it requires evidence that 'within the same zone,a certain strategy has a significantly higher gate-clearance rate',which requires first making the gate discriminative(currently saturated)."
   }
 }

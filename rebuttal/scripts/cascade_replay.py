@@ -1,17 +1,17 @@
 #!/usr/bin/env python3
-"""M2a 级联回放器 —— 零 API 成本,在已有判官预测上算"换级联策略能省多少"。
+"""M2a cascade replayer —— at zero API cost, computes "how much can be saved by switching cascade strategies" from existing judge predictions.
 
-语料:同一批 case 被多个模型用**同一冻结 prompt** 判过(data/preds_*.jsonl),
-gold 来自 data/threads.jsonl。这是**配对**数据 —— 能算模型间一致性,
-而一致性正是级联的关键:便宜档和贵档高度一致时,贵档大部分调用是浪费。
+Corpus:the same batch of cases was judged by multiple models using **the same frozen prompt** (data/preds_*.jsonl),
+with gold from data/threads.jsonl. This is **paired** data —— it supports computing inter-model agreement,
+and agreement is exactly what matters for a cascade:when the cheap tier and expensive tier agree closely, most expensive-tier calls are wasted.
 
-判据口径:停机门问的是"这份 rebuttal 够不够"。此处建模低起点分区的 bar
-(`reaction == 'raise'`),gold=raise 即"本该放行"。
-  FP = 误放行(弱稿过门)—— 要约束的 α
-  FN = 误拦截(好稿被卡)—— 代价是多跑一轮,烧钱不烧信誉
+Criterion convention:the stopping criterion asks "is this rebuttal good enough?". Here, the zone bar for the low-start partition
+(`reaction == 'raise'`) is modeled,where gold=raise means "should have cleared the gate".
+  FP = false clearance(a weak draft clears the gate)—— the α that must be constrained
+  FN = false rejection(a good draft is blocked)—— the cost is one extra round,spending money but not reputation
 
-成本单位:以一次便宜判官 = 1。贵/便宜价格比 r 未知(历史无 token 记录),
-故**扫一组 r 报结果**,不假装知道确切价格。r 的真值将由 M1 账本给出。
+Cost unit:one cheap judge call = 1. The expensive/cheap price ratio r is unknown(no historical token records),
+so **sweep a set of r values and report the results**,without pretending to know the exact price. The true value of r will come from the M1 ledger.
 
   python3 scripts/cascade_replay.py
   python3 scripts/cascade_replay.py --alpha 0.10
@@ -22,7 +22,7 @@ from collections import defaultdict
 ROOT = os.path.abspath(os.path.join(os.path.dirname(__file__), ".."))
 D = os.path.join(ROOT, "data")
 
-MODELS = {           # 文件 -> (展示名, 档位:cheap/mid/exp)
+MODELS = {           # file -> (display name, tier:cheap/mid/exp)
     "preds_deepseek-v4-flash.jsonl": ("deepseek-flash", "cheap"),
     "preds_deepseek-v4-pro.jsonl":   ("deepseek-pro",   "mid"),
     "preds_codex.jsonl":             ("codex",          "exp"),
@@ -64,23 +64,23 @@ def boot_ci(vals, n=2000, seed=7):
 
 def main():
     ap = argparse.ArgumentParser()
-    ap.add_argument("--alpha", type=float, default=0.15, help="可接受的误放行率上限")
+    ap.add_argument("--alpha", type=float, default=0.15, help="maximum acceptable false-clearance rate")
     a = ap.parse_args()
     gold, preds = load()
 
-    # 公共 case 集(所有三档都判过的)——级联必须在同一批 case 上比
+    # Shared case set(judged by all three tiers)——cascades must be compared on the same batch of cases
     core = ["deepseek-flash", "deepseek-pro", "codex"]
     ids = sorted(set.intersection(*[set(preds[m][0]) for m in core if m in preds]))
-    print(f"\n语料:{len(ids)} 个 case 被 {', '.join(core)} 全判过"
+    print(f"\nCorpus:{len(ids)} cases were all judged by {', '.join(core)}"
           f"(gold: raise {sum(1 for i in ids if gold[i]=='raise')} / "
-          f"非 raise {sum(1 for i in ids if gold[i]!='raise')})")
+          f"non-raise {sum(1 for i in ids if gold[i]!='raise')})")
     if len(ids) < 100:
-        print(f"⚠ n={len(ids)} 偏小 —— 下面所有点估计都带 95% bootstrap CI,"
-              f"宽 CI 说明该结论还不能当决策依据。")
+        print(f"⚠ n={len(ids)} is small —— all point estimates below include a 95% bootstrap CI,"
+              f"and a wide CI means the conclusion cannot yet serve as a basis for decisions.")
 
-    # ── 单模型表现 ────────────────────────────────────────────────
-    print("\n【单判官表现】(在公共集上;raise = 放行)\n")
-    print(f"{'判官':16}{'档':>5}{'准确率':>10}{'95% CI':>18}{'误放行FP':>10}{'误拦截FN':>10}")
+    # ── Single-model performance ────────────────────────────────────────────────
+    print("\n【Single-judge performance】(on the shared set;raise = clear the gate)\n")
+    print(f"{'Judge':16}{'Tier':>5}{'Accuracy':>10}{'95% CI':>18}{'False clear FP':>10}{'False reject FN':>10}")
     print("-" * 70)
     for name, (m, tier) in preds.items():
         sub = [i for i in ids if i in m]
@@ -98,8 +98,8 @@ def main():
         print(f"{name:16}{tier:>5}{acc:>10.3f}{f'[{lo:.2f},{hi:.2f}]':>18}"
               f"{fp:>10}{fn:>10}")
 
-    # ── 两两一致性(级联的物理基础)────────────────────────────────
-    print("\n【两两一致性】—— 便宜档与贵档越一致,贵档的调用越多是浪费\n")
+    # ── Pairwise agreement(the physical basis of a cascade)────────────────────────────────
+    print("\n【Pairwise agreement】—— the more the cheap tier agrees with the expensive tier,the more expensive-tier calls are wasted\n")
     names = [n for n in preds if all(i in preds[n][0] for i in ids)]
     for i1 in range(len(names)):
         for i2 in range(i1 + 1, len(names)):
@@ -107,26 +107,26 @@ def main():
             ag = [1 if (preds[A][0][i] == "raise") == (preds[B][0][i] == "raise") else 0
                   for i in ids]
             lo, hi = boot_ci(ag)
-            print(f"  {A:16} vs {B:16} 一致 {sum(ag)}/{len(ag)} = "
+            print(f"  {A:16} vs {B:16} agree {sum(ag)}/{len(ag)} = "
                   f"{sum(ag)/len(ag):.1%}  CI[{lo:.1%},{hi:.1%}]")
 
-    # ── 级联策略模拟 ──────────────────────────────────────────────
-    # 策略 = 有序档位链 + strict 合议(链上每一档都要说 raise 才放行;
-    # 任一档说不 raise 即短路,后面的档**不调用** = 省钱)
+    # ── Cascade strategy simulation ──────────────────────────────────────────────
+    # Strategy = ordered tier chain + strict consensus(every tier in the chain must say raise to clear the gate;
+    # if any tier says not raise,short-circuit immediately,and subsequent tiers are **not called** = save money)
     POLICIES = {
-        "P0 现行 cheap-first (pro→codex)": ["deepseek-pro", "codex"],
-        "P1 三档 (flash→pro→codex)":       ["deepseek-flash", "deepseek-pro", "codex"],
-        "P2 便宜档换 flash (flash→codex)":  ["deepseek-flash", "codex"],
-        "P3 只用 codex":                    ["codex"],
-        "P4 只用 pro":                      ["deepseek-pro"],
+        "P0 current cheap-first (pro→codex)": ["deepseek-pro", "codex"],
+        "P1 three tiers (flash→pro→codex)":       ["deepseek-flash", "deepseek-pro", "codex"],
+        "P2 replace cheap tier with flash (flash→codex)":  ["deepseek-flash", "codex"],
+        "P3 codex only":                    ["codex"],
+        "P4 pro only":                      ["deepseek-pro"],
     }
-    TIER_UNIT = {"cheap": 0.2, "mid": 1.0, "exp": None}   # exp 用 r 参数化
+    TIER_UNIT = {"cheap": 0.2, "mid": 1.0, "exp": None}   # parameterize exp with r
 
-    print("\n【级联策略模拟】strict 合议:链上每档都说 raise 才放行,"
-          "任一档否即短路(后续档不调用)\n")
+    print("\n【Cascade strategy simulation】strict consensus:every tier in the chain must say raise to clear the gate,"
+          "and a no from any tier short-circuits the chain(subsequent tiers are not called)\n")
     for r in (2, 5, 10, 20):
-        print(f"  ── 贵/便宜价格比 r = {r}(exp 档每次记 {r},mid=1,cheap=0.2)──")
-        print(f"  {'策略':36}{'E[成本]':>10}{'省%':>8}{'误放行':>8}{'误拦截':>8}{'准确率':>9}")
+        print(f"  ── Expensive/cheap price ratio r = {r}(each exp-tier call counts as {r},mid=1,cheap=0.2)──")
+        print(f"  {'Strategy':36}{'E[Cost]':>10}{'Saved%':>8}{'False clear':>8}{'False reject':>8}{'Accuracy':>9}")
         base = None
         for label, chain in POLICIES.items():
             if not all(c in preds for c in chain):
@@ -139,7 +139,7 @@ def main():
                     cost_t += r if tier == "exp" else TIER_UNIT[tier]
                     if preds[c][0][i] != "raise":
                         stop = False
-                        break                     # 短路:后面的档不调用
+                        break                     # Short-circuit:subsequent tiers are not called
                 truth = gold[i] == "raise"
                 corr.append(1 if stop == truth else 0)
                 fp += 1 if (stop and not truth) else 0
@@ -148,14 +148,14 @@ def main():
             if base is None:
                 base = ec
             save = 100 * (base - ec) / base
-            flag = "  ⚠超α" if fp / len(ids) > a.alpha else ""
+            flag = "  ⚠exceeds α" if fp / len(ids) > a.alpha else ""
             print(f"  {label:36}{ec:>10.2f}{save:>7.0f}%{fp:>8}{fn:>8}"
                   f"{sum(corr)/len(corr):>9.3f}{flag}")
         print()
 
-    print(f"读法:α={a.alpha:.0%} 是可接受的误放行率上限。"
-          f"省钱但超 α 的策略不可用 —— 误放行意味着弱稿过门,那是信誉成本,不是钱。")
-    print("r 的真值待 M1 账本积累后代入(已知一次 codex 调用 ≈12.7k in / 78% 缓存)。")
+    print(f"How to read this:α={a.alpha:.0%} is the maximum acceptable false-clearance rate."
+          f"A strategy that saves money but exceeds α is unusable —— false clearance means a weak draft clears the gate,which costs reputation,not money.")
+    print("Substitute the true value of r after the M1 ledger has accumulated enough data(one codex call is known to be ≈12.7k in / 78% cached).")
 
 
 if __name__ == "__main__":

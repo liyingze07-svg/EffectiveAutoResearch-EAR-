@@ -1,23 +1,23 @@
 #!/usr/bin/env python3
-"""M1 成本汇总 —— 读 campaigns/*/ledger/cost.jsonl,出可行动的成本画像。
+"""M1 cost summary —— read campaigns/*/ledger/cost.jsonl and produce an actionable cost profile.
 
-  python3 scripts/cost_report.py                 全部 campaign
-  python3 scripts/cost_report.py --slug RIVET     单篇
-  python3 scripts/cost_report.py --by unit        按 reviewer/靶 归集
+  python3 scripts/cost_report.py                 all campaigns
+  python3 scripts/cost_report.py --slug RIVET     one paper
+  python3 scripts/cost_report.py --by unit        aggregate by reviewer/target
 
-重点不是"花了多少钱",而是**杠杆在哪**:
-  · DRIVE/ACQUIT 配比   —— 写手 vs 判官各占多少(判官占大头则 M4 级联阈值收益大)
-  · cheap_reject 率     —— 便宜门拦掉了多少次贵判官调用(现行启发式的实际效果)
-  · cache_hit 率        —— 完全没调引擎的次数
-  · cached_in 占比      —— prompt 缓存吃到多少(codex 实测可达 78%,是白捡的省钱)
-价格表按需改 PRICES;留空则只报 token 与墙钟,不猜钱。
+The focus is not "how much was spent," but **where the leverage is**:
+  · DRIVE/ACQUIT mix   —— each writer's vs judge's share (if judges dominate, M4 cascade-threshold tuning offers large gains)
+  · cheap_reject rate     —— how many expensive authoritative judge calls the cheap gate blocked (the actual effect of the current heuristic)
+  · cache_hit rate        —— number of times the engine was not called at all
+  · cached_in share      —— how much the prompt cache captured (codex has empirically reached 78%, yielding savings at no cost)
+Modify PRICES as needed; if left empty, report only token usage and wall-clock time, without estimating cost.
 """
 import os, sys, json, glob, argparse
 from collections import defaultdict
 
 ROOT = os.path.abspath(os.path.join(os.path.dirname(__file__), ".."))
 
-# USD / 1M token。留 None = 该模型不估价(只报 token)。自己按实际账单改。
+# USD / 1M token. Leave as None = do not estimate the cost of this model (report token usage only). Adjust according to the actual bill.
 PRICES = {
     # "gpt-5.6-sol": {"in": 1.25, "cached_in": 0.125, "out": 10.0},
     # "deepseek-v4-pro": {"in": 0.27, "cached_in": 0.07, "out": 1.10},
@@ -55,15 +55,15 @@ def main():
 
     rows = load(a.slug)
     if not rows:
-        print("账本为空。产线还没在插桩后跑过 —— 这是 M1 的预期初始状态。")
-        print(f"  期望路径: campaigns/{a.slug or '<slug>'}/ledger/cost.jsonl")
+        print("The ledger is empty. The pipeline has not run since instrumentation —— this is the expected initial state for M1.")
+        print(f"  Expected path: campaigns/{a.slug or '<slug>'}/ledger/cost.jsonl")
         return
 
     g = defaultdict(lambda: {"n": 0, "wall": 0.0, "in": 0, "out": 0, "cin": 0,
                              "cheap": 0, "cache": 0, "err": 0, "usd": 0.0, "usd_known": 0})
     tot = dict(n=0, wall=0.0, cheap=0, cache=0, err=0)
     for r in rows:
-        k = r.get(a.by) or "(空)"
+        k = r.get(a.by) or "(empty)"
         d = g[k]
         d["n"] += 1
         d["wall"] += r.get("wall_s") or 0
@@ -84,9 +84,9 @@ def main():
         tot["err"] += 1 if r.get("err") else 0
 
     w = max(len(str(k)) for k in g) + 2
-    print(f"\n成本画像  ({tot['n']} 次调用, 按 {a.by} 归集"
-          f"{', slug=' + a.slug if a.slug else ', 全部 campaign'})\n")
-    hdr = f"{'':{w}}{'调用':>6}{'墙钟h':>8}{'in_tok':>11}{'out_tok':>10}{'缓存in%':>9}{'便宜拒':>7}{'缓存跳':>7}{'失败':>6}"
+    print(f"\nCost profile  ({tot['n']} calls, aggregated by {a.by}"
+          f"{', slug=' + a.slug if a.slug else ', all campaigns'})\n")
+    hdr = f"{'':{w}}{'calls':>6}{'wall h':>8}{'in_tok':>11}{'out_tok':>10}{'cached in%':>9}{'cheap rejects':>7}{'cache skips':>7}{'failures':>6}"
     if PRICES:
         hdr += f"{'USD':>9}"
     print(hdr)
@@ -99,38 +99,38 @@ def main():
             line += f"{d['usd']:>9.2f}" if d["usd_known"] else f"{'n/a':>9}"
         print(line)
 
-    print("\n杠杆指标")
+    print("\nLeverage metrics")
     roles = defaultdict(int)
     for r in rows:
         roles[r.get("role") or "?"] += 1
     drive, acq = roles.get("DRIVE", 0), roles.get("ACQUIT", 0)
-    # ★按 token 而不是按调用数 —— 按调用数会严重误导:实测写手 447k in/次、
-    # 判官 16k in/次(差 ~27 倍),调用数上判官占多数,成本上写手占 94%。
+    # ★Use token count rather than call count —— call count is seriously misleading: empirically, writers use 447k in/call,
+    # while judges use 16k in/call (a ~27-fold difference); judges account for most calls, but writers account for 94% of the cost.
     tok = defaultdict(int)
     for r in rows:
         tok[r.get("role") or "?"] += (r.get("in_tok") or 0) + (r.get("out_tok") or 0)
     dt, at = tok.get("DRIVE", 0), tok.get("ACQUIT", 0)
     if drive + acq:
-        print(f"  DRIVE/ACQUIT 调用数   {drive} / {acq}  (判官占 {100*acq/(drive+acq):.0f}% 的调用)")
+        print(f"  DRIVE/ACQUIT calls   {drive} / {acq}  (judges account for {100*acq/(drive+acq):.0f}% of calls)")
     if dt + at:
-        who = "写手" if dt > at else "判官"
+        who = "writers" if dt > at else "judges"
         print(f"  DRIVE/ACQUIT token    {dt:,} / {at:,}"
-              f"  ({who}占 {100*max(dt,at)/(dt+at):.0f}% 的 token ← 成本中心在这里)")
+              f"  ({who} account for {100*max(dt,at)/(dt+at):.0f}% of token usage ← this is the cost center)")
         if drive and acq:
-            print(f"  每次调用 token        写手 {dt//max(drive,1):,} · 判官 {at//max(acq,1):,}"
-                  f"  (相差 {max(dt//max(drive,1),1)/max(at//max(acq,1),1):.0f}×)")
-    print(f"  cheap_reject 率      {tot['cheap']}/{tot['n']} = {100*tot['cheap']/tot['n']:.1f}%"
-          f"   (每次 = 省下一次权威 Codex)")
-    print(f"  cache_hit 率         {tot['cache']}/{tot['n']} = {100*tot['cache']/tot['n']:.1f}%"
-          f"   (每次 = 整次引擎调用未发生)")
+            print(f"  token per call        writers {dt//max(drive,1):,} · judges {at//max(acq,1):,}"
+                  f"  ({max(dt//max(drive,1),1)/max(at//max(acq,1),1):.0f}× difference)")
+    print(f"  cheap_reject rate      {tot['cheap']}/{tot['n']} = {100*tot['cheap']/tot['n']:.1f}%"
+          f"   (each one = one fewer authoritative Codex judge call)")
+    print(f"  cache_hit rate         {tot['cache']}/{tot['n']} = {100*tot['cache']/tot['n']:.1f}%"
+          f"   (each one = the entire engine call did not occur)")
     if tot["err"]:
-        print(f"  ⚠ 失败/超时          {tot['err']} 次 —— 纯浪费,M4 要专门盯")
+        print(f"  ⚠ failures/timeouts          {tot['err']} occurrences —— pure waste; M4 must monitor this specifically")
     ci = sum(r.get("cached_in_tok") or 0 for r in rows)
     ti = sum(r.get("in_tok") or 0 for r in rows)
     if ti:
-        print(f"  prompt 缓存吃到      {100*ci/ti:.0f}% 的输入 token")
+        print(f"  prompt cache coverage      {100*ci/ti:.0f}% of input token")
     if not PRICES:
-        print("\n  (未配价格表 → 只报 token/墙钟。要出金额请填 scripts/cost_report.py 的 PRICES)")
+        print("\n  (no price table configured → report token usage/wall-clock time only. To report monetary cost, fill in PRICES in scripts/cost_report.py)")
 
 
 if __name__ == "__main__":

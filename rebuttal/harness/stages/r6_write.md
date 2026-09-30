@@ -1,63 +1,63 @@
-# stage r6_write — 为一个 (reviewer, 策略) 写一版 rebuttal
+# stage r6_write — Write one rebuttal draft for a (reviewer, strategy)
 
-> 引擎在**新上下文**里跑本文件。只用下面声明的输入,不带对话历史。产物是**一份 reviewer-facing 的 rebuttal 正文**。
+> The engine runs this file in a **fresh context**. Use only the inputs declared below, with no conversation history. The artifact is **one reviewer-facing rebuttal body**.
 
-## 槽位(orchestrator 填)
-`{{SLUG}}` `{{REVIEWER}}` `{{STRATEGY_FILE}}`（strategies/<s>.md）`{{STRATEGY_ID}}` `{{N}}`（轮次)`{{SEED}}`（carry-forward 种子或 None）
+## Slots (filled by the orchestrator)
+`{{SLUG}}` `{{REVIEWER}}` `{{STRATEGY_FILE}}` (`strategies/<s>.md`) `{{STRATEGY_ID}}` `{{N}}` (round) `{{SEED}}` (carry-forward seed or None)
 
-## 输入(只读这些确切文件)
-- `campaigns/{{SLUG}}/REBUTTAL_CARD.json` → 取 `{{REVIEWER}}` 的 concerns + OA + stance
-- `campaigns/{{SLUG}}/ledger/concern_ledger.json` → 每个 concern 的 **`real_concern`(心结)** + severity + stance(r2 诊断,写作按它定打法)
+## Inputs (read only these exact files)
+- `campaigns/{{SLUG}}/REBUTTAL_CARD.json` → extract the concerns + OA + stance for `{{REVIEWER}}`
+- `campaigns/{{SLUG}}/ledger/concern_ledger.json` → each concern's **`real_concern` (the real concern)** + severity + stance (r2 diagnosis; the writer must use it to choose the approach)
 - `campaigns/{{SLUG}}/ledger/evidence_pool.json`
-  🔴 **此文件缺失时禁止退回 `evidence_map.json`,直接停止并报错**。`evidence_map.json` 是 r1 产的**未过滤**证据底:没有 `evidence_status`,**没有把 REJECT 的实验剔出去**。拿它写作 = 会把未验收/被 REJECT 的实验当成已完成证据写进稿子(01-wdData/37ch 实测踩过:稿中把 `01-E-overlap` 写成 "our overlap stress test measured",而该实验 ACCEPTANCE 判定是 REJECT)。缺失时的正确动作:**不写稿**,回报 "evidence_pool.json 缺失,需先跑 r5_evidence_merge"。→ 每个 concern 绑的证据 + `evidence_status`(met/partial/unmet)+ `persuasion_verdict` + **`framing_hint`**。**只用 `evidence_status != unmet` 的真实证据;unmet 的走 warrant 阶梯让步,绝不硬编。**
-  - **必遵 `framing_hint`(实验说服力门 r4_experiment_persuasion 的裁决,已按 v0.4 应答编译写好)**:`met/STRENGTH` → 该证据当**字面直答**写(完成时,mirror 主谓宾);`partial/LOWER_BOUND` → 只写**诚实下界**,**禁**泛化成 'stable/robust/in general'(overclaim = 弹药);`unmet/CONCEDE`(即便实验真跑过并通过 X1-X6)→ **禁当强点**,走 warrant 阶梯 move-6 把局限一次性写成正向 scope 条件后收口。
-- `papers/{{SLUG}}/review.md` → `{{REVIEWER}}` 的审稿原文
-- 相关 `campaigns/{{SLUG}}/experiments/<expid>/results.json` → 只用 `derived` 的真实数字 + `interpretation`
-- **`harness/strategies/CRAFT.md` → 内部 logic(总则+立场三分流+不滑跪不自爆+14 concern 打法+心结速查):想清楚**该答什么心结、用什么证据、什么立场**。先读。**
-- **`harness/strategies/write-direct-rebuttals.md` → 对外呈现主方法(应答编译):最终 reviewer-facing 稿怎么写。逐 slot 字面直答 / verbatim 标号 / 不寒暄 / 时态三分 / deletion+ammunition。**
-- `harness/{{STRATEGY_FILE}}` → 本策略姿态(叠在 CRAFT 之上的差异化取舍)
-- 本文件的通用规则(下)
+  🔴 **If this file is missing, falling back to `evidence_map.json` is forbidden; stop immediately and report an error**. `evidence_map.json` is the **unfiltered** evidence base produced by r1: it has no `evidence_status` and **does not remove experiments with a REJECT verdict**. Using it for writing = writing unaccepted/REJECTed experiments into the draft as completed evidence (this happened in an actual 01-wdData/37ch run: the draft said "our overlap stress test measured" for `01-E-overlap`, even though that experiment's ACCEPTANCE verdict was REJECT). The correct action when it is missing: **do not write a draft**; report "evidence_pool.json is missing; run r5_evidence_merge first". → evidence bound to each concern + `evidence_status` (met/partial/unmet) + `persuasion_verdict` + **`framing_hint`**. **Use only real evidence with `evidence_status != unmet`; for unmet evidence, use the warrant fallback ladder to concede, and never fabricate.**
+  - **You must follow `framing_hint` (the verdict from the r4_experiment_persuasion persuasion gate, already compiled for response according to v0.4)**: `met/STRENGTH` → write the evidence as a **literal direct answer** (when completed, mirror the subject/verb/object); `partial/LOWER_BOUND` → write only the **honest lower bound**, and **never** generalize it to 'stable/robust/in general' (overclaim = ammunition); `unmet/CONCEDE` (even if the experiment actually ran and passed X1-X6) → **it must not be used as a strong point**; use move-6 of the warrant fallback ladder to state the limitation once as a positive scope condition, then close.
+- `papers/{{SLUG}}/review.md` → the original review text from `{{REVIEWER}}`
+- relevant `campaigns/{{SLUG}}/experiments/<expid>/results.json` → use only the real numbers in `derived` + `interpretation`
+- **`harness/strategies/CRAFT.md` → internal logic (general rules + three-way routing by stance + no cringing capitulation or self-sabotage + 14 concern playbooks + the real concern quick reference): reason through** what the real concern is, what evidence to use, and what stance to take. **Read this first.**
+- **`harness/strategies/write-direct-rebuttals.md` → primary method for external presentation (response compilation): how to write the final reviewer-facing draft. Literal direct answer for each slot / `verbatim` labels / no pleasantries / three-way tense split / deletion+ammunition.**
+- `harness/{{STRATEGY_FILE}}` → this strategy's posture (differentiated tradeoffs layered on top of CRAFT)
+- the general rules in this file (below)
 
-## 写作 = 内部 logic(CRAFT + 论证编译) → 对外应答编译(write-direct-rebuttals)
-1. **内部想清楚**:对每个 concern,按 r2 诊断的 `real_concern`(心结)用 **CRAFT §3/§5** 选打法 + **CRAFT §1** 定立场;走论证编译(下)保证逻辑严谨、warrant 可溯。
-2. 按 `{{STRATEGY_FILE}}` 的姿态取舍(打什么、顺序、让步深浅)。
-3. **对外落稿按 `write-direct-rebuttals.md`(应答编译)**:两遍——先逐 reviewer slot 字面直答(mirror 主谓宾),再编译成每 W 一段连续散文。**verbatim 引用标号、不写致谢段、时态三分(编辑=将来时,不假装已改)、边界写正向条件、过 deletion+ammunition**。逻辑在内部(可留中文 `逻辑：`),直接在对外。见《输出格式》。
+## Writing = internal logic (CRAFT + argument compilation) → external response compilation (write-direct-rebuttals)
+1. **Reason it through internally**: for each concern, use **CRAFT §3/§5** to select the playbook for the r2-diagnosed `real_concern` (the real concern) + use **CRAFT §1** to set the stance; perform the argument compilation below to guarantee rigorous logic and traceable warrants.
+2. Make tradeoffs according to the posture in `{{STRATEGY_FILE}}` (what to address, ordering, depth of concession).
+3. **Produce the external draft according to `write-direct-rebuttals.md` (response compilation)**: two passes—first provide a literal direct answer for each reviewer slot (mirror the subject/verb/object), then compile each W into one continuous prose paragraph. **Use `verbatim` quote labels, write no acknowledgment paragraph, apply the three-way tense split (edits=future tense; never pretend an edit is already made), frame boundaries as positive conditions, and pass deletion+ammunition**. Logic stays in a separate internal English `Logic:` file; directness goes into the external-facing text. See "Output Format."
 
-## 论证编译(4 pass,严格按序;这是推理任务不是 next-token)
-1. **Pass 1 建论证 DAG**:每个 concern 定战略目标(把 reviewer 从 X 挪到 Y)→ 倒推 claim 链 → 每个 claim 挂一个 warrant(指向 evidence_map 里的真实证据)。链终点 = 战略目标。**先不写散文。**
-2. **Pass 2 语义检查**:每 claim 能从前驱+warrant 推出(无跳跃)· 每 warrant link 到真实证据(link 失败=编造→降 `[TBD]`/删)· 无冗余 · 终点=目标。
-3. **Pass 3 渲染**:DAG→散文,一 claim 节点=一句,连接词编码逻辑边。**下一句必须是下一个节点,不许生成 DAG 外内容。**
-4. **Pass 4 反编译校验**:把散文 re-parse 回 claim 集合,必须 ⊇ DAG(没丢/没加语义)。
+## Argument compilation (4 passes, strictly in order; this is a reasoning task, not next-token)
+1. **Pass 1 Build the argument DAG**: set a strategic objective for each concern (move the reviewer from X to Y) → work backward to derive the claim chain → attach one warrant to each claim (pointing to real evidence in evidence_map). The chain's endpoint = the strategic objective. **Do not write prose yet.**
+2. **Pass 2 Semantic checks**: every claim must follow from its predecessors+warrant (no gaps) · every warrant must link to real evidence (link failure=fabrication→demote to `[TBD]`/delete) · no redundancy · endpoint=objective.
+3. **Pass 3 Render**: DAG→prose, with one claim node=one sentence and connectives encoding the logical edges. **The next sentence must be the next node; generating content outside the DAG is forbidden.**
+4. **Pass 4 Reverse-compilation validation**: re-parse the prose into a claim set; it must be ⊇ the DAG (no semantics dropped/added).
 
-## 🔴 诚实规则(实质诚实,不是表演诚实 —— 重要)
-诚实是**不谎报事实**,不是**在正文里反复声明自己诚实**。后者显得心虚、给 reviewer 递软肋、让论文看着更弱。
-- **要**:每个数字/claim 可追溯真实证据;做不到的用 `[TBD]`;让步在真拿不到 warrant 时。
-- **不要(这些是软弹药,会被扣分/拦)**:
-  - 表演式诚实句式:`we honestly concede / we will not manufacture / we did not spin it / we prefer to concede rather than assert / we are careful not to over-claim / we disclose ... honestly`。
-  - 每条让步贴 `(conceded)` 标签、反复说"这是公允的批评"。
-  - 过度让步:能自信答的用证据自信答;让步**一句带过 + 立刻转回强度**,不展开、不重复。
-- **让步的正确写法**:陈述局限一次(简短)→ 立刻给它的 scope 或补偿证据 → 收口。例:不写 "we honestly have no long-CoT infrastructure and will not manufacture results";写 "Long-form CoT is outside our current scope; the tradeoff already persists at 27B (0.248/0.402), and we mark it as future work."
-- **caveat/proxy 只陈述一次事实**(如"junk 是 authenticity-detector 代理"),不加"we are explicit that ... not synthetic"这类自我表白。
+## 🔴 Honesty rule (substantive honesty, not performative honesty — important)
+Honesty means **not misrepresenting facts**, not **repeatedly declaring one's honesty in the body**. The latter appears insecure, hands the reviewer a vulnerability, and makes the paper look weaker.
+- **Do**: every number/claim must be traceable to real evidence; use `[TBD]` when that is impossible; concede when no warrant can genuinely be obtained.
+- **Do not (these are soft ammunition and will lose points/be blocked)**:
+  - Performative honesty formulations: `we honestly concede / we will not manufacture / we did not spin it / we prefer to concede rather than assert / we are careful not to over-claim / we disclose ... honestly`.
+  - Tag every concession with `(conceded)`, or repeatedly say "this is a fair criticism."
+  - Over-concede: answer confidently with evidence when a confident answer is available; make the concession **in one sentence + immediately return to strength**, without elaborating or repeating it.
+- **The correct form for a concession**: state the limitation once (briefly) → immediately give its scope or compensating evidence → close. Example: do not write "we honestly have no long-CoT infrastructure and will not manufacture results"; write "Long-form CoT is outside our current scope; the tradeoff already persists at 27B (0.248/0.402), and we mark it as future work."
+- **State a caveat/proxy fact only once** (for example, "junk is a proxy for the authenticity-detector"); do not add self-professions such as "we are explicit that ... not synthetic."
 
-## carry-forward(若 `{{SEED}}` 非 None)
-在 `SEED.prior_best_rebuttal` 上改:保留有效的,按 `SEED.apply_advice` 补,删 `SEED.avoid_phrases`。不从零重写。
+## carry-forward (if `{{SEED}}` is not None)
+Revise `SEED.prior_best_rebuttal`: retain what works, supplement it according to `SEED.apply_advice`, and delete `SEED.avoid_phrases`. Do not rewrite from scratch.
 
-## DO-NOT(硬)
-- 不编数字/引用;不把没做的实验写成做了;不空承诺("we will run/add" 对 P0 = 弹药)。
-- 不生成 DAG 外内容(Pass 3 锁死)。
-- 不写上面的表演式诚实句式 / 不过度让步。
-- **DRIVE/ACQUIT 物理隔离(硬):绝不读判官内部** —— 不读 `rebuttal_verifier/`(`consensus_gate.py`/`prompt_template.py`/`verify_rebuttal.py`)、不读 `harness/stages/r7_gate.md`、`b1_concern_gate.md`、`b2_faithfulness_gate.md`、`b3_ammunition_gate.md`、不读 `harness/runner/coach_loop.py` 的 `AMMO_PATTERNS`。只读上面"输入"列的确切文件。看判据 = 对判据拟合 = 整轮作废。
+## DO-NOT (hard)
+- Do not fabricate numbers/citations; do not present experiments that were not run as completed; make no empty promise (`"we will run/add"` for P0 = ammunition).
+- Do not generate content outside the DAG (Pass 3 is locked).
+- Do not use the performative honesty formulations above / do not over-concede.
+- **Physical isolation of DRIVE/ACQUIT (hard): never read judge internals** — do not read `rebuttal_verifier/` (`consensus_gate.py`/`prompt_template.py`/`verify_rebuttal.py`), do not read `harness/stages/r7_gate.md`, `b1_concern_gate.md`, `b2_faithfulness_gate.md`, `b3_ammunition_gate.md`, and do not read `AMMO_PATTERNS` in `harness/runner/coach_loop.py`. Read only the exact files listed under "Inputs" above. Seeing the criteria = fitting to the criteria = the entire round is invalid.
 
-## 输出格式(硬约束 —— **应答编译范式**,主方法读 `strategies/write-direct-rebuttals.md`)
-> Directness 压倒修辞:rebuttal = 对每个 reviewer slot 的**最小、字面、诚实直接应答**的编译。CRAFT §0–5 提供**内部 logic**(心结/立场/打法),本节 + write-direct-rebuttals 管**对外呈现**。
-1. **不写致谢/复述好评段 —— 直接进 W1。** 给台阶靠答案内部的**正向框架化**(如 "we did not state this upfront; in the camera-ready we will state it before first use"),不靠开场恭维。
-2. **W 标号 = 逐字引用 reviewer 原句(verbatim)**,不是概括心结。过长保留完整关键子句,不插造的省略号。(心结概括留内部 logic / 中文 `逻辑：` 文件。)
-3. **第一句 = 字面槽位直答**,mirror reviewer 的主/谓/宾(见方法文件映射表:`What is X?`→`X is…`;`Is it A/B/both?`→`It is…`)。机制/证据留第二句起。**禁把 reframe 或恭维当首句。**
-4. **多部分问题的每个 clause 都要答**;礼貌语("Can you speak to this?")不当独立问题答,并入其后的实质问题。
-5. **时态三分**:已有理论=现在时;完成实验=过去/现在完成时;**手稿编辑=将来时 `In the camera-ready version, we will <具体改动>`**。⚠️**不许把未落地的编辑写成 "is now stated / the revised X reads"(=假装已改=overclaim)**。编辑类 `we will`(定义术语/重画图/加引用/调顺序)**合法**;禁的只是"用承诺**搪塞 reviewer 要的实质/实验工作**"。
-6. **表格降级**:仅**多列对比**才用 markdown 表;单一数量/一串同类数字 → 内联散文。**不追求字数**——长度由 **deletion test** 决定(每句必须承担 answer-slot / 定义 / 连接 / 证据 / camera-ready-edit 之一,否则删);无下限焦虑。超长才精简 + 交叉引用。
-7. **边界 = 正向技术条件,不是道歉/limitation**("The theorem applies when …",不写"我们没测 X")。不 volunteer 未问的弱点,不把实质反对说成"only a clarity issue"。
+## Output Format (hard constraints — **response compilation paradigm**; read `strategies/write-direct-rebuttals.md` for the primary method)
+> Directness overrides rhetoric: rebuttal = a compilation of the **minimal, literal, honest direct answer** to each reviewer slot. CRAFT §0–5 provides the **internal logic** (the real concern/stance/playbook); this section + write-direct-rebuttals governs **external presentation**.
+1. **Write no acknowledgment/restatement-of-praise paragraph — go directly to W1.** Provide an off-ramp through **positive framing** inside the answer (for example, "we did not state this upfront; in the camera-ready we will state it before first use"), not through opening flattery.
+2. **W label = a `verbatim` quotation of the reviewer's original sentence**, not a summary of the real concern. If it is too long, retain the complete key clause and do not insert fabricated ellipses. (Keep summaries of the real concern in the internal English `Logic:` file.)
+3. **First sentence = the literal direct answer to the slot**, mirroring the reviewer's subject/verb/object (see the mapping table in the method file: `What is X?`→`X is…`; `Is it A/B/both?`→`It is…`). Put mechanism/evidence from the second sentence onward. **A reframe or pleasantry must not be the first sentence.**
+4. **Answer every clause of a multipart question**; do not answer a polite expression ("Can you speak to this?") as a standalone question; merge it into the substantive question that follows.
+5. **Three-way tense split**: existing theory=present tense; completed experiment=past/present perfect; **manuscript edit=future tense, `In the camera-ready version, we will <specific change>`**. ⚠️ **Never describe an edit that has not been made as "is now stated / the revised X reads" (=pretending it is already changed=overclaim).** Editorial `we will` (define terminology/redraw a figure/add citations/reorder material) is **legitimate**; what is forbidden is only "using a promise to **fob off the substantive/experimental work requested by the reviewer**."
+6. **Table demotion**: use a markdown table only for **multi-column comparisons**; for a single quantity/a sequence of like-valued numbers → use inline prose. **Do not chase a word count**—length is determined by the **deletion test** (every sentence must serve one of answer-slot / definition / connection / evidence / camera-ready-edit; otherwise delete it); do not worry about a minimum. Only shorten when overly long + use cross-references.
+7. **Boundary = a positive technical condition, not an apology/limitation** ("The theorem applies when …", not "we did not test X"). Do not volunteer unasked-for weaknesses, and do not characterize a substantive objection as "only a clarity issue."
 
-## 输出(写这个确切文件)
-`campaigns/{{SLUG}}/drafts/round{{N}}/{{REVIEWER}}__{{STRATEGY_ID}}.md` —— reviewer-facing rebuttal 正文,**严格按上面《输出格式》6 条硬约束**(标号 + 先结论 + 表格 + 谦卑开场 + 无未来时空承诺 + 用足 4000–5000 字符)。
-receipt(回一行):`{reviewer, strategy, draft_path, char_count, concerns_covered}`。char_count 超 5000 → 精简;低于 3000 → 补足证据密度再交。
+## Output (write this exact file)
+`campaigns/{{SLUG}}/drafts/round{{N}}/{{REVIEWER}}__{{STRATEGY_ID}}.md` — reviewer-facing rebuttal body, **strictly following the 6 hard constraints in "Output Format" above** (labels + conclusion first + table + humble opening + no future-tense empty promises + use the full 4000–5000 characters).
+receipt (return one line): `{reviewer, strategy, draft_path, char_count, concerns_covered}`. If char_count exceeds 5000 → shorten; if below 3000 → increase evidence density before submitting.

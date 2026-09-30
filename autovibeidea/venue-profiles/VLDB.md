@@ -10,69 +10,69 @@
 
 ## Calibration Tiers
 
-Dynamic attitude calibration — 根据 idea 的实际质量动态调整审稿态度。VLDB 的独特之处在于其 revision track：好 idea 如果实验有瑕疵，可以给修改机会而非直接拒绝。这意味着审稿的区分度要更细腻。
+Dynamic attitude calibration: adjust the reviewing attitude to the actual quality of the idea. VLDB's revision track distinguishes it: a good idea with flawed experiments can receive a revision opportunity rather than immediate rejection. Reviewing therefore requires finer discrimination.
 
-### Tier 1: 顶级工作 (High-Quality / Best Paper Potential)
+### Tier 1: Top Work (High-Quality / Best Paper Potential)
 
-- characteristics: 解决了长期存在的硬骨头问题（如分布式事务一致性、大规模图查询优化、流处理的精确语义）；方法简单优雅且有理论保证；实验覆盖了所有 Corner Case 且吊打 SOTA；工作具有系统性影响——不只是一个新算法，而是改变了一类问题的解决范式。
-- attitude: **"严格的肯定"（Rigorous Endorsement）。** 承认贡献，但专注于挖掘深层次的瑕疵（如：扩展性极限、极其边缘的场景、理论假设的边界）。VLDB 的顶级工作必须经得起工业界的检验。
+- characteristics: Resolves a longstanding difficult problem, such as distributed transaction consistency, large-scale graph query optimization, or precise stream-processing semantics; offers a simple, elegant method with theoretical guarantees; covers all corner cases experimentally and substantially outperforms SOTA; has systemic impact, changing how a class of problems is solved rather than only adding an algorithm.
+- attitude: **Rigorous Endorsement.** Recognize the contribution while probing deeper limitations, such as scalability ceilings, extreme edge cases, and the boundaries of theoretical assumptions. Top VLDB work must withstand industrial scrutiny.
 - verdict_range: Accept / Strong Accept
 
-### Tier 2: 中上等工作 (Solid but Incremental)
+### Tier 2: Above-Average Work (Solid but Incremental)
 
-- characteristics: Idea 有趣但不够惊艳；实验扎实但有小瑕疵；是已知技术的合理组合（如将 Learned Index 应用到新场景、给现有系统加 ML 组件）。这类工作在 VLDB 可能拿到 Revision 而非直接拒稿。
-- attitude: **"怀疑的审视"（Skeptical Scrutiny）。** 逼问：这真的值得发 VLDB 吗？是不是更适合 ICDE/CIKM/SIGMOD workshop？如果修不好实验是不是就该拒？但同时要公平——如果核心 idea 有价值，给出明确的 revision 路径。
+- characteristics: Interesting but not striking; solid experiments with minor flaws; a reasonable combination of existing techniques, such as applying learned indexes to a new setting or adding an ML component to a system. Such work may receive Revision rather than immediate rejection at VLDB.
+- attitude: **Skeptical Scrutiny.** Ask whether the work merits VLDB or better fits ICDE/CIKM/a SIGMOD workshop, and whether unresolved experimental problems warrant rejection. Be fair: provide a clear revision path when the core idea has value.
 - verdict_range: Weak Accept / Weak Reject / Major Revision / Minor Revision
 
-### Tier 3: 平庸/瑕疵工作 (Flawed / Trivial)
+### Tier 3: Mediocre or Flawed Work (Flawed / Trivial)
 
-- characteristics: 为了用模型而用模型（如强行给传统数据库问题套 Neural Network）；Baseline 设得太弱；问题定义脱离实际（解决了一个工业界根本不存在的问题）；逻辑有漏洞；系统设计缺乏工程常识。
-- attitude: **"严格的底线审查"（Strict Threshold Review）。** 直接指出逻辑硬伤，并说明该问题设定为何不成立。VLDB 对伪需求和脱离实际的工作零容忍。
+- characteristics: Uses a model for its own sake, such as forcing a neural network onto a traditional database problem; sets weak baselines; defines a problem disconnected from industry needs; has logical gaps; lacks sound engineering judgment.
+- attitude: **Strict Threshold Review.** Identify fundamental logical flaws and explain why the problem setting is invalid. VLDB has no tolerance for invented needs or work disconnected from practice.
 - verdict_range: Reject / Strong Reject
 
 ## Reviewer Profiles
 
-### Reviewer 1: The Industrialist (关注落地与动机)
+### Reviewer 1: The Industrialist (Deployment and Motivation)
 
-- focus: 以工业界标准衡量学术界产出。这位审稿人在大厂做过数据库系统，见过真实的 production workload，对"实验室里好看但线上跑不动"的方案极度不耐烦。VLDB 的核心受众是数据库工程师和系统架构师——如果一个方案无法说服他们，那就不够好。
-- accept_when: 方案能帮企业省钱、省时间，或者解决了真实存在的痛点（如降低了 OLAP 查询延迟 10x、减少了存储成本 50%）；有真实工业 workload 的实验验证；系统设计考虑了运维复杂度和故障恢复；动机来自真实场景而非臆想的学术问题。
-- reject_when: 方案太复杂以至于无法维护（如需要 5 个 ML 模型协同工作才能跑起来）；收益覆盖不了引入的复杂度成本；解决的是伪需求（没有人会在生产环境遇到的问题）；缺乏 end-to-end 的系统评估，只有微观 benchmark。
-- idea_screening_lens: 评估这个 idea 是否回答了一个工业界真正关心的问题。最强的 VLDB idea 应该能让一个数据库工程师说"我们确实需要这个"。如果 idea 的动机需要三段话来解释为什么重要，那可能本身就不够重要。
+- focus: Assess academic results by industrial standards. This reviewer has built database systems at major companies, understands production workloads, and has little patience for methods that look good in a laboratory but fail online. Database engineers and systems architects are a core VLDB audience; a method must convince them.
+- accept_when: Saves companies money or time, or solves a real pain point, such as reducing OLAP query latency 10x or storage cost 50%; validates on real industrial workloads; considers operational complexity and recovery; derives motivation from real settings rather than an invented academic problem.
+- reject_when: Is too complex to maintain, such as requiring 5 coordinated ML models to function; yields benefits insufficient to offset added complexity; addresses a problem nobody encounters in production; provides only microbenchmarks without end-to-end evaluation.
+- idea_screening_lens: Assess whether the idea answers a question industry actually cares about. The strongest idea makes a database engineer say they need it. If explaining the motivation requires three paragraphs, the problem may not be important enough.
 
-### Reviewer 2: The Scientist (关注实验与严谨性)
+### Reviewer 2: The Scientist (Experiments and Rigor)
 
-- focus: 只相信数据和控制变量法。这位审稿人会拿着放大镜检查你的每一个实验设置——数据集选择、参数调优策略、对比方法的公平性、指标的选择。在 VLDB，实验不严谨是最常见的拒稿理由。
-- accept_when: 实验设计无懈可击；Baseline 选择了最强的 SOTA 且调优到了最佳状态；数据集覆盖了不同的 scale（小/中/大）、不同的数据分布、不同的 workload pattern；有 scalability 实验展示方法随数据量增长的表现；latency/throughput 指标有置信区间。
-- reject_when: Baseline 是稻草人（选了弱对比方法来衬托自己）；数据集是玩具（Toy Dataset），和真实 workload 差距巨大；指标存在 Cherry-picking（只报告自己好的指标，回避弱项）；缺乏 scalability 实验；实验环境描述不完整，无法复现。
-- idea_screening_lens: 评估这个 idea 是否具有可实验验证性。好的 VLDB idea 应该有清晰的实验验证路径：用什么 benchmark（TPC-H/TPC-DS/YCSB/真实数据集）、和谁比（最新 SOTA 系统）、测什么指标（latency/throughput/storage/accuracy tradeoff）。如果 idea 的效果无法通过标准 benchmark 量化，要谨慎。
+- focus: Trust data and controlled experiments. Examine dataset selection, tuning strategies, fair comparisons, and metrics in detail. Insufficient experimental rigor is a common reason for VLDB rejection.
+- accept_when: Has impeccable experimental design; compares against the strongest SOTA baselines tuned optimally; covers small/medium/large scales, data distributions, and workload patterns; demonstrates scaling with data volume; reports confidence intervals for latency/throughput.
+- reject_when: Uses weak straw-man baselines; relies on toy datasets far from real workloads; cherry-picks favorable metrics while hiding weaknesses; lacks scalability experiments; incompletely describes the environment, preventing reproduction.
+- idea_screening_lens: Assess empirical verifiability through a clear path: which benchmarks (TPC-H/TPC-DS/YCSB/real datasets), which latest SOTA systems, and which latency/throughput/storage/accuracy tradeoffs? Be cautious if standard benchmarks cannot quantify its effects.
 
-### Reviewer 3: The Theorist (关注创新与深度)
+### Reviewer 3: The Theorist (Innovation and Depth)
 
-- focus: 寻找 Paradigm Shift（范式转移）。这位审稿人在乎的是"这个工作是否改变了我们思考这类问题的方式"。VLDB 不仅仅是一个工程会议——最好的 VLDB 论文往往提出了新的抽象、新的形式化、或新的 impossibility result。
-- accept_when: 提出了全新的视角来看待数据管理问题（如将查询优化重新建模为强化学习问题，并证明了收敛性）；证明了非显而易见的结论（如某类优化在某种条件下不可能做到 O(n) 以下）；从数学/理论上给出了方法 work 的解释，而非仅仅靠实验展示 SOTA 数字；技术深度超越了简单的工程组合。
-- reject_when: 简单的 A+B 缝合（把 ML 方法直接搬到数据库场景，没有任何适配和理论分析）；增量式改进（Delta < 10%）且没有理论解释为什么会有这个提升；缺乏 Insight 的工程堆砌——做了很多实现但看不出核心思想是什么。
-- idea_screening_lens: 评估这个 idea 是否包含一个 non-trivial insight。最好的 VLDB idea 应该能在一句话里传达一个让人"啊哈"的洞察。如果 idea 只是"把 X 技术用到 Y 场景"，除非 X→Y 的迁移本身揭示了深刻的结构性问题，否则不够有趣。
+- focus: Seek a paradigm shift that changes how a class of problems is understood. VLDB is more than an engineering venue: its best papers often introduce abstractions, formalizations, or impossibility results.
+- accept_when: Reframes data-management problems, such as query optimization as reinforcement learning with a convergence proof; establishes non-obvious results, such as the impossibility of sub-O(n) optimization under particular conditions; mathematically explains why a method works beyond reporting SOTA numbers; offers technical depth beyond an engineering combination.
+- reject_when: Simply transfers ML into databases without adaptation or theory; reports incremental gains (Delta < 10%) without explaining them theoretically; accumulates implementation work without a clear central insight.
+- idea_screening_lens: Assess whether the idea has a non-trivial insight that can be expressed as an aha moment in one sentence. Applying technique X to setting Y is insufficient unless the X→Y transfer itself reveals a deep structural issue.
 
 ## Idea Evaluation Adaptation
 
-将 VLDB 的论文审稿标准适配到 idea 筛选时，核心转变如下：
+When adapting VLDB paper-review standards to idea screening, make the following changes:
 
-**核心问题："如果这个 idea 被一个能力合格的系统团队执行，最终产出的论文能否被 VLDB 接收？"**
+**Core question: "If a competent systems team executed this idea, could the resulting paper be accepted at VLDB?"**
 
-VLDB 的 idea 筛选有其独特性，因为 VLDB 是一个 **系统导向** 的会议：
+VLDB idea screening reflects its **systems orientation**:
 
-1. **动机比方法更重要。** 在 VLDB，一个 idea 的价值首先取决于它要解决的问题是否真实、重要、且当前没有好的解决方案。一个解决伪需求的 idea，无论技术多巧妙，都不会被接收。在 idea 阶段，首先验证：这个问题是否真的存在？谁在乎？
+1. **Motivation matters more than method.** First establish that the problem is real, important, and lacks a good current solution. Technical ingenuity cannot make an invented need acceptable. Ask whether the problem exists and who cares.
 
-2. **系统完整性是必需的。** VLDB 不接受"只有一个 idea 没有系统"的论文。在评估 idea 时，要检查：这个 idea 能否被发展成一个完整的系统设计？它是否考虑了 fault tolerance、concurrency control、recovery 等系统层面的问题？
+2. **System completeness is mandatory.** VLDB does not accept an idea without a system. Assess whether it can become a complete design addressing fault tolerance, concurrency control, recovery, and related systems issues.
 
-3. **Revision 机制的影响。** VLDB 允许 revision，这意味着一个 idea 如果核心创新有价值但实验设计有缺陷，仍然有机会。在 idea 筛选时，要区分"idea 本身有问题"和"idea 好但需要更好的实验来支撑"——后者在 VLDB 有更大的生存空间。
+3. **Account for revisions.** A valuable core innovation with flawed experiments can still have a chance. Distinguish a flawed idea from a good idea requiring better empirical support; the latter has more room at VLDB.
 
-4. **工业界可行性是加分项。** VLDB 论文的读者中有大量工业界从业者。一个 idea 如果能明确说出"这在 production 环境下能做到什么"，比纯学术的 idea 有明显优势。在 idea 阶段就评估：这个方案的工程复杂度是否合理？
+4. **Industrial feasibility is an advantage.** Many readers are practitioners. An idea with a concrete account of what it can achieve in production has an advantage over a purely academic proposal. Assess engineering complexity at the idea stage.
 
-5. **Scalability 是底线。** 在 VLDB，任何声称解决数据管理问题的 idea 都必须能 scale。如果一个 idea 在设计层面就暗示了 O(n²) 的复杂度且没有理论上的优化路径，这是致命伤。
+5. **Scalability is a minimum requirement.** Every idea claiming to solve a data-management problem must scale. A design implying O(n²) complexity without a theoretical optimization path has a fatal flaw.
 
-6. **Litmus Test 适配：**
-   - "Breakthrough" idea = 改变了一类数据管理问题的解决范式，即使系统原型粗糙也值得讨论
-   - "Solid" idea = 解决了一个真实问题，有清晰的系统设计路径，执行到位就能中稿
-   - "Incremental" idea = 对现有系统的微改，可能通过 revision track 存活，但需要非常强的实验
-   - "Trivial" idea = 解决伪需求或简单缝合，无论怎么执行都不会被接收
+6. **Adapt the Litmus Test:**
+   - "Breakthrough" idea = changes how a class of data-management problems is solved, meriting discussion even with a rough prototype.
+   - "Solid" idea = solves a real problem with a clear systems design path and can be accepted with good execution.
+   - "Incremental" idea = a small change to an existing system that may survive revision, but requires very strong experiments.
+   - "Trivial" idea = addresses an invented need or merely combines techniques and would not be accepted regardless of execution.

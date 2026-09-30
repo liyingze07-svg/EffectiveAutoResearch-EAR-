@@ -156,10 +156,9 @@ Switching papers means writing a new card. The harness itself does not change.
 - Strategy selection follows a fixed ladder (stop at the first draft that clears the gate). It does not route by paper or concern type.
 - The bundled example is a **rendered contract set**, not a runnable demo: it shows what a campaign's
   contracts look like, but ships no reviews, evidence or drafts.
-- Most documentation inside `harness/` — including the stage prompts, which are executable artifacts — is written in Chinese.
 
 ---
 
 ## License
 
-MIT. See `LICENSE`.
+MIT. Copyright (c) 2026 Yingze Li, Dong Wang, Ben Wu. See [LICENSE](../LICENSE).

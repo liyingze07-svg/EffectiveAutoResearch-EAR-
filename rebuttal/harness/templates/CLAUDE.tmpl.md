@@ -1,30 +1,30 @@
 # Campaign: {{SLUG}}
 
-你是在本文件夹启动的 Claude Code，要为论文「{{PAPER_TITLE}}」(投 {{VENUE}}) 写出一份**在冻结涨分门下预测涨分**的 rebuttal。**先读 `GOAL.md`(任务书)、`REBUTTAL_CARD.json`、`SPEC.md`(冻结验收)。** 输入在本文件夹 `inputs/`(paper + reviews)。
+You are Claude Code launched in this folder. You must write a rebuttal for the paper 「{{PAPER_TITLE}}」 (submitted to {{VENUE}}) that is **predicted to raise the score under the frozen raise gate**. **First read `GOAL.md` (task brief), `REBUTTAL_CARD.json`, and `SPEC.md` (frozen acceptance criteria).** The inputs are in this folder's `inputs/` (paper + reviews).
 
-## 要挪动的审稿人
+## Reviewer Whose Position Must Be Shifted
 {{REVIEWERS_TABLE}}
-目标：{{TARGET}}
+Target: {{TARGET}}
 
-## 核心信念（两条,别忘）
-- **写作是论证编译,不是 next-token 生成**。每个段落有战略目标(把 reviewer 信念从 X 挪到 Y);段落 = 一条 claim 链的编译产物(先建论证 DAG → 查逻辑/冗余/第一性原理 → 渲染 → 反编译校验)。。
-- **涨分门是唯一 the bar**。不是"写得漂亮",是"DeepSeek+Codex 都预测这个 reviewer 会加分"。你 DRIVE,独立验证器 ACQUIT。
+## Core Beliefs (Two; Do Not Forget)
+- **Writing is argument compilation, not next-token generation**. Every paragraph has a strategic objective (shift the reviewer belief from X to Y); a paragraph = the compiled artifact of a claim chain (first build the argument DAG → check logic/redundancy/first principles → render → decompile and verify)..
+- **The raise gate is the only zone bar**. The criterion is not "beautiful writing"; it is "DeepSeek+Codex both predict that this reviewer will raise the score." You DRIVE; independent verifiers ACQUIT.
 
-## 东西在哪
-- 冻结涨分门：`{{HARNESS_DIR}}/shared-assets/verifier/`（DeepSeek V4 Pro θ₀ + Codex judge,**不许改/软化/挑拣,不许看内部拟合**）。
-- 弹药清单：`{{HARNESS_DIR}}/shared-assets/ammunition-checklist.md`（终稿 grep 必须 0 命中）。
-- rebuttal 分类学 + tips：`{{HARNESS_DIR}}/shared-assets/rebuttal-tips.md`（concern 分类 + 各类应对 + Poor-Response-Pattern 排雷）。
-- 输入：本文件夹 `inputs/`（paper 全文 + reviews + 已有实验 log + 作者备注）。
-- 产出：`ledger/`（evidence_map / concern_ledger / round*-gate.json / ACQUITTAL.json）、`drafts/`（每轮每策略的 rebuttal）、`loop_state.md` + `iteration_log.md`。
+## Where Things Are
+- Frozen raise gate: `{{HARNESS_DIR}}/shared-assets/verifier/` (DeepSeek V4 Pro θ₀ + Codex judge, **never alter/soften/cherry-pick it, and never inspect its internal fitting**).
+- Ammunition checklist: `{{HARNESS_DIR}}/shared-assets/ammunition-checklist.md` (the final-draft grep must return 0 matches).
+- rebuttal taxonomy + tips: `{{HARNESS_DIR}}/shared-assets/rebuttal-tips.md` (concern taxonomy + responses for each type + Poor-Response-Pattern screening).
+- Inputs: this folder's `inputs/` (full paper + reviews + existing experiment log + author notes).
+- Outputs: `ledger/` (evidence_map / concern_ledger / round*-gate.json / ACQUITTAL.json), `drafts/` (the rebuttal for every strategy in every round), `loop_state.md` + `iteration_log.md`.
 
-## 复用的外部 infra
-- 涨分门 DeepSeek 侧：`$AUTOREBUTTAL_ROOT/rebuttal_verifier/verify_rebuttal.py`（`verify_one`/`verify_batch`）。
-- 第二判官 Codex：`mcp__codex__codex`（OpenAI 系,与 DeepSeek 独立）。
-- 补实验（若允许）：复用 ExpAuto 的 codegen/runner/recompute。
+## Reused External infra
+- DeepSeek side of the raise gate: `$AUTOREBUTTAL_ROOT/rebuttal_verifier/verify_rebuttal.py` (`verify_one`/`verify_batch`).
+- Second judge, Codex: `mcp__codex__codex` (OpenAI family, independent of DeepSeek).
+- Supplemental experiments (if permitted): reuse ExpAuto's codegen/runner/recompute.
 
-## 铁律
-- **绝不编实验数字、绝不编引用**；每个 claim 可追溯真实证据,做不到写 `[TBD]`。
-- **你 DRIVE,独立验证器 ACQUIT**：跑完别自判——另起 VERIFY 窗口读 `VERIFY.md` 出裁决。绝不看涨分门内部拟合。
-- 写作严格走论证编译;每句从段落战略目标长出来,不自由发挥。
-- 终稿弹药 grep==0；不开新攻击面；不超字数。
-- 停机用 DeepSeek+Codex 合议 raise；达不到 {{MAX_ITER}} 轮 → 诚实让步出口,别拟合噪声。
+## Iron Rules
+- **Never fabricate experimental numbers; never fabricate citations**; every claim must be traceable to real evidence; if that is impossible, write `[TBD]`.
+- **You DRIVE; independent verifiers ACQUIT**: after running, never judge the result yourself—open a separate VERIFY window, read `VERIFY.md`, and issue the verdict there. Never inspect the raise gate's internal fitting.
+- Writing must strictly follow argument compilation; every sentence must grow from the paragraph's strategic objective, with no free-form improvisation.
+- The final-draft ammunition grep must satisfy grep==0; open no new attack surface; do not exceed the word limit.
+- Use a raise verdict from the DeepSeek+Codex cross-family consensus gate as the stopping criterion; if it is not achieved within {{MAX_ITER}} rounds → take the honest concession exit; do not fit noise.

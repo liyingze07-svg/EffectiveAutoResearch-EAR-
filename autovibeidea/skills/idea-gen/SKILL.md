@@ -1,6 +1,6 @@
 ---
 name: idea-gen
-description: Generate and rank research ideas given a broad direction. Brainstorms 8-12 ideas via external LLM, filters by feasibility, novelty, impact, and a 4-dimension researcher-fit framework. Use when user says "找idea", "brainstorm ideas", "generate research ideas", "想点子", "what can we work on", or wants to explore a research area for publishable directions.
+description: Generate and rank research ideas given a broad direction. Brainstorms 8-12 ideas via external LLM, filters by feasibility, novelty, impact, and a 4-dimension researcher-fit framework. Use when user says "find ideas", "brainstorm ideas", "generate research ideas", "come up with ideas", "what can we work on", or wants to explore a research area for publishable directions.
 argument-hint: [research-direction]
 allowed-tools: Bash(*), Read, Write, Grep, Glob, WebSearch, WebFetch, Agent, mcp__codex__codex, mcp__codex__codex-reply
 ---
@@ -17,18 +17,18 @@ This skill is designed to compose with the `/lit-survey` skill (run first for be
 
 ## Constants
 
-- **REVIEWER_MODEL = `gpt-5.4`** — 用于头脑风暴与评审的外部模型。（**模型可用性依赖账号**：用 ChatGPT 账号登录的 codex 只能用账号自带模型，指定不支持的模型会被 400 拒绝。走 `--codex-cli` 时**不要传 `--model`**，让 codex 用默认模型；走 `--gpt-only` 时该模型必须对你的 OpenAI API key 可用。）
+- **REVIEWER_MODEL = `gpt-5.4`** — External model for brainstorming and review. (**Model availability depends on your account**: Codex signed in with a ChatGPT account can use only models available to that account; unsupported models return a 400 error. With `--codex-cli`, **do not pass `--model`**; let Codex use its default model. With `--gpt-only`, the model must be available to your OpenAI API key.)
 - **MIN_IDEAS = 8** — Minimum number of ideas to generate in the brainstorming phase.
 - **MAX_IDEAS = 12** — Maximum number of ideas to generate in the brainstorming phase.
 - **FILTER_THRESHOLD = 12** — Minimum composite score (out of 20) on the Researcher-Fit Filter for an idea to survive.
 - **SURVIVING_TARGET = 4-6** — Target number of ideas that survive all filtering stages.
 
-> **外部模型路径（三选一，按环境变量 `CODEX_MODE` 路由）**
-> - 未设置 → 优先 `mcp__codex__codex` / `mcp__codex__codex-reply`。**注意 codex CLI ≥0.158.0 已移除 `mcp-server` 子命令**，新版环境下这两个工具必然不可用，直接走下面两条之一，不要视为故障。
-> - `CODEX_MODE=codex-cli` → `bash tools/codex_call.sh --thread <thread文件> --output <输出文件> --phase <阶段> --model REVIEWER_MODEL --config '{"model_reasoning_effort":"xhigh"}' --prompt "..."`。新建线程时 thread 文件为空即可，脚本会把 thread_id 写回该文件；后续同线程调用传同一个文件即自动 `resume`。**无需 API key**。
-> - `CODEX_MODE=gpt-api` → `bash tools/gpt_call.sh`（同样的参数形态，需 `OPENAI_API_KEY`）。
+> **External model routes (choose one, routed by `CODEX_MODE`)**
+> - Unset → prefer `mcp__codex__codex` / `mcp__codex__codex-reply`. **Note: Codex CLI ≥0.158.0 removed the `mcp-server` subcommand**. In newer environments these two tools are unavailable; use one of the routes below instead of treating this as an error.
+> - `CODEX_MODE=codex-cli` → `bash tools/codex_call.sh --thread <thread-file> --output <output-file> --phase <phase> --model REVIEWER_MODEL --config '{"model_reasoning_effort":"xhigh"}' --prompt "..."`. For a new thread, leave the thread file empty; the script writes the thread_id into it. Pass the same file on later calls to automatically `resume` that thread. **No API key required**.
+> - `CODEX_MODE=gpt-api` → `bash tools/gpt_call.sh` (same argument format; requires `OPENAI_API_KEY`).
 >
-> 三条路径都不可用时，才降级为本地 agent 自评，并在节点上置 `scores.degraded=true`。
+> Only when all three routes are unavailable, fall back to local-agent self-evaluation and set `scores.degraded=true` on the node.
 
 ## Workflow
 
@@ -100,9 +100,9 @@ Identified gaps (preliminary):
 [paste identified_gaps — either the Gap Identification Matrix or the mini-survey gaps]
 
 High-entropy regions (contested claims under comparable conditions):
-[paste the 高熵区域 section from outputs/ENTROPY_MAP.json, if it exists — each entry with
+[paste the high-entropy regions section from outputs/ENTROPY_MAP.json, if it exists — each entry with
 its score, stance distribution, and papers. Omit this block entirely if the file does not exist.
-NEVER paste claims flagged as 伪冲突嫌疑 (high entropy, low comparability): their disagreement
+NEVER paste claims flagged as suspected spurious conflicts (high entropy, low comparability): their disagreement
 is likely caused by differing datasets/scales/metrics rather than a genuine field-level conflict.]
 
 Failure modes shared across papers:
@@ -226,30 +226,30 @@ Diversity requirements:
 python3 tools/idea_nodes.py init
 ```
 
-为每个 idea 写一个节点到 `outputs/IDEA_NODES.jsonl`（schema 见 `docs/IDEA_NODE_SCHEMA.md`）：
+Write one node per idea to `outputs/IDEA_NODES.jsonl` (schema: `docs/IDEA_NODE_SCHEMA.md`):
 
-- `generator.operator`: 锚定批判的用 `critique_anchored`；由高熵区域派生的用 `entropy_region`；由失效模式派生的用 `failure_mode`
-- `generator.anchor`: 对应的 `CRITIQUE-ID` / `C<k>` / 失效条件键。**不允许为空**
-- `hypothesis.falsifier`: 什么结果会否证这个 idea。写不出来的，说明该 idea 的假设不可否证——退回 Phase 2b 重写
-- `closest_work`: `ref` 与 `delta` 必须成对出现
+- `generator.operator`: Use `critique_anchored` for critique-anchored ideas, `entropy_region` for ideas derived from high-entropy regions, and `failure_mode` for those derived from failure modes.
+- `generator.anchor`: The corresponding `CRITIQUE-ID` / `C<k>` / failure-condition key. **Must not be empty.**
+- `hypothesis.falsifier`: What result would falsify this idea? If this cannot be stated, the hypothesis is not falsifiable; return to Phase 2b and rewrite it.
+- `closest_work`: `ref` and `delta` must appear together.
 
 ```bash
-python3 tools/idea_nodes.py validate      # 必须通过才能进入 Phase 3
+python3 tools/idea_nodes.py validate      # Must pass before Phase 3
 ```
 
-**去重（在过滤之前）**：
+**Deduplication (before filtering)**:
 
 ```bash
 python3 tools/dedup_ideas.py pairs --top 5
 ```
 
-该工具只做**廉价的词法/概念重叠标记**，词法重叠与机制重复两个方向都可能不一致。逐对裁定：如果两个 idea 是同一机制的不同表述，执行
+This tool only provides **inexpensive lexical/concept-overlap flags**; lexical overlap and mechanistic duplication can disagree in either direction. Adjudicate each pair: if two ideas express the same mechanism differently, run
 
 ```bash
-python3 tools/dedup_ideas.py mark IDEA-0X IDEA-0Y --reason "裁定理由"
+python3 tools/dedup_ideas.py mark IDEA-0X IDEA-0Y --reason "Adjudication rationale"
 ```
 
-被标记方进入 `status=pruned` / `prune.mask=duplicate`，**不删除**——剪枝记录本身是产物。若裁定为不同机制，不做任何操作，并在 `outputs/PIPELINE_LOG.md` 记一行"已复核 X 组候选重复对，判定为不同机制"。
+The marked idea receives `status=pruned` / `prune.mask=duplicate`; **do not delete it**. Pruning records are themselves outputs. If the mechanisms differ, leave the nodes unchanged and record "Reviewed X candidate duplicate pairs; judged to use distinct mechanisms" in `outputs/PIPELINE_LOG.md`.
 
 **Phase 2b Codex MCP failure handling**: If the reply call fails (or no threadId available from Phase 2a fallback):
 1. The local agent brainstorms directly using the Phase 2b prompt structure and the critique manifest from `outputs/CRITICAL_ANALYSIS.md`
@@ -350,32 +350,32 @@ For each surviving idea, check:
 - If an idea has 2+ flags, add a strong caution note
 - Display flags prominently in the output
 
-### Phase 5.9: 同步过滤结果到节点文件
+### Phase 5.9: Synchronize Filtering Results to the Node File
 
-每个在 Phase 3-5 被淘汰的 idea，都要更新其节点，使剪枝原因可统计：
+Update the node of every idea eliminated in Phases 3-5 so pruning reasons can be counted:
 
 ```bash
 python3 tools/idea_nodes.py update IDEA-0X --set prune.pruned=true \
-    --set prune.mask=<mask> --set 'prune.reason=<一句话>'
+    --set prune.mask=<mask> --set 'prune.reason=<one sentence>'
 ```
 
-`mask` 取值与淘汰阶段的对应关系：
+Map elimination reasons to `mask` values as follows:
 
-| 淘汰原因 | mask |
+| Elimination Reason | mask |
 |---|---|
-| 查新发现撞车 | `collision` |
+| Novelty search finds prior-work collision | `collision` |
 | Researcher-Fit < 12/20 | `fit_below_threshold` |
-| 可行性不足 / 理论 claim 验不起 | `not_feasible` |
-| 与其他 idea 机制重复 | `duplicate` |
-| 同一批判下 idea 过多（>3） | `critique_saturated` |
+| Insufficient feasibility / theory claim too costly to validate | `not_feasible` |
+| Mechanistically duplicates another idea | `duplicate` |
+| Too many ideas anchored to one critique (>3) | `critique_saturated` |
 
-存活 idea 写入 `scores.researcher_fit`，并**必须**同时写 `scores.source`（哪个模型给的分）与 `scores.degraded`（外部模型是否降级为自评）。最后：
+For surviving ideas, write `scores.researcher_fit` and **always** write `scores.source` (the scoring model) and `scores.degraded` (whether the external model fell back to self-evaluation). Finally:
 
 ```bash
 python3 tools/idea_nodes.py validate && python3 tools/idea_nodes.py stats
 ```
 
-`stats` 若提示"单个证据锚定超过 3 个 idea"，说明多样性约束已被突破，在 `PIPELINE_LOG.md` 中记录。
+If `stats` reports "more than 3 ideas anchored to a single evidence item", the diversity constraint has been exceeded; record this in `PIPELINE_LOG.md`.
 
 ### Phase 6: Output
 
@@ -512,7 +512,7 @@ This file contains the filtered, scored, and ranked ideas — the actionable out
 
 ## Key Rules
 
-1. **所有输出使用中文。** IDEAS_RAW.md、IDEAS_FILTERED.md 中的 idea 描述、评估理由、过滤原因均使用中文撰写。Idea title、论文标题、技术术语可保留英文。
+1. **Write all output in English.** Write idea descriptions, evaluation rationales, and filtering reasons in IDEAS_RAW.md and IDEAS_FILTERED.md in English, including idea titles and technical terminology.
 2. **The user provides a DIRECTION, not an idea.** Your job is to generate the ideas. Do not ask the user "what idea do you want to explore?" — that is your task.
 
 2. **Quantity first, quality second.** Brainstorm broadly in Phase 2, then filter ruthlessly in Phases 3-5. The external LLM should generate freely without over-constraining.

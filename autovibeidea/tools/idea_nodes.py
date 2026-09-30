@@ -1,16 +1,16 @@
 #!/usr/bin/env python3
-"""Manage outputs/IDEA_NODES.jsonl — idea 作为可审查对象。
+"""Manage outputs/IDEA_NODES.jsonl — ideas as auditable objects.
 
-Schema 说明见 docs/IDEA_NODE_SCHEMA.md。
+See docs/IDEA_NODE_SCHEMA.md for the schema.
 
-命令
+Commands
 ----
-init      建空文件（已存在则不动）
-add       追加一个节点（--file node.json 或 --json '{...}'），写入前校验
-update    改字段：--set status=pruned --set prune.mask=collision
-validate  全量校验，返回非 0 表示有问题
-stats     状态 / 算子 / mask / 成本汇总
-tree      打印派生谱系
+init      Create an empty file (leave existing files untouched)
+add       Append a node (--file node.json or --json '{...}'), validating before writing
+update    Update fields: --set status=pruned --set prune.mask=collision
+validate  Validate all nodes; a nonzero exit code indicates problems
+stats     Summarize status / operators / masks / cost
+tree      Print derivation lineage
 """
 
 from __future__ import annotations
@@ -47,7 +47,7 @@ def load(path: Path) -> list[dict]:
         try:
             nodes.append(json.loads(line))
         except json.JSONDecodeError as exc:
-            raise SystemExit(f"{path}:{lineno} JSON 解析失败: {exc}")
+            raise SystemExit(f"{path}:{lineno} JSON parsing failed: {exc}")
     return nodes
 
 
@@ -64,57 +64,57 @@ def validate_node(node: dict, known_ids: set[str]) -> list[str]:
     nid = node.get("id", "<no id>")
     for field in REQUIRED:
         if not node.get(field):
-            errs.append(f"{nid}: 缺少必填字段 {field}")
+            errs.append(f"{nid}: Missing required field {field}")
 
     if node.get("status") not in STATUSES:
-        errs.append(f"{nid}: status={node.get('status')!r} 不在 {sorted(STATUSES)}")
+        errs.append(f"{nid}: status={node.get('status')!r} not in {sorted(STATUSES)}")
 
     gen = node.get("generator") or {}
     if gen and gen.get("operator") not in OPERATORS:
-        errs.append(f"{nid}: generator.operator={gen.get('operator')!r} 不在 {sorted(OPERATORS)}")
+        errs.append(f"{nid}: generator.operator={gen.get('operator')!r} not in {sorted(OPERATORS)}")
     if gen and not gen.get("anchor"):
-        errs.append(f"{nid}: generator.anchor 为空 — 每个 idea 必须锚定到具体证据 ID")
+        errs.append(f"{nid}: generator.anchor is empty; each idea must be anchored to specific evidence IDs")
 
     parent = node.get("parent_id")
     if parent and parent not in known_ids:
-        errs.append(f"{nid}: parent_id={parent!r} 指向不存在的节点")
+        errs.append(f"{nid}: parent_id={parent!r} points to a nonexistent node")
     if parent == nid:
-        errs.append(f"{nid}: parent_id 不能指向自身")
+        errs.append(f"{nid}: parent_id must not refer to itself")
 
     scores = node.get("scores") or {}
     if scores:
         if not scores.get("source"):
-            errs.append(f"{nid}: scores 存在但缺 scores.source — 分数必须记录由谁给出")
+            errs.append(f"{nid}: scores exists but scores.source is missing; record who produced the scores")
         if "degraded" not in scores:
-            errs.append(f"{nid}: scores 存在但缺 scores.degraded — 必须记录外部模型是否降级为自评")
+            errs.append(f"{nid}: scores exists but scores.degraded is missing; record whether external evaluation fell back to self-evaluation")
         for key in ("novelty", "venue", "strategic", "feasibility", "composite"):
             v = scores.get(key)
             if v is not None and not (0 <= float(v) <= 10):
-                errs.append(f"{nid}: scores.{key}={v} 超出 0-10")
+                errs.append(f"{nid}: scores.{key}={v} outside 0-10")
         rf = scores.get("researcher_fit")
         if rf is not None and not (4 <= float(rf) <= 20):
-            errs.append(f"{nid}: scores.researcher_fit={rf} 超出 4-20")
+            errs.append(f"{nid}: scores.researcher_fit={rf} outside 4-20")
 
     prune = node.get("prune") or {}
     if prune.get("pruned"):
         if prune.get("mask") not in MASKS:
-            errs.append(f"{nid}: prune.mask={prune.get('mask')!r} 不在 {sorted(MASKS)}")
+            errs.append(f"{nid}: prune.mask={prune.get('mask')!r} not in {sorted(MASKS)}")
         if node.get("status") != "pruned":
-            errs.append(f"{nid}: prune.pruned=true 但 status={node.get('status')!r}（应为 pruned）")
+            errs.append(f"{nid}: prune.pruned=true but status={node.get('status')!r} (expected pruned)")
     if node.get("status") == "pruned" and not prune.get("pruned"):
-        errs.append(f"{nid}: status=pruned 但 prune.pruned 未置 true")
+        errs.append(f"{nid}: status=pruned but prune.pruned is not true")
 
     cw = node.get("closest_work") or {}
     if cw.get("ref") and not cw.get("delta"):
-        errs.append(f"{nid}: closest_work 有 ref 但无 delta — 查新未完成")
+        errs.append(f"{nid}: closest_work has ref but no delta; novelty verification is incomplete")
 
     hyp = node.get("hypothesis") or {}
     if hyp.get("core") and not hyp.get("falsifier"):
-        errs.append(f"{nid}: hypothesis.core 有但 falsifier 为空 — 假设不可否证")
+        errs.append(f"{nid}: hypothesis.core exists but falsifier is empty; the hypothesis is not falsifiable")
 
     for i, claim in enumerate(node.get("theory_claims") or []):
         if claim.get("feasibility") not in FEASIBILITY:
-            errs.append(f"{nid}: theory_claims[{i}].feasibility={claim.get('feasibility')!r} 非法")
+            errs.append(f"{nid}: theory_claims[{i}].feasibility={claim.get('feasibility')!r} invalid")
     return errs
 
 
@@ -137,17 +137,17 @@ def _set_path(node: dict, dotted: str, raw: str) -> None:
     for k in keys[:-1]:
         cur = cur.setdefault(k, {})
         if not isinstance(cur, dict):
-            raise SystemExit(f"字段 {dotted} 的中间层不是对象")
+            raise SystemExit(f"An intermediate component of field {dotted} is not an object")
     cur[keys[-1]] = value
 
 
 def cmd_init(args) -> int:
     path = Path(args.path)
     if path.exists():
-        print(f"{path} 已存在，未改动（{len(load(path))} 个节点）")
+        print(f"{path} already exists; unchanged ({len(load(path))} nodes)")
         return 0
     save(path, [])
-    print(f"已创建 {path}")
+    print(f"Created {path}")
     return 0
 
 
@@ -162,7 +162,7 @@ def cmd_add(args) -> int:
         node.setdefault("created_at", _now())
         node["updated_at"] = _now()
         if node.get("id") in known:
-            problems.append(f"{node.get('id')}: id 重复")
+            problems.append(f"{node.get('id')}: duplicate id")
             continue
         errs = validate_node(node, known | {n.get("id") for n in incoming})
         problems.extend(errs)
@@ -170,12 +170,12 @@ def cmd_add(args) -> int:
             nodes.append(node)
             known.add(node.get("id"))
     if problems:
-        print("校验失败，未写入：", file=sys.stderr)
+        print("Validation failed; nothing written:", file=sys.stderr)
         for p in problems:
             print(f"  - {p}", file=sys.stderr)
         return 1
     save(path, nodes)
-    print(f"已追加 {len(incoming)} 个节点，共 {len(nodes)}")
+    print(f"Appended {len(incoming)} nodes; {len(nodes)} total")
     return 0
 
 
@@ -184,26 +184,26 @@ def cmd_update(args) -> int:
     nodes = load(path)
     target = next((n for n in nodes if n.get("id") == args.id), None)
     if target is None:
-        print(f"未找到节点 {args.id}", file=sys.stderr)
+        print(f"Node {args.id} not found", file=sys.stderr)
         return 1
     for assignment in args.set:
         if "=" not in assignment:
-            print(f"--set 需形如 field=value，收到 {assignment!r}", file=sys.stderr)
+            print(f"--set requires field=value; received {assignment!r}", file=sys.stderr)
             return 1
         key, raw = assignment.split("=", 1)
         _set_path(target, key, raw)
-    # 剪枝时自动保持 status 与 prune.pruned 一致
+    # Keep status and prune.pruned consistent when pruning
     if (target.get("prune") or {}).get("pruned"):
         target["status"] = "pruned"
     target["updated_at"] = _now()
     errs = validate_node(target, {n.get("id") for n in nodes})
     if errs:
-        print("更新后校验失败，未写入：", file=sys.stderr)
+        print("Validation failed after update; nothing written:", file=sys.stderr)
         for e in errs:
             print(f"  - {e}", file=sys.stderr)
         return 1
     save(path, nodes)
-    print(f"已更新 {args.id}")
+    print(f"Updated {args.id}")
     return 0
 
 
@@ -211,23 +211,23 @@ def cmd_validate(args) -> int:
     path = Path(args.path)
     nodes = load(path)
     ids = [n.get("id") for n in nodes]
-    problems = [f"id 重复: {i}" for i, c in Counter(ids).items() if c > 1]
+    problems = [f"duplicate id: {i}" for i, c in Counter(ids).items() if c > 1]
     known = set(ids)
     for node in nodes:
         problems.extend(validate_node(node, known))
     if problems:
-        print(f"❌ {len(problems)} 个问题：")
+        print(f"❌ {len(problems)} problems:")
         for p in problems:
             print(f"  - {p}")
         return 1
-    print(f"✅ {len(nodes)} 个节点全部通过校验")
+    print(f"✅ All {len(nodes)} nodes passed validation")
     return 0
 
 
 def cmd_stats(args) -> int:
     nodes = load(Path(args.path))
     if not nodes:
-        print("无节点")
+        print("No nodes")
         return 0
     status = Counter(n.get("status") for n in nodes)
     ops = Counter((n.get("generator") or {}).get("operator") for n in nodes)
@@ -240,23 +240,23 @@ def cmd_stats(args) -> int:
         for k, v in (n.get("cost") or {}).items():
             cost[k] += float(v or 0)
 
-    print(f"节点总数: {len(nodes)}")
-    print("状态分布: " + ", ".join(f"{k}={v}" for k, v in status.most_common()))
-    print("生成算子: " + ", ".join(f"{k}={v}" for k, v in ops.most_common()))
+    print(f"Total nodes: {len(nodes)}")
+    print("Status distribution: " + ", ".join(f"{k}={v}" for k, v in status.most_common()))
+    print("Generation operators: " + ", ".join(f"{k}={v}" for k, v in ops.most_common()))
     if masks:
-        print("剪枝 mask: " + ", ".join(f"{k}={v}" for k, v in masks.most_common()))
+        print("Pruning masks: " + ", ".join(f"{k}={v}" for k, v in masks.most_common()))
     if anchors:
         top = ", ".join(f"{k}×{v}" for k, v in anchors.most_common(5))
-        print(f"锚定证据 (top5): {top}")
+        print(f"Evidence anchors (top5): {top}")
         sat = [k for k, v in anchors.items() if v > 3]
         if sat:
-            print(f"  ⚠️ 单个证据锚定超过 3 个 idea: {sat} — 多样性约束已被突破")
+            print(f"  ⚠️ More than 3 ideas share a single evidence anchor: {sat}; the diversity constraint has been exceeded")
     if scored:
-        print(f"composite: n={len(scored)} 均值={sum(scored)/len(scored):.2f} 最高={max(scored):.2f}")
+        print(f"composite: n={len(scored)} mean={sum(scored)/len(scored):.2f} max={max(scored):.2f}")
     if degraded:
-        print(f"⚠️ {degraded}/{len(nodes)} 个节点的分数来自降级自评，与正常评分不可比")
+        print(f"⚠️ {degraded}/{len(nodes)} nodes were scored by fallback self-evaluation and are not comparable to standard scores")
     if cost:
-        print("累计成本: " + ", ".join(f"{k}={v:g}" for k, v in sorted(cost.items())))
+        print("Cumulative cost: " + ", ".join(f"{k}={v:g}" for k, v in sorted(cost.items())))
     return 0
 
 
@@ -270,7 +270,7 @@ def cmd_tree(args) -> int:
         for n in children.get(parent, []):
             mark = ""
             if n.get("status") == "pruned":
-                mark = f"  [剪枝: {(n.get('prune') or {}).get('mask')}]"
+                mark = f"  [Pruned: {(n.get('prune') or {}).get('mask')}]"
             comp = (n.get("scores") or {}).get("composite")
             score = f"  composite={comp}" if comp is not None else ""
             print(f"{'  ' * depth}{'└─ ' if depth else ''}{n.get('id')} {n.get('title', '')[:56]}{score}{mark}")
@@ -282,7 +282,7 @@ def cmd_tree(args) -> int:
 
 def main() -> int:
     ap = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
-    ap.add_argument("--path", default=str(DEFAULT_PATH), help=f"默认 {DEFAULT_PATH}")
+    ap.add_argument("--path", default=str(DEFAULT_PATH), help=f"Default: {DEFAULT_PATH}")
     sub = ap.add_subparsers(dest="cmd", required=True)
     sub.add_parser("init").set_defaults(func=cmd_init)
     p_add = sub.add_parser("add")

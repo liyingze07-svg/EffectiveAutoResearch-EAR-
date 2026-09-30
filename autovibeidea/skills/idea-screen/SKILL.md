@@ -1,6 +1,6 @@
 ---
 name: idea-screen
-description: "Multi-dimensional screening of research ideas: novelty check + venue reviewer simulation + strategic fit assessment. Use when user says \"screen ideas\", \"evaluate ideas\", \"review ideas\", \"novelty check\", \"查新\", \"筛选idea\", or wants to rank and filter research ideas before committing to execution."
+description: "Multi-dimensional screening of research ideas: novelty check + venue reviewer simulation + strategic fit assessment. Use when user says \"screen ideas\", \"evaluate ideas\", \"review ideas\", \"novelty check\", \"check prior work\", \"filter ideas\", or wants to rank and filter research ideas before committing to execution."
 argument-hint: "[ideas-file-or-description] [-- venue: ICML|VLDB|NeurIPS|all]"
 allowed-tools: Bash(*), Read, Write, Grep, Glob, WebSearch, WebFetch, Agent, mcp__codex__codex, mcp__codex__codex-reply
 ---
@@ -11,18 +11,18 @@ Screen and rank research ideas: **$ARGUMENTS**
 
 ## Constants
 
-- **REVIEWER_MODEL** = `gpt-5.4` — 外部评审模型。（**模型可用性依赖账号**：用 ChatGPT 账号登录的 codex 只能用账号自带模型，指定不支持的模型会被 400 拒绝。走 `--codex-cli` 时**不要传 `--model`**，让 codex 用默认模型；走 `--gpt-only` 时该模型必须对你的 OpenAI API key 可用。）
+- **REVIEWER_MODEL** = `gpt-5.4` — External review model. (**Model availability depends on your account**: Codex signed in with a ChatGPT account can use only models available to that account; unsupported models return a 400 error. With `--codex-cli`, **do not pass `--model`**; let Codex use its default model. With `--gpt-only`, the model must be available to your OpenAI API key.)
 - **DEFAULT_VENUE** = `ICML` — Default target venue when none is specified.
 - **COMPOSITE_WEIGHTS** = `{novelty: 0.25, venue: 0.35, strategic: 0.20, feasibility: 0.20}` — Weights for the composite score. Overridable via `-- weights:`.
 - **PROCEED_THRESHOLD** = `7.0` — Composite score at or above this triggers a PROCEED recommendation.
 - **CAUTION_THRESHOLD** = `5.0` — Composite score between this and PROCEED_THRESHOLD triggers PROCEED WITH CAUTION. Below this triggers ABANDON.
 
-> **外部模型路径（三选一，按环境变量 `CODEX_MODE` 路由）**
-> - 未设置 → 优先 `mcp__codex__codex` / `mcp__codex__codex-reply`。**注意 codex CLI ≥0.158.0 已移除 `mcp-server` 子命令**，新版环境下这两个工具必然不可用，直接走下面两条之一，不要视为故障。
-> - `CODEX_MODE=codex-cli` → `bash tools/codex_call.sh --thread <thread文件> --output <输出文件> --phase <阶段> --model REVIEWER_MODEL --config '{"model_reasoning_effort":"xhigh"}' --prompt "..."`。新建线程时 thread 文件为空即可，脚本会把 thread_id 写回该文件；后续同线程调用传同一个文件即自动 `resume`。**无需 API key**。
-> - `CODEX_MODE=gpt-api` → `bash tools/gpt_call.sh`（同样的参数形态，需 `OPENAI_API_KEY`）。
+> **External model routes (choose one, routed by `CODEX_MODE`)**
+> - Unset → prefer `mcp__codex__codex` / `mcp__codex__codex-reply`. **Note: Codex CLI ≥0.158.0 removed the `mcp-server` subcommand**. In newer environments these two tools are unavailable; use one of the routes below instead of treating this as an error.
+> - `CODEX_MODE=codex-cli` → `bash tools/codex_call.sh --thread <thread-file> --output <output-file> --phase <phase> --model REVIEWER_MODEL --config '{"model_reasoning_effort":"xhigh"}' --prompt "..."`. For a new thread, leave the thread file empty; the script writes the thread_id into it. Pass the same file on later calls to automatically `resume` that thread. **No API key required**.
+> - `CODEX_MODE=gpt-api` → `bash tools/gpt_call.sh` (same argument format; requires `OPENAI_API_KEY`).
 >
-> 三条路径都不可用时，才降级为本地 agent 自评，并在节点上置 `scores.degraded=true`。
+> Only when all three routes are unavailable, fall back to local-agent self-evaluation and set `scores.degraded=true` on the node.
 
 ## Overview
 
@@ -196,15 +196,15 @@ mcp__codex__codex:
   model: REVIEWER_MODEL
   config: {"model_reasoning_effort": "xhigh"}
   prompt: |
-    你将模拟 [VENUE_NAME] ([VENUE_FULL_NAME]) 的审稿委员会。
+    You will simulate the review committee of [VENUE_NAME] ([VENUE_FULL_NAME]).
 
-    你评审的是一个**研究 Idea**（不是完成的论文）。核心问题是：
-    "如果这个 idea 被正确执行，产出的论文能发 [VENUE_NAME] 吗？"
+    You are reviewing a **research idea** (not a completed paper). The key question is:
+    "If this idea is executed correctly, could the resulting paper be accepted at [VENUE_NAME]?"
 
-    ## 评审校准标准
+    ## Review Calibration Criteria
     [INJECT CALIBRATION TIERS FROM VENUE PROFILE]
 
-    ## 审稿人画像
+    ## Reviewer Profiles
     [INJECT REVIEWER PROFILES FROM VENUE PROFILE]
 
     === IDEA ===
@@ -217,19 +217,19 @@ mcp__codex__codex:
     Novelty Score: [X/10, from Module A]
     === END IDEA ===
 
-    请为每位审稿人输出：
-    1. **校准层级**: Tier 1/2/3，附理由
-    2. **Strengths**: 从该审稿人视角出发的优点（至少 2 个具体点）
-    3. **Critical Weaknesses**: 2-3 个具体、可操作的弱点（不要泛泛而谈）
-    4. **Verdict**: [从 verdict_options 中选择: Strong Reject / Reject / Weak Reject / Weak Accept / Accept / Strong Accept]
-    5. **"怎样才能让我给 Accept"**: 1-2 句话，告诉作者具体需要什么
+    For each reviewer, provide:
+    1. **Calibration Tier**: Tier 1/2/3, with justification
+    2. **Strengths**: At least 2 specific strengths from that reviewer's perspective
+    3. **Critical Weaknesses**: 2-3 specific, actionable weaknesses (not generic remarks)
+    4. **Verdict**: [Choose from verdict_options: Strong Reject / Reject / Weak Reject / Weak Accept / Accept / Strong Accept]
+    5. **"What would make me accept"**: 1-2 sentences telling the authors exactly what is needed
 
-    然后写 **Meta Review**:
-    - 审稿人之间的核心争议（如果有）—— 审稿人之间应该有分歧，不要三人一致
-    - 最终裁决: [从 verdict_options 选择]
-    - 如果拒稿: 这个 idea 适合什么级别的会议？（e.g., "适合 AAAI/IJCAI" 或 "建议转投 Workshop"）
-    - 如果接收: 怎样才能冲击 Best Paper?
-    - 执行中的 Top 3 风险（技术风险、实验风险、定位风险）
+    Then write a **Meta Review**:
+    - Main disagreements among reviewers (if any); reviewers should disagree, not give three identical opinions
+    - Final verdict: [Choose from verdict_options]
+    - If rejected: What venue tier would suit this idea? (e.g., "Suitable for AAAI/IJCAI" or "Consider a workshop")
+    - If accepted: What would make it a Best Paper contender?
+    - Top 3 execution risks (technical, experimental, positioning)
 ```
 
 > **GPT-only mode**: If `CODEX_MODE=gpt-api` is set in the environment, substitute the `mcp__codex__codex` call above with:
@@ -411,9 +411,9 @@ mkdir -p outputs
 ```
 
 
-### 同步到 `outputs/IDEA_NODES.jsonl`
+### Synchronize to `outputs/IDEA_NODES.jsonl`
 
-每个被筛选的 idea，把各维分数写回其节点（schema 见 `docs/IDEA_NODE_SCHEMA.md`）：
+For each screened idea, write dimension scores back to its node (schema: `docs/IDEA_NODE_SCHEMA.md`):
 
 ```bash
 python3 tools/idea_nodes.py update IDEA-0X \
@@ -424,16 +424,16 @@ python3 tools/idea_nodes.py update IDEA-0X \
     --set scores.degraded=<true|false>
 ```
 
-**`scores.source` 与 `scores.degraded` 是必填项**：外部模型不可用时的自评分（含 Module B 的 0.8x 惩罚）与正常评分不可比，缺少来源标注的分数无法解释。
+**`scores.source` and `scores.degraded` are required**: Self-evaluation when the external model is unavailable (including Module B's 0.8x penalty) is not comparable to normal scoring. Scores without provenance cannot be interpreted.
 
-被判为 ABANDON 的 idea：
+For ideas judged ABANDON:
 
 ```bash
 python3 tools/idea_nodes.py update IDEA-0X --set prune.pruned=true \
-    --set prune.mask=collision --set 'prune.reason=Module A 发现 <论文> 已做同一机制'
+    --set prune.mask=collision --set 'prune.reason=Module A found that <paper> already uses the same mechanism'
 ```
 
-`mask` 按主导原因选择：查新撞车 `collision`；可行性/理论验证代价 `not_feasible`；其他沿用 `docs/IDEA_NODE_SCHEMA.md` 的枚举。**被剪节点保留在文件中。**
+Choose `mask` by the dominant reason: prior-work collision → `collision`; feasibility/theory-validation cost → `not_feasible`; otherwise use the enums in `docs/IDEA_NODE_SCHEMA.md`. **Keep pruned nodes in the file.**
 
 ### `outputs/SCREENING_REPORT.md`
 
@@ -568,7 +568,7 @@ SCREENING_EOF
 
 ## Key Rules
 
-1. **所有输出使用中文。** SCREENING_REPORT.md、SCREENING_RANKED.md 中的新颖性评估、审稿人评语、战略分析、Meta Review 均使用中文撰写。论文标题、技术术语可保留英文。审稿人模拟的 prompt 可以用中文发送给外部 LLM。
+1. **Write all output in English.** Write novelty assessments, reviewer comments, strategic analysis, and meta-reviews in SCREENING_REPORT.md and SCREENING_RANKED.md in English. Send reviewer-simulation prompts to the external LLM in English.
 2. **Module A must complete before Module B** for each idea — the novelty score and closest prior work are injected into the venue simulation prompt.
 2. **Module C has no dependencies** on A or B — it can run concurrently with Module B.
 3. **Be BRUTALLY honest in novelty assessment.** False novelty claims waste months. If someone has done this, say so plainly.

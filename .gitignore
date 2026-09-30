@@ -1,4 +1,4 @@
-# 运行产出（含未发表的研究内容，不入库）
+# Runtime outputs (including unpublished research content; do not commit)
 outputs/
 outputs_*/
 refine-logs/
@@ -7,7 +7,7 @@ logx/
 *.log
 *.pid
 
-# 密钥与本地配置
+# Secrets and local configuration
 .openai_key
 .env
 .claude/settings.local.json
@@ -17,27 +17,27 @@ __pycache__/
 *.pyc
 .pytest_cache/
 
-# ── 内部专有，绝不入库 ──
-# 含明文凭证 / 内网拓扑的 infra skill
+# ── Internal proprietary material; never commit ──
+# Infrastructure skills containing plaintext credentials / internal-network topology
 skills/*-infra/
 skills/bitex-bibtex-a6k/
 skills/domestic-gpu/
 autovibeidea/skills/*-infra/
 autovibeidea/skills/bitex-bibtex-a6k/
 autovibeidea/skills/domestic-gpu/
-# 具名方法论 / 未脱敏内容
+# Named methodologies / non-sanitized content
 skills/he-rebuttal/
 autovibeidea/skills/he-rebuttal/
 skills/idea-filter/idea-filter.md
 autovibeidea/skills/idea-filter/idea-filter.md
 docs/REFINE_SCOPE_*
 autovibeidea/docs/REFINE_SCOPE_*
-# 内部工作目录残留
+# Residual internal working directories
 release/
-# 内部任务清单（含真实在研方向）；发布版的示例清单单独放行
+# Internal task lists (containing real active research directions); explicitly allow the public example list
 batch_tasks/
 !autovibeidea/batch_tasks/
 !autovibeidea/batch_tasks/example.txt
 
-# 内部设计文档（不对外）
+# Internal design documents (not public)
 DESIGN_RATIONALE.md

@@ -1,27 +1,27 @@
 #!/bin/bash
-# tools/gpt_call.sh — OpenAI API curl 封装，兼容 mcp__codex__codex 调用语义
+# tools/gpt_call.sh — OpenAI API curl wrapper compatible with mcp__codex__codex call semantics
 #
-# 用法：
-#   新 thread:   bash tools/gpt_call.sh --model MODEL --prompt "..." [--output FILE]
-#   续 thread:   bash tools/gpt_call.sh --model MODEL --prompt "..." --thread FILE [--output FILE]
-#   配置:        bash tools/gpt_call.sh --model MODEL --config '{"model_reasoning_effort":"xhigh"}' --prompt "..."
+# Usage:
+#   New thread:   bash tools/gpt_call.sh --model MODEL --prompt "..." [--output FILE]
+#   Resume thread:   bash tools/gpt_call.sh --model MODEL --prompt "..." --thread FILE [--output FILE]
+#   Configuration:        bash tools/gpt_call.sh --model MODEL --config '{"model_reasoning_effort":"xhigh"}' --prompt "..."
 #
-# Thread 语义：
-#   --thread FILE 指定一个 JSON 文件路径，存储完整对话历史（messages 数组）。
-#   首次调用不传 --thread，脚本自动在 /tmp/ 创建线程文件，并将路径输出到 stderr。
-#   续写时传入相同的文件路径，脚本追加消息后再次调用 API。
-#   这与 mcp__codex__codex-reply 的 threadId 语义等价。
+# Thread semantics:
+#   --thread FILE specifies a JSON file containing the complete conversation history (messages array).
+#   On the first call, omit --thread; the script creates a thread file in /tmp/ and prints its path to stderr.
+#   To continue, pass the same path; the script appends messages and calls the API again.
+#   This is equivalent to the threadId semantics of mcp__codex__codex-reply.
 #
 # API Key：
-#   优先级：$OPENAI_API_KEY 环境变量 > ~/.openai_key 文件内容
+#   Precedence: $OPENAI_API_KEY environment variable > contents of ~/.openai_key
 #
-# 退出码：0=成功  1=API 错误  2=配置错误
+# Exit codes: 0=success  1=API error  2=configuration error
 #
-# 依赖：curl, python3（用于 JSON 解析）
+# Dependencies: curl, python3 (for JSON parsing)
 
 set -e
 
-# ---------- 参数解析 ----------
+# ---------- Argument parsing ----------
 MODEL="gpt-4o"
 PROMPT=""
 THREAD_FILE=""
@@ -39,29 +39,29 @@ while [[ $# -gt 0 ]]; do
         --output)   OUTPUT_FILE="$2"; shift 2 ;;
         --config)   CONFIG="$2";      shift 2 ;;
         *)
-            echo "未知参数: $1" >&2
-            echo "用法: gpt_call.sh --model M --prompt \"...\" [--thread FILE] [--output FILE] [--config JSON]" >&2
+            echo "Unknown argument: $1" >&2
+            echo "Usage: gpt_call.sh --model M --prompt \"...\" [--thread FILE] [--output FILE] [--config JSON]" >&2
             exit 2
             ;;
     esac
 done
 
 if [ -z "$PROMPT" ]; then
-    echo "错误: --prompt 参数必填" >&2
+    echo "Error: --prompt is required" >&2
     exit 2
 fi
 
-# ---------- API Key 加载 ----------
+# ---------- Load API key ----------
 API_KEY="${OPENAI_API_KEY:-}"
 if [ -z "$API_KEY" ] && [ -f "$HOME/.openai_key" ]; then
     API_KEY=$(cat "$HOME/.openai_key" | tr -d '[:space:]')
 fi
 if [ -z "$API_KEY" ]; then
-    echo "错误: 未找到 OpenAI API Key。请设置 OPENAI_API_KEY 环境变量或将 key 写入 ~/.openai_key" >&2
+    echo "Error: OpenAI API key not found. Set OPENAI_API_KEY or save the key in ~/.openai_key" >&2
     exit 2
 fi
 
-# ---------- 解析 config 中的 reasoning_effort ----------
+# ---------- Parse reasoning_effort from config ----------
 REASONING_EFFORT=$(python3 -c "
 import json, sys
 try:
@@ -73,7 +73,7 @@ except:
     pass
 " 2>/dev/null || true)
 
-# ---------- Thread 文件初始化 ----------
+# ---------- Initialize thread file ----------
 NEW_THREAD=false
 if [ -z "$THREAD_FILE" ]; then
     THREAD_FILE=$(mktemp /tmp/gpt_thread_XXXXXX.json)
@@ -85,8 +85,8 @@ if [ ! -f "$THREAD_FILE" ]; then
     echo "[]" > "$THREAD_FILE"
 fi
 
-# ---------- 构建消息数组 ----------
-# 用 python3 安全地追加 user 消息
+# ---------- Build message array ----------
+# Append the user message safely with python3
 UPDATED_MESSAGES=$(python3 << PYEOF
 import json, sys
 
@@ -99,7 +99,7 @@ print(json.dumps(messages))
 PYEOF
 )
 
-# ---------- 构建 API 请求 body ----------
+# ---------- Build API request body ----------
 REQUEST_BODY=$(python3 << PYEOF
 import json
 
@@ -110,7 +110,7 @@ body = {
     "max_completion_tokens": 16384
 }
 
-# 若 reasoning_effort 非空且模型支持（o1/o3/o4 系列），追加参数
+# If reasoning_effort is nonempty and supported by the model (o1/o3/o4 families), append it
 effort = "$REASONING_EFFORT"
 if effort and any(m in "$MODEL" for m in ["o1", "o3", "o4"]):
     body["reasoning_effort"] = effort
@@ -119,7 +119,7 @@ print(json.dumps(body))
 PYEOF
 )
 
-# ---------- 调用 OpenAI API ----------
+# ---------- Call OpenAI API ----------
 _T0=$(date +%s)
 _RESP_TMP=$(mktemp /tmp/gpt_resp_XXXXXX.json)
 curl -s -X POST "https://api.openai.com/v1/chat/completions" \
@@ -129,14 +129,14 @@ curl -s -X POST "https://api.openai.com/v1/chat/completions" \
 _T1=$(date +%s)
 RESPONSE=$(cat "$_RESP_TMP")
 
-# ---------- 解析响应 ----------
+# ---------- Parse response ----------
 ASSISTANT_CONTENT=$(python3 << PYEOF
 import json, sys
 
 resp = json.loads("""$RESPONSE""")
 
 if "error" in resp:
-    print(f"API 错误: {resp['error']['message']}", file=sys.stderr)
+    print(f"API error: {resp['error']['message']}", file=sys.stderr)
     sys.exit(1)
 
 content = resp["choices"][0]["message"]["content"]
@@ -144,7 +144,7 @@ print(content)
 PYEOF
 )
 
-# ---------- 记录成本（token 用量仅在本脚本路径可得；Codex MCP 路径拿不到）----------
+# ---------- Record cost (token usage is available only through this script, not through Codex MCP)----------
 python3 - "$_RESP_TMP" "$PHASE" "$MODEL" "$((_T1 - _T0))" "$COST_LOG" <<'PYEOF'
 import json, sys, os
 from datetime import datetime, timezone
@@ -154,7 +154,7 @@ try:
     with open(resp_path, encoding="utf-8") as f:
         resp = json.load(f)
 except Exception:
-    sys.exit(0)          # 响应不可解析时不阻断主流程
+    sys.exit(0)          # Do not block the main workflow when the response cannot be parsed
 usage = resp.get("usage") or {}
 record = {
     "ts": datetime.now(timezone.utc).isoformat(timespec="seconds"),
@@ -173,14 +173,14 @@ with open(log_path, "a", encoding="utf-8") as f:
 PYEOF
 rm -f "$_RESP_TMP"
 
-# ---------- 更新 Thread 文件（追加 assistant 消息）----------
+# ---------- Update thread file (append assistant message)----------
 python3 << PYEOF
 import json
 
 with open("$THREAD_FILE", "r") as f:
     messages = json.load(f)
 
-# 先追加 user 消息（与上面保持一致）
+# Append the user message first (consistent with the above)
 already_user = any(m["role"] == "user" and m["content"].startswith("${PROMPT:0:30}") for m in messages[-2:])
 if not already_user:
     messages.append({"role": "user", "content": """$PROMPT"""})
@@ -191,14 +191,14 @@ with open("$THREAD_FILE", "w") as f:
     json.dump(messages, f, ensure_ascii=False, indent=2)
 PYEOF
 
-# ---------- 输出结果 ----------
+# ---------- Output results ----------
 if [ -n "$OUTPUT_FILE" ]; then
     echo "$ASSISTANT_CONTENT" > "$OUTPUT_FILE"
 else
     echo "$ASSISTANT_CONTENT"
 fi
 
-# 如果是新 thread，把 thread 文件路径输出到 stderr，方便调用方捕获
+# For a new thread, print its file path to stderr so the caller can capture it
 if [ "$NEW_THREAD" = "true" ]; then
     echo "THREAD_FILE: $THREAD_FILE" >&2
 fi

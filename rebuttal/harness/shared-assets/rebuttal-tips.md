@@ -1,51 +1,51 @@
-# rebuttal-tips.md — concern 分类学 + 应对手册（paper-agnostic）
+# rebuttal-tips.md — concern taxonomy + response handbook (paper-agnostic)
 
-四个来源提炼(MLNLP Paper-Rebuttal-Tips 28 条 / awesome-rebuttal / Paper2Rebuttal / Devi Parikh)。r2 用它分类,r6 写作时注入。**核心信条:Good rebuttal = Respect + Evidence + Clarity。行动而非承诺(Tip 12)。**
-
----
-
-## 分类学(r2 打标签用)
-
-### 类 I — 创新 / 动机 / 理论 / 边界
-| concern | Poor Response（禁） | Recommended（论证 DAG 的 warrant 方向） |
-|---|---|---|
-| novelty 不足 / 只是组合 | "我们承认是组合但…"(认框架) | 甩消融:朴素组合会失败 → 组合非平凡 → 我们的机制才是贡献 |
-| 贡献不清 | 重复 abstract | 一句话锚定唯一核心贡献 + 指到证据 |
-| 动机弱 | 空谈重要性 | 具体失败案例/gap 证明问题真实存在 |
-| 理论浅 | 堆公式 | 指出定理边界 + 说清它保证了什么 |
-| limitation 讨论浅 | 加一段免责 | 精确划边界(在 X 内成立),把 limitation 变成 scope |
-
-### 类 II — 表述 / 相关工作 / 沟通
-| concern | Poor | Recommended |
-|---|---|---|
-| 写得不清楚 | "我们会改" | 直接在 rebuttal 里给清晰版 + 指 §定位 |
-| related work 缺 | 罗列引用 | 差异化:我们 vs 他们在哪条轴上不同(带 warrant) |
-| **reviewer 误读** | 逐字反驳 | 礼貌指出 paper 已在 §X 说明 + 引原文;不指责 |
-
-### 类 III — 实验证据
-| concern | Poor | Recommended |
-|---|---|---|
-| 缺 baseline / 缺和 Z 比 | "Z 不可比" | 补真实 baseline(公平 tuning)或指已有对比;真打不过就诚实让步+说 scope |
-| 消融不足 | "已经够了" | 补关键消融证明每个组件必要 |
-| 算力成本 | 回避 | 给真实数字 + 对比同类 |
-| 泛化 | "应该能" | 补一个 held-out/跨域点 |
-| 统计显著性 | 只报均值 | 补方差/显著性检验 |
-| 数据泄漏 | 否认 | 说清 split 协议 |
-| 可复现 | 承诺放码 | 现在就给关键细节/伪码 |
+Distilled from four sources (28 MLNLP Paper-Rebuttal-Tips / awesome-rebuttal / Paper2Rebuttal / Devi Parikh). r2 uses it for classification, and r6 injects it during writing. **Core creed: Good rebuttal = Respect + Evidence + Clarity. Action, not promises (Tip 12).**
 
 ---
 
-## 应对总则(写作时的 warrant 选择)
-1. **误读**(misread)→ 类 II 打法:指位置 + 引原文,不补新东西。
-2. **真实缺口**(gap)→ 类 III:补真实实验/文献,或诚实让步 + 划 scope。
-3. **frame-lock** → 别逐条回,先用最强证据打破框架(如消融打破"只是组合")。
+## Taxonomy (for r2 tagging)
 
-## Devi Parikh 心法(节选,写作 Avoid 清单)
-- 别防御性/情绪化;假设 reviewer 善意。
-- 别用"future work / camera-ready 再加"搪塞 P0(空承诺 = 弹药)。
-- 先答最重要的(P0),别按 reviewer 顺序流水账。
-- 每个回应自包含:reviewer 不该回去翻 paper 才懂。
-- 给 AC 一句话:这篇为什么该收(confidential comment)。
+### Class I — Novelty / Motivation / Theory / Boundaries
+| concern | Poor Response (prohibited) | Recommended (warrant direction for the argument DAG) |
+|---|---|---|
+| insufficient novelty / merely a combination | "We acknowledge that it is a combination, but..." (accepting the framing) | Present the ablation: a naive combination fails → the combination is nontrivial → our mechanism is the contribution |
+| unclear contribution | repeat the abstract | anchor the single core contribution in one sentence + point to the evidence |
+| weak motivation | discuss importance in the abstract | use a specific failure case/gap to prove that the problem genuinely exists |
+| shallow theory | pile up formulas | identify the theorem's boundaries + state clearly what it guarantees |
+| shallow discussion of limitations | add a disclaimer paragraph | delineate the boundaries precisely (holds within X), turning the limitation into scope |
+
+### Class II — Presentation / Related Work / Communication
+| concern | Poor | Recommended |
+|---|---|---|
+| unclear writing | "We will revise it" | provide a clear version directly in the rebuttal + point to the location in § |
+| missing related work | list citations | differentiate: identify the axis on which we differ from them (with warrant) |
+| **reviewer misreading** | rebut word by word | politely point out that the paper already explains this in §X + quote the original text; do not assign blame |
+
+### Class III — Experimental Evidence
+| concern | Poor | Recommended |
+|---|---|---|
+| missing baseline / no comparison with Z | "Z is not comparable" | add a real baseline (with fair tuning) or point to an existing comparison; if we genuinely cannot beat it, make an honest concession + state the scope |
+| insufficient ablation | "It is already sufficient" | add the key ablation to prove that every component is necessary |
+| compute cost | evade it | provide real numbers + compare with similar methods |
+| generalization | "It should work" | add one held-out/cross-domain result |
+| statistical significance | report only the mean | add variance/significance tests |
+| data leakage | deny it | explain the split protocol clearly |
+| reproducibility | promise to release code | provide the key details/pseudocode now |
+
+---
+
+## General response rules (warrant selection during writing)
+1. **Misreading** (misread) → Class II response mode: point to the location + quote the original text; do not add anything new.
+2. **Real gap** (gap) → Class III: add real experiments/literature, or make an honest concession + delineate the scope.
+3. **frame-lock** → do not respond point by point; first use the strongest evidence to break the framing (e.g., use an ablation to refute "merely a combination").
+
+## Devi Parikh principles (excerpt, writing Avoid list)
+- Do not be defensive/emotional; assume reviewer goodwill.
+- Do not use "future work / add it in camera-ready" to brush off P0 (empty promise = ammunition).
+- Answer the most important issue (P0) first; do not mechanically follow reviewer order.
+- Make every response self-contained: the reviewer should not have to look back through the paper to understand it.
+- Give the AC one sentence explaining why this paper should be accepted (confidential comment).
 
 ## per-reviewer strategy matrix(awesome-rebuttal)
-每个 reviewer 一套姿态,不统一:低分高信心的 P0 reviewer 是主战场(涨他的分最能提总分);高分 reviewer 维持即可,别节外生枝开新攻击面。
+Use a distinct posture for each reviewer rather than a uniform one: a low-score, high-confidence P0 reviewer is the main battleground (raising that reviewer's score improves the overall score the most); simply maintain a high-score reviewer, and do not create unnecessary complications that open new attack surfaces.

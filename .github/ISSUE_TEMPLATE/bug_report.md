@@ -1,23 +1,23 @@
 ---
 name: Bug report
-about: pipeline 某个阶段行为异常
+about: Unexpected behavior in a pipeline stage
 labels: bug
 ---
 
-**哪个阶段 / skill**
-（如 `/idea-gen` Phase 2a、`tools/arxiv_fetch.py`）
+**Stage / skill**
+(For example, `/idea-gen` Phase 2a or `tools/arxiv_fetch.py`)
 
-**运行模式**
+**Execution mode**
 - [ ] Codex MCP
-- [ ] `--gpt-only`（`CODEX_MODE=gpt-api`）
-- [ ] Codex CLI 直跑
-- 模型：（如 gpt-5.4）
+- [ ] `--gpt-only` (`CODEX_MODE=gpt-api`)
+- [ ] Direct Codex CLI run
+- Model: (for example, gpt-5.4)
 
-**期望行为 / 实际行为**
+**Expected behavior / actual behavior**
 
-**降级记录**
-`outputs/PIPELINE_LOG.md` 里有没有 `⚠️` 降级条目？贴出来（外部模型不可用时会自动降级为自评，这会影响分数）。
+**Degradation record**
+Does `outputs/PIPELINE_LOG.md` contain a `⚠️` degradation entry? Paste it here. (When the external model is unavailable, the pipeline automatically degrades to self-review, which affects the scores.)
 
-**复现步骤**
+**Steps to reproduce**
 
-**注意**：请不要粘贴尚未发表的研究内容，举例请用公开已发表的方向。
+**Note**: Do not paste unpublished research content. Use publicly available, published research directions in examples.

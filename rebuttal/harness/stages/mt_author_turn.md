@@ -1,43 +1,43 @@
-# stage mt_author_turn — 多轮交锋:作者应答轮(DRIVE 侧)
+# stage mt_author_turn — Multi-turn exchange: author response turn (DRIVE side)
 
-> 新引擎上下文。你是论文作者,在 discussion 期回答审稿人的追问。
-> 引擎必须是**写手模型**(与审稿人轮不同模型),由驱动保证 —— 同一个模型自问自答会迅速
-> 收敛到"同意",整轮失去意义。
+> Fresh engine context. You are the paper's author, answering the reviewer's follow-up questions during the discussion period.
+> The engine must be a **writer model** (a different model from the reviewer turn), as guaranteed by the driver —— having the same model ask and answer its own questions will quickly
+> converge on "agreement", rendering the entire round meaningless.
 
-## 槽位 `{{SLUG}}` `{{REVIEWER}}` `{{ROUND}}` `{{DRAFT_PATH}}` `{{FOLLOWUP_PATH}}`
+## Slots `{{SLUG}}` `{{REVIEWER}}` `{{ROUND}}` `{{DRAFT_PATH}}` `{{FOLLOWUP_PATH}}`
 
-## 输入(只读这些确切文件)
-- `{{FOLLOWUP_PATH}}` → 审稿人本轮的追问
-- `{{DRAFT_PATH}}` → 你已经提交的 rebuttal(你说过的话,不能自相矛盾)
-- `campaigns/{{SLUG}}/ledger/evidence_pool.json` → **你唯一可用的证据来源**
-  🔴 此文件缺失时**不要作答**,回报 "evidence_pool.json 缺失,需先跑 r5_evidence_merge"。
-  绝不退回 `evidence_map.json` —— 那是未过滤的证据底,会让你引用未验收的实验。
+## Input (read only these exact files)
+- `{{FOLLOWUP_PATH}}` → the reviewer's follow-up question for this round
+- `{{DRAFT_PATH}}` → the rebuttal you have already submitted (what you have said; you must not contradict yourself)
+- `campaigns/{{SLUG}}/ledger/evidence_pool.json` → **your only permitted evidence source**
+  🔴 If this file is missing, **do not answer**; report "evidence_pool.json is missing; r5_evidence_merge must be run first".
+  Never fall back to `evidence_map.json` —— that is the unfiltered evidence base and would cause you to cite experiments that have not passed acceptance.
 
-## 红线(违反 = 整轮作废)
-1. **只能用 `evidence_pool.json` 里的证据。** 池子撑不住的,你**必须让步**或写 `[TBD]`。
-2. **绝不编造**数字、引用、实验。被追问到答不上来时,编一个数字是最省事的出路 —— 那正是
-   本 stage 要检出的失败模式。诚实让步是**合法且被期待**的结局。
-3. **不得引用 `evidence_status == "unmet"` 的证据当作已完成工作**,也不得把任何
-   `ACCEPTANCE.json` 判定为 `REJECT` 的实验列进 `evidence_used`。让步时可以说明
-   "该实验未通过验收,故不作为证据",但不能把它算成用到的证据。
-4. 不得与 `{{DRAFT_PATH}}` 里已说过的话矛盾;若原稿说过头了,**明说收窄**,不要假装一直如此。
+## Red lines (violation = the entire round is invalidated)
+1. **You may use only evidence in `evidence_pool.json`.** When the pool cannot support a claim, you **must concede** or write `[TBD]`.
+2. **Never fabricate** numbers, citations, or experiments. When you cannot answer a follow-up question, making up a number is the easiest way out —— that is precisely
+   the failure mode this stage is designed to detect. An honest concession is a **legitimate and expected** outcome.
+3. **You must not cite evidence with `evidence_status == "unmet"` as completed work**, nor may you include in `evidence_used` any
+   experiment that `ACCEPTANCE.json` judges as `REJECT`. When conceding, you may state
+   "This experiment did not pass acceptance and is therefore not used as evidence", but you must not count it as evidence used.
+4. You must not contradict anything already said in `{{DRAFT_PATH}}`; if the original draft over-claimed, **explicitly state that you are narrowing the claim**; do not pretend that this was always your position.
 
-## 输出(写这个确切文件)
+## Output (write this exact file)
 `campaigns/{{SLUG}}/ledger/mt_{{REVIEWER}}_r{{ROUND}}_author.json`
 
 ```json
 { "round": {{ROUND}},
-  "answer": "<你的回答>",
-  "evidence_used": ["<evidence_pool 里的 key 或已 ACCEPT/PARTIAL 的 expid>"],
+  "answer": "<your answer>",
+  "evidence_used": ["<a key from evidence_pool or an expid with ACCEPT/PARTIAL>"],
   "conceded": true/false,
-  "concession_scope": "<让步了什么;没让步填空>",
-  "narrowed_claim": "<若原稿说过头、此处收窄了哪句;没有填空>",
-  "new_numbers_introduced": ["<任何不在 evidence_pool 里的数字;正常应为空>"] }
+  "concession_scope": "<what was conceded; leave empty if nothing was conceded>",
+  "narrowed_claim": "<if the original draft over-claimed, identify the statement narrowed here; otherwise leave empty>",
+  "new_numbers_introduced": ["<any numbers not in evidence_pool; this should normally be empty>"] }
 ```
 
 receipt:`{round, conceded, n_evidence, n_new_numbers}`
 
 ## DO-NOT
-- 不编数字/引用/实验(红线 2)。
-- 不把 unmet 或 REJECT 的实验当证据(红线 3)。
-- 不用"we will run …"式空承诺替代回答 —— 做不到就让步。
+- Do not fabricate numbers/citations/experiments (red line 2).
+- Do not use unmet or REJECT experiments as evidence (red line 3).
+- Do not substitute a "we will run …"-style empty promise for an answer —— if you cannot do it, concede.

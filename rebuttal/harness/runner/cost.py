@@ -1,33 +1,34 @@
 #!/usr/bin/env python3
-"""M1 成本仪表 —— 给 harness 的每次引擎/判官调用记一行账。
+"""M1 cost meter — records one ledger line for every engine/judge call made by the harness.
 
-为什么单独一个模块:
-  · `rebuttal_verifier/` 是**冻结包**(`consensus_gate.py` 被 orchestrate 的 GATE_SHA
-    内容哈希钉住做溯源)。插桩**绝不改那些文件**,否则破坏反 Goodhart 的冻结前提。
-    DeepSeek 侧的 token 因此靠 `install_deepseek_probe()` 在**客户端工厂**上拦截,
-    拦不到就静默降级成"只有 wall + 调用数",绝不让计量失败影响产线。
-  · 记账失败永不抛异常。仪表坏了是丢数据,不能变成产线中断。
+Why this is a separate module:
+  · `rebuttal_verifier/` is a **frozen package** (`consensus_gate.py` is pinned by the GATE_SHA
+    content hash in orchestrate for provenance). Instrumentation **must never modify those files**,
+    or it would break the frozen premise for anti-Goodhart. DeepSeek-side token counts are therefore
+    intercepted at the **client factory** via `install_deepseek_probe()`; if interception fails, it
+    silently degrades to "wall + call count only". A metering failure must never affect the production pipeline.
+  · Accounting failures never raise exceptions. A broken meter means lost data; it must not become a production outage.
 
-账本:campaigns/<slug>/ledger/cost.jsonl(一行一次调用,append-only)
-消费者:scripts/cost_report.py(汇总)· M2 离线回放器(反事实)
+Ledger:campaigns/<slug>/ledger/cost.jsonl(one line per call,append-only)
+Consumers:scripts/cost_report.py(aggregation)· M2 offline replay tool(counterfactual)
 
 schema
 ------
 ts          ISO8601 UTC
 module      "rebuttal" | "math"
-slug        campaign / 靶 slug
-unit        reviewer id / 实验 expid / 靶 slug —— 成本归属的最小单位
-strategy    MoE 策略 id(r6_write 有;其他 stage 为 None)
+slug        campaign / target slug
+unit        reviewer id / experiment expid / target slug — smallest unit of cost attribution
+strategy    MoE strategy id(present for r6_write; None for other stage values)
 stage       r6_write / r7_gate / cheap_eval / b3_ammo / ...
-model       引擎或判官模型 id
-role        "DRIVE"(写手/规划) | "ACQUIT"(判官) —— 物理隔离两侧分别计费
-in_tok/out_tok/cached_in_tok/reasoning_tok   token(拿不到则 None)
-wall_s      墙钟秒
-prompt_chars 送进去的字符数(token 拿不到时的代理量)
-verdict     该次调用的结论(PASS/FAIL/STRENGTH/CONCEDE/…)
-cheap_reject 便宜门是否拒掉(= 省下了一次贵判官调用)
-cache_hit   stage-signature 缓存是否命中(= 完全没调引擎)
-err         引擎失败/超时标记
+model       engine or judge model id
+role        "DRIVE"(writer/planning) | "ACQUIT"(judge) — the two physically isolated sides are billed separately
+in_tok/out_tok/cached_in_tok/reasoning_tok   token(None if unavailable)
+wall_s      wall-clock seconds
+prompt_chars number of characters sent(proxy when token counts are unavailable)
+verdict     verdict from this call(PASS/FAIL/STRENGTH/CONCEDE/…)
+cheap_reject whether the cheap gate rejected it(= one expensive judge call saved)
+cache_hit   whether the stage-signature cache was hit(= the engine was not called at all)
+err         engine failure/timeout marker
 """
 import os, json, time, threading
 
@@ -49,15 +50,15 @@ def record(slug=None, unit=None, stage=None, model=None, role=None, module="rebu
            strategy=None, in_tok=None, out_tok=None, cached_in_tok=None, reasoning_tok=None,
            wall_s=None, prompt_chars=None, verdict=None,
            cheap_reject=None, cache_hit=None, err=None, **extra):
-    """追加一条成本记录。**任何异常都吞掉** —— 仪表不能拖垮产线。"""
+    """Append one cost record. **Swallow every exception** — the meter must not bring down the production pipeline."""
     if not _ENABLED:
         return
     try:
         row = {"v": SCHEMA_VERSION,
                "ts": time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime()),
                "module": module, "slug": slug, "unit": unit, "stage": stage,
-               # strategy 是一等字段:MoE 下同一 reviewer 会跑 N 个策略,只记到 reviewer
-               # 就无法按策略归集成本(与旧 gate ledger 只记 picked 是同一类毛病)
+               # strategy is a first-class field: under MoE, the same reviewer runs N strategies;
+               # recording only the reviewer prevents cost aggregation by strategy(the same flaw as the old gate ledger recording only picked)
                "strategy": strategy,
                "model": model, "role": role,
                "in_tok": in_tok, "out_tok": out_tok,
@@ -76,11 +77,11 @@ def record(slug=None, unit=None, stage=None, model=None, role=None, module="rebu
 
 
 def parse_codex_usage(stdout_text):
-    """从 `codex exec --json` 的 stdout(JSONL 事件流)累加 token。
+    """Accumulate token counts from the stdout(JSONL event stream) of `codex exec --json`.
 
-    实测事件:{"type":"turn.completed","usage":{"input_tokens":…,"cached_input_tokens":…,
+    Observed event:{"type":"turn.completed","usage":{"input_tokens":…,"cached_input_tokens":…,
               "cache_write_input_tokens":…,"output_tokens":…,"reasoning_output_tokens":…}}
-    多 turn 则累加。拿不到返回全 None(调用方降级用 wall + chars)。
+    Accumulate across multiple turns. If unavailable, return None for every field(the caller degrades to wall + chars).
     """
     tot = {"in_tok": 0, "out_tok": 0, "cached_in_tok": 0, "reasoning_tok": 0}
     seen = False
@@ -103,23 +104,23 @@ def parse_codex_usage(stdout_text):
     return tot if seen else {k: None for k in tot}
 
 
-# ---- DeepSeek 侧:不改冻结包,在客户端工厂上拦截 -------------------------------
+# ---- DeepSeek side: do not modify the frozen package; intercept at the client factory -------------------------------
 
 _DS_USAGE = threading.local()
 
 
 def last_deepseek_usage():
-    """取并清空最近一次 DeepSeek 调用的 usage(线程局部)。探针未装 → None。"""
+    """Retrieve and clear usage from the most recent DeepSeek call(thread-local). Probe not installed → None."""
     u = getattr(_DS_USAGE, "u", None)
     _DS_USAGE.u = None
     return u
 
 
 def install_deepseek_probe():
-    """包住 verify_rebuttal 的 OpenAI 客户端,使 chat.completions.create 顺手记下 usage。
+    """Wrap the OpenAI client in verify_rebuttal so chat.completions.create also records usage.
 
-    **不改 rebuttal_verifier/ 任何文件**(冻结包 + GATE_SHA 溯源)。内部结构变了就
-    静默返回 False,产线照跑,只是少了 token 维度。
+    **Do not modify any file under rebuttal_verifier/**(frozen package + GATE_SHA provenance). If the internal
+    structure changes, silently return False; the production pipeline keeps running, only without the token dimension.
     """
     try:
         import verify_rebuttal as vr
@@ -167,7 +168,7 @@ def install_deepseek_probe():
 
 
 class timed:
-    """with timed() as t: ...   之后 t.s = 墙钟秒"""
+    """with timed() as t: ...   afterward t.s = wall-clock seconds"""
     def __enter__(self):
         self._t0 = time.time()
         self.s = None
@@ -179,7 +180,7 @@ class timed:
 
 
 if __name__ == "__main__":
-    # 自检:不碰网络、不碰产线
+    # Self-test: do not touch the network or the production pipeline
     ev = ('{"type":"turn.started"}\n'
           '{"type":"turn.completed","usage":{"input_tokens":12727,"cached_input_tokens":9984,'
           '"cache_write_input_tokens":0,"output_tokens":6,"reasoning_output_tokens":0}}\n')
@@ -187,9 +188,9 @@ if __name__ == "__main__":
     assert u == {"in_tok": 12727, "out_tok": 6, "cached_in_tok": 9984, "reasoning_tok": 0}, u
     assert parse_codex_usage("garbage") == {"in_tok": None, "out_tok": None,
                                            "cached_in_tok": None, "reasoning_tok": None}
-    u2 = parse_codex_usage(ev + ev)          # 多 turn 累加
+    u2 = parse_codex_usage(ev + ev)          # Accumulate across multiple turns
     assert u2["in_tok"] == 25454, u2
     with timed() as t:
         pass
     assert t.s is not None and t.s >= 0
-    print("✓ cost.py 自检通过(usage 解析 / 多 turn 累加 / 降级 / 计时)")
+    print("✓ cost.py self-test passed(usage parsing / multiple-turn accumulation / degradation / timing)")

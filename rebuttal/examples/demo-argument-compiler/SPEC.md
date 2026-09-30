@@ -1,45 +1,45 @@
-# SPEC — demo-argument-compiler（冻结验收契约 · 第三方 · 实例化后不得修改）
+# SPEC — demo-argument-compiler (frozen acceptance contract · third-party · must not be modified after instantiation)
 
-本文件在写第一句 rebuttal 之前由 **meta 层填死**,是独立验证器判 ACQUIT/REJECT 的唯一依据。**writer 不得编辑本文件,不得查看涨分门内部去拟合。** 任何模糊 → 验证器朝"拒绝"方向解释。
+This file is **fully populated and locked by the meta layer** before the first sentence of the rebuttal is written and is the sole basis on which the independent verifier judges ACQUIT/REJECT. **The writer must never edit this file or inspect the internals of the raise gate to fit to it.** Any ambiguity → the verifier interprets it toward "rejection."
 
-- paper：Learning to Rebut: A First-Principles Argument Compiler　venue：ICLR 2026
-- 论文主张（证据基底）：- C1: 我们提出机制 M,把 A 和 B 的冲突解决,这是核心贡献
-- C2: 在 benchmark X 上相对最强 baseline 提升 13.6 分
-- C3: 理论分析给出 M 的收敛保证(Thm 1)
-- 审稿人（判据锚点）：| id | rating | conf | sound | present | contrib | review |
+- paper: Learning to Rebut: A First-Principles Argument Compiler　venue: ICLR 2026
+- Paper claims (evidence base): - C1: We propose mechanism M, which resolves the conflict between A and B; this is the core contribution
+- C2: On benchmark X, we improve by 13.6 points over the strongest baseline
+- C3: The theoretical analysis provides a convergence guarantee for M (Thm 1)
+- Reviewers (criterion anchors): | id | rating | conf | sound | present | contrib | review |
 |---|---|---|---|---|---|---|
 | R1 | 5 | 4 | 2 | 3 | 2 | inputs/reviews/R1.md |
 | R2 | 3 | 4 | 2 | 2 | 2 | inputs/reviews/R2.md |
 | R3 | 6 | 3 | 3 | 3 | 3 | inputs/reviews/R3.md |
-- 目标：对 P0 reviewer [R1, R2] 达成 DeepSeek+Codex 合议 raise(min_delta=1)
-- 字数上限：per-reviewer 5000 chars
-- 涨分门配置：`$AUTOREBUTTAL_ROOT/harness/shared-assets/verifier/`（DeepSeek V4 Pro θ₀ + Codex judge,**逐字冻结、不得改**）。
+- Target: for P0 reviewer [R1, R2], achieve a DeepSeek+Codex consensus raise(min_delta=1)
+- Length limit: per-reviewer 5000 chars
+- Raise gate configuration: `$AUTOREBUTTAL_ROOT/harness/shared-assets/verifier/` (DeepSeek V4 Pro θ₀ + Codex judge, **frozen verbatim and must never be changed**).
 
-## A. 涨分（跨家族合议 · the bar）
-最优策略的 rebuttal，对 对 P0 reviewer [R1, R2] 达成 DeepSeek+Codex 合议 raise(min_delta=1) 里指定的**每一个 P0 reviewer**，在冻结涨分门下：
-- **DeepSeek V4 Pro** 预测 `reaction=raise`（`quality=high`），**且**
-- **Codex**（同 review + rebuttal + persona，独立 prompt）也预测 `raise`。
-两个不同家族判官**都** raise 才算 A 通过（合取,严——因为 goal 模式在硬优化,出口要严,防单判官被刷穿）。persona 必须带 `initial_rating` + soundness/presentation/contribution 子分 + confidence（README 证实带 persona 显著提分）。
+## A. Raise (cross-family consensus gate · the bar)
+For the rebuttal produced by the optimal strategy, under the frozen raise gate, the following must hold for the reviewers specified in the target “for P0 reviewer [R1, R2], achieve a DeepSeek+Codex consensus raise(min_delta=1)”—that is, for **every P0 reviewer**:
+- **DeepSeek V4 Pro** must predict `reaction=raise` (`quality=high`), **and**
+- **Codex** (same review + rebuttal + persona, independent prompt) must also predict `raise`.
+A passes only if both judges from the two different families raise (a strict conjunction—because goal mode performs hard optimization, the exit must be strict to prevent a single judge from being gamed). persona must include `initial_rating` + soundness/presentation/contribution subscores + confidence (README confirms that including persona significantly improves scores).
 
-## B. 覆盖（P0/P1 一个都不漏）
-每个 P0/P1 concern 在终稿里被明确回应（回应、指位置、补证据、或优雅让步之一）。缺 P2 不致命。
+## B. Coverage (not one P0/P1 may be missed)
+Every P0/P1 concern must be explicitly addressed in the final draft (through a response, a location pointer, additional evidence, or a graceful concession). Missing a P2 is not fatal.
 
-## C. 证据诚实（任一不过即失败）
-1. 进正文里**从实验数据汇总出的数字**（均值/斜率/比值…）用 `recompute_check` 从 raw 重算 <1%；无 raw 算式的量（理论常数等）不要求重算。
-2. **每条引用真实存在且相关**——存在性核过、写进白名单;禁止编造引用。
-3. **每个 claim 可追溯**：说"paper 已证明 X"能定位到节/图/表;说"我们做了实验 Y"能定位到 raw。无支撑的 claim → 必须是 `[TBD]` + action item,不得写成已完成。
-4. 可选哪些证据展示，但**禁止编造/美化/把没做的说成做了**。
+## C. Evidence honesty (failure of any item means failure)
+1. **Numbers derived by aggregating experimental data** that enter the main text (means/slopes/ratios…) must be recomputed from raw using `recompute_check` with <1% error; quantities without a raw formula (such as theoretical constants) do not require recomputation.
+2. **Every citation must actually exist and be relevant**—it must pass the existence check and be added to the allowlist; fabricated citations are forbidden.
+3. **Every claim must be traceable**: a statement that "the paper has proved X" must be locatable to a section/figure/table; a statement that "we ran experiment Y" must be locatable to raw. An unsupported claim → must be `[TBD]` + action item and must never be presented as completed.
+4. Evidence may be selected for presentation, but **fabrication/embellishment/claiming unperformed work as completed is forbidden**.
 
-## D. 无弹药 + 无新攻击面
-1. 终稿弹药 grep（`$AUTOREBUTTAL_ROOT/harness/shared-assets/ammunition-checklist.md`）= 0：无自揭短、无"我们不声称"、无过度让步框架句式。
-2. 不为回应某个 reviewer 而承认另一个 reviewer 没提到的新弱点（不开新攻击面）。
-3. 字数不超 per-reviewer 5000 chars；正文无 `[TBD]`。
+## D. Zero ammunition + no new attack surface
+1. Final-draft ammunition grep (`$AUTOREBUTTAL_ROOT/harness/shared-assets/ammunition-checklist.md`) = 0: no self-exposure, no "we do not claim," and no over-concession framing language.
+2. Do not admit a new weakness that another reviewer did not raise in order to respond to one reviewer (do not open a new attack surface).
+3. Do not exceed per-reviewer 5000 chars; the main text must contain no `[TBD]`.
 
-## E. 独立性
-绑定 ACQUIT 由**独立 VERIFY 窗口**（见 `VERIFY.md`）重跑涨分门 + 重核 C/D，**不是 writer 自判**;writer 自发的 verdict 无效。验证器逐条出 PASS/FAIL + 门返回的 reaction/reasoning + 证据路径。
+## E. Independence
+The binding ACQUIT is determined by an **independent VERIFY window** (see `VERIFY.md`) that reruns the raise gate + rechecks C/D, **not by the writer's own judgment**; any verdict issued by the writer is invalid. The verifier outputs PASS/FAIL item by item + the gate's returned reaction/reasoning + evidence paths.
 
-**ACQUIT ⇔ A ∧ B ∧ C ∧ D ∧ E 全过。** the bar = 跨家族合议涨分。诚实闸只拦「有算式的数字对不上 raw」「引用不存在」「claim 无支撑却写成已完成」这种实打实造假；**协议措辞小差不当致命——提示改对即可,别整篇 REJECT**。
+**ACQUIT ⇔ A ∧ B ∧ C ∧ D ∧ E all pass.** the bar = the cross-family consensus gate for a raise. The faithfulness gate blocks only concrete fabrication such as "a formula-derived number does not match raw," "a citation does not exist," or "an unsupported claim is presented as completed"; **minor differences in protocol wording must not be treated as fatal—just flag them for correction; do not REJECT the entire submission**.
 
-**诚实让步出口**：若 4 轮仍不能合议涨分,但终稿 B/C/D/E 全过（覆盖全、证据诚实、零弹药、独立），且是"最诚实的让步式 rebuttal" → `{"verdict":"ACQUIT","track":"honest-concede","raise_achieved":false}`。不是每篇都能涨分,诚实收兵优于拟合噪声。
+**Honest concession exit**: if a consensus raise still cannot be achieved after 4 rounds, but the final draft passes B/C/D/E in full (full coverage, evidence honesty, zero ammunition, independence), and it is the "most honest concession-style rebuttal" → `{"verdict":"ACQUIT","track":"honest-concede","raise_achieved":false}`. Not every paper can earn a raise; honestly standing down is preferable to fitting noise.
 
-本文件实例化后冻结。
+This file is frozen after instantiation.

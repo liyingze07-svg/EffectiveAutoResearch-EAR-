@@ -17,8 +17,8 @@ Run it in the BACKGROUND (nohup/setsid) so it is not tied to any chat context.
 """
 import os, sys, re, json, argparse, subprocess, time, hashlib
 
-# 可移植:默认由本文件位置推出仓库根(harness/runner/ → ../../),
-# 可用 AUTOREBUTTAL_ROOT 覆盖。此前是硬编码的绝对路径,无法发布也无法换机部署。
+# Portable: by default, derive the repository root from this file's location (harness/runner/ → ../../),
+# with AUTOREBUTTAL_ROOT available as an override. Previously this was a hard-coded absolute path, which prevented publication and deployment on another machine.
 ROOT = os.environ.get("AUTOREBUTTAL_ROOT") or os.path.abspath(
     os.path.join(os.path.dirname(os.path.abspath(__file__)), "..", ".."))
 HARNESS = os.path.join(ROOT, "harness")
@@ -39,19 +39,19 @@ sys.modules["consensus_gate"] = cg
 _spec.loader.exec_module(cg)
 from coach_loop import ammo_hits     # noqa: E402  (imports the same frozen consensus_gate)
 from moe_loop import load_strategies  # noqa: E402  (reads strategies/MANIFEST.json)
-import cost                             # noqa: E402  M1 成本仪表(独立模块;绝不改冻结包)
-_COST_PROBE = cost.install_deepseek_probe()   # DeepSeek token 在客户端工厂上拦截;失败静默降级
+import cost                             # noqa: E402  M1 cost meter (independent module; never modify the frozen package)
+_COST_PROBE = cost.install_deepseek_probe()   # Intercept DeepSeek token at the client factory; silently degrade on failure
 
 
-MAX_ITER_OVERRIDE = None  # --max-iter:临时压低 goal 循环轮数(省额度),不改 REBUTTAL_CARD.json
-B3_REPEATS = 3           # --b3-repeats:B3 连跑次数,取命中**并集**。见 ammo_gate 的实测依据。
-FANOUT_ALL = False       # --fanout-all:恢复旧的"每轮把 N 个策略全写一遍"(只在做策略对比评测时用)。
-                         # 默认走策略级惰性阶梯,见 reviewer_loop 里的成本依据。
-NO_DEEPSEEK = False      # --no-deepseek:单家族降级模式。DeepSeek 不可用(余额/网络)时的退路。
-                         # ⚠ 这会**丢掉 GOAL.md 不可违反 #4(跨家族合议)** —— 只剩 OpenAI 一家,
-                         # 判官与写手同家族,反 Goodhart 的核心保险失效。仍保住 H1(判官模型 ≠ 写手模型)。
-                         # 因此该模式下:① 每条 gate 记录打 cross_family=false + degraded
-                         # ② 循环状态是 PASS_SINGLE_FAMILY,不是 PASS —— 绝不让降级产物被当成真 ACQUIT。
+MAX_ITER_OVERRIDE = None  # --max-iter: temporarily reduce goal-loop iterations (to save quota), without changing REBUTTAL_CARD.json
+B3_REPEATS = 3           # --b3-repeats: number of consecutive B3 runs; take the **union** of hits. See the empirical basis in ammo_gate.
+FANOUT_ALL = False       # --fanout-all: restore the old behavior of "writing all N strategies every round" (use only for strategy-comparison evaluations).
+                         # The default is a strategy-level lazy ladder; see the cost basis in reviewer_loop.
+NO_DEEPSEEK = False      # --no-deepseek: single-family degraded mode. Fallback when DeepSeek is unavailable (balance/network).
+                         # ⚠ This **drops GOAL.md inviolable rule #4 (cross-family consensus gate)** — only the OpenAI family remains,
+                         # the judge and writer are in the same family, and the core anti-Goodhart safeguard fails. H1 is still preserved (judge model ≠ writer model).
+                         # Therefore, in this mode: ① mark every gate record with cross_family=false + degraded
+                         # ② the loop status is PASS_SINGLE_FAMILY, not PASS — never let degraded output be mistaken for a genuine ACQUIT.
 MODEL = None            # WRITER engine model override (--model); None = codex config default
 JUDGE_MODEL = "gpt-5.6-sol"  # authoritative Codex JUDGE model -- MUST differ from writer MODEL
                              # so family-B independence survives (anti-Goodhart; H1). --judge-model overrides.
@@ -69,9 +69,9 @@ def codex_exec(prompt, cwd=ROOT, sandbox="workspace-write", effort="medium", tim
                stage=None, slug=None, unit=None, role="DRIVE", strategy=None):
     """Run one stage in a FRESH codex context. Returns the final message (receipt).
 
-    M1: `--json` 让 codex 把事件以 JSONL 打到 stdout(此前是 DEVNULL,token 被丢掉),
-    从 turn.completed.usage 取 token 记进成本账本。`-o <rc>` 仍是唯一的 receipt 来源,
-    所以加 --json 不改变返回值语义(已实测)。stage/slug/unit/role 只用于记账。"""
+    M1: `--json` makes codex emit events as JSONL to stdout (previously DEVNULL, so token was discarded),
+    and records token from turn.completed.usage in the cost ledger. `-o <rc>` remains the sole receipt source,
+    so adding --json does not change return-value semantics (empirically verified). stage/slug/unit/role are used only for accounting."""
     rc = f"/tmp/codex_receipt_{os.getpid()}_{int(time.time()*1000)%100000}.txt"
     cmd = ["codex", "exec", "-s", sandbox, "-C", cwd,
            "-c", f"model_reasoning_effort={effort}", "-c", "approval_policy=\"never\"",
@@ -104,12 +104,12 @@ def codex_exec(prompt, cwd=ROOT, sandbox="workspace-write", effort="medium", tim
 
 
 def cheap_judge(case, slug, unit, stage):
-    """便宜档判官。返回 (judgment, bar_met)。
+    """Cheap-tier judge. Returns (judgment, bar_met).
 
-    NO_DEEPSEEK 下返回 (None, None) —— 本机 codex 用 ChatGPT 账号登录,
-    `gpt-5.3-codex-spark` 报 400 "not supported when using Codex with a ChatGPT account",
-    可用模型只剩 gpt-5.5(写手)/ gpt-5.6-sol(判官),**没有更便宜的档**,
-    所以级联的便宜层直接消失,不是换个模型就能补上。调用方须按降级路径处理。"""
+    Under NO_DEEPSEEK, returns (None, None) — local codex is logged in with a ChatGPT account,
+    `gpt-5.3-codex-spark` returns 400 "not supported when using Codex with a ChatGPT account",
+    leaving only gpt-5.5 (writer) / gpt-5.6-sol (judge) available, with **no cheaper tier**,
+    so the cheap layer of the cascade disappears outright; substituting another model cannot restore it. Callers must follow the degraded path."""
     if NO_DEEPSEEK:
         return (None, None)
     with cost.timed() as _t:
@@ -120,7 +120,7 @@ def cheap_judge(case, slug, unit, stage):
 
 
 def _rec_ds(t, slug, unit, stage, ds, cheap_reject=None):
-    """记一次 DeepSeek 判官调用。token 来自 cost 探针(装不上则为 None,只留 wall)。"""
+    """Record one DeepSeek judge call. token comes from the cost probe (None if installation fails, retaining only wall)."""
     u = cost.last_deepseek_usage() or {}
     cost.record(slug=slug, unit=unit, stage=stage, role="ACQUIT",
                 model=os.environ.get("DEEPSEEK_MODEL", "deepseek"),
@@ -158,11 +158,11 @@ def run_stage(stage, slots, output_path, sandbox="workspace-write", effort="medi
         return False
     prompt = fill(open(stage_path).read(), slots)
     sig = _stage_sig(prompt, None)
-    # M1 记账归属:槽位里已有 SLUG/REVIEWER,无需改调用方
+    # M1 accounting attribution: the slots already contain SLUG/REVIEWER, so callers need no changes
     _slug = slots.get("SLUG") or slots.get("PAPER")
     _unit = slots.get("REVIEWER") or slots.get("EXPID") or slots.get("RID")
-    _strat = slots.get("STRATEGY_ID")        # MoE:同 reviewer 多策略,必须分开记账
-    _role = "ACQUIT" if model else "DRIVE"   # model 只在判官阶段(b2/b3)被显式指定
+    _strat = slots.get("STRATEGY_ID")        # MoE: multiple strategies for the same reviewer must be accounted for separately
+    _role = "ACQUIT" if model else "DRIVE"   # model is specified explicitly only at judge stages (b2/b3)
     meta_path = output_path + ".stagemeta"
     if os.path.exists(output_path):
         old = open(meta_path).read().strip() if os.path.exists(meta_path) else None
@@ -170,7 +170,7 @@ def run_stage(stage, slots, output_path, sandbox="workspace-write", effort="medi
             if not dry:
                 open(meta_path, "w").write(sig)
             log(f"  skip {stage} (adopt existing: {os.path.basename(output_path)})")
-            if not dry:                          # H11: dry-run 零副作用,账本也不许写
+            if not dry:                          # H11: dry-run has zero side effects; even the ledger must not be written
                 cost.record(slug=_slug, unit=_unit, stage=stage, role=_role, strategy=_strat,
                             cache_hit=True, wall_s=0.0, verdict="adopt_existing")
             return True
@@ -178,7 +178,7 @@ def run_stage(stage, slots, output_path, sandbox="workspace-write", effort="medi
             log(f"  skip {stage} (up-to-date: {os.path.basename(output_path)})")
             if not dry:                          # H11
                 cost.record(slug=_slug, unit=_unit, stage=stage, role=_role, strategy=_strat,
-                            cache_hit=True, wall_s=0.0, verdict="up_to_date")   # 省下的整次引擎调用
+                            cache_hit=True, wall_s=0.0, verdict="up_to_date")   # an entire engine call saved
             return True
         log(f"  stale {stage} (prompt/model/version changed) -> re-run")
     if dry:
@@ -245,8 +245,8 @@ def gate(slug, rev, rebuttal, effort="high"):
                 "cheap_reject": False, "judge_error": codex_raw[:120]}
     cx = cg.parse_codex(codex_raw)
     if ds is None:
-        # 单家族降级:只有一个家族,cg.consensus 的跨家族语义不成立 —— 不去伪造它,
-        # 而是显式构造一个标着 cross_family=false 的判定,下游一眼能看出这不是真合议。
+        # Single-family degradation: with only one family, the cross-family semantics of cg.consensus do not hold — do not fabricate them;
+        # instead, explicitly construct a judgment marked cross_family=false, so downstream can immediately see that this is not genuine consensus.
         cx_ok, _ = cg.bar_met(cx, case)
         con = {"stop": bool(cx_ok), "kind": "single_family_degraded", "mode": "degraded",
                "primary": "codex", "codex_ok": bool(cx_ok), "deepseek_ok": None,
@@ -267,8 +267,8 @@ def cheap_eval(slug, rev, draft):
     ds, ds_ok = cheap_judge(case, slug, rev, "cheap_eval.deepseek")
     ammo = ammo_hits(draft)
     if ds is None:
-        # 降级:没有便宜档判官 → 排序只剩免费的弹药正则,且所有稿都对贵判官开放
-        # (便宜门消失 = cheap-first 省钱机制失效,成本会上升。这是降级的代价,不掩盖。)
+        # Degradation: no cheap-tier judge → ranking retains only the free ammunition regex, and every draft is admitted to the expensive judge
+        # (the cheap gate disappears = the cheap-first savings mechanism fails, so costs rise. This is the cost of degradation; do not conceal it.)
         return {"ds": None, "ammo": ammo, "ds_ok": True, "degraded": "no-deepseek",
                 "rank": (1 if not ammo else 0, 1 if not ammo else 0, 0, 0.0)}
     rp_high = str(ds.get("raise_potential", "")).lower() == "high"
@@ -294,15 +294,15 @@ def b2_faithfulness(slug, rev_id, draft_path, dry=False):
         return {"verdict": "FAIL", "reasons": ["B2 gate produced no parseable output"]}
 
 
-# b3_ammunition_gate.md §2/§6 的明文规则:A–E 命中拦 PASS(E 另标 red_line);
-# deletable / not_direct 仅为建议,不拦。裁决在**代码里**算,不再依赖判官自报 verdict ——
-# 判官漏检时它会连带报出 CLEAN,而并集里可能已有别的 trial 抓到的拦截类命中。
+# The explicit rule in b3_ammunition_gate.md §2/§6: A–E hits block PASS (E is additionally marked red_line);
+# deletable / not_direct are advisory only and do not block. Compute the verdict **in code**, no longer relying on the judge's self-reported verdict —
+# when the judge misses a hit it will also report CLEAN, while the union may already contain blocking-category hits caught by another trial.
 B3_BLOCKING = {"A", "B", "B2", "C", "C2", "D", "E"}
 B3_ADVISORY = {"deletable", "not_direct"}
 
 
 def _b3_key(h):
-    """命中去重键:类别 + 引文前 120 字(同一句在不同 trial 里可能被截得略有出入)。"""
+    """Hit deduplication key: category + the first 120 characters of the quote (the same sentence may be truncated slightly differently across trials)."""
     return (str(h.get("category", "")).strip(),
             " ".join(str(h.get("quote", "")).split())[:120].lower())
 
@@ -313,13 +313,13 @@ def ammo_gate(slug, rev_id, draft_path, dry=False, repeats=None):
     empty promises / over-concession / performative honesty / fabrication by MEANING, not pattern
     (regex can't tell 'we will revise X' from 'the revised X reads: ...'). HAS_AMMO blocks PASS.
 
-    ★ union-of-N(2026-09-29 复现性测量后)。同一份稿(sha 不变)判 10 次的实测:
-      · **裁决不飘**:判官忠实执行 §2/§6 —— 10/10 都是"有拦截类命中就 HAS_AMMO"。
-      · **飘的是检出**:同一处实质过度声称(D 类),medium 档 3/5 次被发现、
-        xhigh 档 4/5 次;n_hits 在 1–7 之间。跑得快的那几次就是漏掉的那几次。
-      ⇒ 这是纯 recall 问题,不是判准问题。连跑 N 次取**并集**:漏检率 0.2^N
-        (N=3 → 0.8%)。B3 单次仅 ≈88k token,跑 3 次仍比 B2 单次 780k 便宜。
-      门本应偏向 recall:漏掉弹药(稿子带着夸大发出去)的代价远大于误报一条(多改一句)。
+    ★ union-of-N (after the 2026-09-29 reproducibility measurement). Empirical results from judging the same draft (unchanged sha) 10 times:
+      · **The verdict is stable**: the judge faithfully follows §2/§6 — all 10/10 returned "HAS_AMMO whenever there is a blocking-category hit."
+      · **Detection is unstable**: the same substantive over-claiming (category D) was found 3/5 times at medium,
+        and 4/5 times at xhigh; n_hits ranged from 1–7. The faster runs were exactly the runs that missed it.
+      ⇒ This is purely a recall problem, not a decision-standard problem. Run N times and take the **union**: miss rate 0.2^N
+        (N=3 → 0.8%). A single B3 costs only ≈88k token; 3 runs are still cheaper than one 780k-token B2 run.
+      The gate should favor recall: the cost of missing ammunition (sending a draft containing exaggeration) is far greater than one false positive (editing one extra sentence).
     """
     out = f"{ROOT}/campaigns/{slug}/ledger/B3_{rev_id}_ammunition.json"
     if dry:
@@ -327,7 +327,7 @@ def ammo_gate(slug, rev_id, draft_path, dry=False, repeats=None):
     n = int(repeats or B3_REPEATS)
     merged, trials = {}, []
     for i in range(1, n + 1):
-        for p in (out, out + ".stagemeta"):      # 每次都必须真跑(draft 每轮会变 + 本身要重复采样)
+        for p in (out, out + ".stagemeta"):      # Every run must actually execute (the draft changes each round + repeated sampling is itself required)
             if os.path.exists(p):
                 os.remove(p)
         _b3_run_once(slug, rev_id, draft_path)
@@ -340,18 +340,18 @@ def ammo_gate(slug, rev_id, draft_path, dry=False, repeats=None):
         trials.append({"trial": i, "judge_verdict": r.get("verdict"), "n_hits": len(hits),
                        "cats": sorted({str(h.get("category")) for h in hits})})
         for h in hits:
-            merged.setdefault(_b3_key(h), h)     # 并集去重
+            merged.setdefault(_b3_key(h), h)     # union deduplication
     hits = list(merged.values())
     blocking = [h for h in hits if str(h.get("category", "")).strip() in B3_BLOCKING]
     res = {"verdict": "HAS_AMMO" if blocking else "CLEAN",
            "red_line": any(str(h.get("category", "")).strip() == "E" for h in hits),
            "hits": hits, "n_hits": len(hits), "n_blocking": len(blocking),
-           # 留痕:让"某次漏检"事后可查,也让 union 的收益可度量
+           # Audit trail: make a miss in a particular run inspectable afterward and make the union's benefit measurable
            "union_of": n, "effort": "xhigh", "judge_model": JUDGE_MODEL, "trials": trials}
     disagree = {t["judge_verdict"] for t in trials}
     if len(disagree) > 1:
-        log(f"    B3 union-of-{n}: 各次判官自报不一致 {sorted(disagree)} "
-            f"(n_hits={[t['n_hits'] for t in trials]}) → 按并集裁决 {res['verdict']}")
+        log(f"    B3 union-of-{n}: judges' self-reports disagree across runs {sorted(disagree)} "
+            f"(n_hits={[t['n_hits'] for t in trials]}) → verdict by union: {res['verdict']}")
     json.dump(res, open(out, "w"), ensure_ascii=False, indent=1)
     return res
 
@@ -360,28 +360,28 @@ def _b3_run_once(slug, rev_id, draft_path):
     out = f"{ROOT}/campaigns/{slug}/ledger/B3_{rev_id}_ammunition.json"
     run_stage("b3_ammunition_gate.md",
               {"SLUG": slug, "REVIEWER": rev_id, "DRAFT_PATH": draft_path},
-              # effort: medium → xhigh(2026-09-29 复现性测量后)。B3 是唯一需要**逐句通读全文
-              # 找语义弹药**的门 —— 纯 recall 任务,最吃推理预算,却曾是三道门里配额最低的
-              # (r7 xhigh / B2 high / B3 medium)。实测同一份稿 7 次判定 3 CLEAN / 4 HAS_AMMO,
-              # 检出数在 1–6 之间飘,且**跑得快的那几次就是漏掉的那几次**(55s→找到1-2条,
-              # 74-110s→找到6条)。模型三门相同(gpt-5.6-sol),故 effort 是唯一可动的自变量。
-              # timeout 同步 400→900:medium 下深审已用 110s,xhigh 超 400s 会变成自制的超时失败。
+              # effort: medium → xhigh (after the 2026-09-29 reproducibility measurement). B3 is the only gate that must **read the entire text sentence by sentence
+              # to find semantic ammunition** — a pure recall task, it consumes the most reasoning budget, yet previously had the lowest allocation of the three gates
+              # (r7 xhigh / B2 high / B3 medium). Across 7 judgments of the same draft, empirical results were 3 CLEAN / 4 HAS_AMMO,
+              # with detection counts varying between 1–6, and **the faster runs were exactly the runs that missed hits** (55s→found 1-2,
+              # 74-110s→found 6). All three gates use the same model (gpt-5.6-sol), so effort is the only adjustable independent variable.
+              # Increase timeout in parallel from 400→900: deep review at medium already took 110s; if xhigh exceeds 400s, that would create a self-inflicted timeout failure.
               out, sandbox="workspace-write", effort="xhigh", timeout=900,
               model=JUDGE_MODEL)                 # semantic judge, distinct from the writer
 
 
 def join_budget(items, budget, what="feedback", logger=None):
-    """把判官的发现拼进 carry-forward seed,**超预算必须出声**。
+    """Join the judge's findings into the carry-forward seed; **budget overflow must be reported**.
 
-    病根(#24 同类):原先 fab[:300] / ammo_fix[:400] 直接截断 —— B3 一次给 5-6 条
-    命中,每条含引文(~95 字符)+ 改写建议,400 字符只装得下 1-2 条,**剩下的在
-    下一轮根本传不到写手手里**,循环注定清不完。而且静默失效:表现为"循环效果不好",
-    不是"出错了"。DESIGN_LOGIC §4 原则 2:截断必须出声。
+    Root cause (same class as #24): fab[:300] / ammo_fix[:400] previously truncated directly — one B3 run yields 5-6
+    hits, each containing a quote (~95 characters) + rewrite advice, so 400 characters can hold only 1-2 hits; **the remainder
+    never reaches the writer in the next round**, making it impossible for the loop to clear them all. It also fails silently: this appears as "the loop performs poorly,"
+    not "an error occurred." DESIGN_LOGIC §4 principle 2: truncation must be reported.
 
-    提到模块级是为了可单测 —— 原先是 reviewer_loop 里的闭包,改了也没法验。
-    单测立刻抓到:B3 改 union-of-3 后命中从 5-6 涨到 **12 条 / 4305 字符**,
-    2500 的预算只装得下 7 条 —— 两个改动相互作用,光加大预算不够。
-    故调用方须**先按重要性排序**(拦截类在前,建议类可丢),本函数只负责装箱与告警。
+    This is lifted to module scope for unit testing — it was previously a closure inside reviewer_loop, so changes could not be verified.
+    The unit test immediately caught that after B3 changed to union-of-3, hits rose from 5-6 to **12 hits / 4305 characters**,
+    while a budget of 2500 could hold only 7 hits — the two changes interact, so merely increasing the budget is insufficient.
+    Therefore callers must **sort by importance first** (blocking categories first; advisory categories may be dropped); this function handles only packing and warnings.
     """
     out, used, dropped = [], 0, 0
     for it in items:
@@ -394,18 +394,18 @@ def join_budget(items, budget, what="feedback", logger=None):
         out.append(t)
         used += len(t) + 2
     if dropped:
-        msg = (f"    note: {what} 反馈超预算,丢弃 {dropped}/{len(items)} 条"
-               f"(budget={budget}) —— 下一轮收不到这些,考虑调大预算")
+        msg = (f"    note: {what} feedback exceeds budget; dropped {dropped}/{len(items)} items"
+               f"(budget={budget}) — these will not reach the next round; consider increasing the budget")
         (logger or log)(msg)
     return "; ".join(out)
 
 
-MT_ROUNDS = 3            # --mt-rounds:多轮交锋的最大轮数
-MT_NOVELTY_SIM = 0.5     # 轮间追问相似度上限;超过视为重问 → 饱和停机
+MT_ROUNDS = 3            # --mt-rounds: maximum number of rounds in the multi-turn exchange
+MT_NOVELTY_SIM = 0.5     # Upper bound on follow-up similarity across rounds; exceeding it counts as repetition → stop at saturation
 
 
 def _rejected_expids(slug):
-    """ACCEPTANCE.json 判定为 REJECT 的实验 —— 作者轮不得把它们列为证据。"""
+    """Experiments judged REJECT in ACCEPTANCE.json — the author turn must not cite them as evidence."""
     out = set()
     d = f"{ROOT}/campaigns/{slug}/experiments"
     if not os.path.isdir(d):
@@ -422,33 +422,33 @@ def _rejected_expids(slug):
 
 
 def multiturn_exchange(slug, rev, draft_path, rounds=None, dry=False):
-    """② 多轮交锋模拟:审稿人追问 → 作者应答 → 再追问,最多 N 轮。
+    """② Multi-turn exchange simulation: reviewer follow-up → author response → another follow-up, for at most N rounds.
 
-    现有产线只模拟**单轮**(判官读一遍给判定),这里模拟真实 discussion 期的往返。
-    验证的不是"第一印象能不能过",而是"**稿子扛不扛得住追问**"。
+    The existing pipeline simulates only a **single turn** (the judge reads once and issues a judgment); this simulates actual back-and-forth during the discussion period.
+    It tests not "whether the first impression passes," but "**whether the draft withstands follow-up questions**."
 
-    ★ 不是拦门。它不阻止 r7 判 PASS,产出的是"哪些 claim 在追问下塌掉",
-      供回 r6 收窄、或进 honest-concede 清单。
+    ★ Not a gate. It does not prevent r7 from judging PASS; its output identifies "which claim collapses under follow-up,"
+      for narrowing in r6 or inclusion in the honest-concede list.
 
-    最小前提已实测(01-wdData/37ch):轮 2 追问与轮 1 相似度 0.03、锚在不同句,
-    且轮 2 更要害(从"quality screen 是什么"推进到"重标定是否用了同轮标签"=数据泄漏)。
-    对照组:换 persona 先验的做法相似度 0.74-0.80,已证伪。
+    The minimal premise has been empirically verified (01-wdData/37ch): the round 2 follow-up had similarity 0.03 to round 1 and anchored to a different sentence,
+    while round 2 was more consequential (advancing from "what is the quality screen" to "whether recalibration used labels from the same round" = data leakage).
+    Control group: the approach of changing persona priors yielded similarity 0.74-0.80 and was falsified.
 
-    代码里强制的不变量(不依赖引擎自觉):
-      · 审稿人 = JUDGE_MODEL(ACQUIT),作者 = 写手 MODEL(DRIVE),同模型则拒跑
-      · evidence_pool 缺失则拒跑(否则作者轮会退回未过滤证据)
-      · 新意判据在代码里算(相似度 + 锚句),不问引擎"这条新不新"
-      · 红线检出:作者引入新数字 / 引用 REJECT 实验
+    Invariants enforced in code (not dependent on engine compliance):
+      · reviewer = JUDGE_MODEL(ACQUIT), author = writer MODEL(DRIVE); refuse to run if they are the same model
+      · refuse to run if evidence_pool is missing (otherwise the author turn falls back to unfiltered evidence)
+      · compute the novelty criterion in code (similarity + anchor sentence); do not ask the engine "whether this is novel"
+      · red-line detection: the author introduces new numbers / cites a REJECT experiment
     """
     import difflib
     rid = rev["id"]
     camp = f"{ROOT}/campaigns/{slug}"
     n = int(rounds or MT_ROUNDS)
     if MODEL and JUDGE_MODEL and MODEL == JUDGE_MODEL:
-        log(f"  mt {rid}: 写手与判官同模型({MODEL}) → 拒跑。自问自答必然收敛到同意。")
+        log(f"  mt {rid}: writer and judge use the same model ({MODEL}) → refusing to run. Self-questioning and self-answering inevitably converge on agreement.")
         return {"status": "BLOCKED", "reason": "writer == judge"}
     if not dry and not os.path.exists(f"{camp}/ledger/evidence_pool.json"):
-        log(f"  mt {rid}: evidence_pool.json 缺失 → 拒跑(作者轮会退回未过滤证据)")
+        log(f"  mt {rid}: evidence_pool.json missing → refusing to run (the author turn would fall back to unfiltered evidence)")
         return {"status": "BLOCKED", "reason": "no evidence_pool"}
     rejected = _rejected_expids(slug)
     hist_path = f"{camp}/ledger/mt_{rid}_history.md"
@@ -462,9 +462,9 @@ def multiturn_exchange(slug, rev, draft_path, rounds=None, dry=False):
         for q in (rv_out, rv_out + ".stagemeta"):
             if not dry and os.path.exists(q):
                 os.remove(q)
-        # sandbox 必须是 workspace-write:本 stage **声明了输出文件**,只读沙箱写不了。
-        # (照抄 r7 判官的 read-only 是错的 —— r7 判官不写文件,判定从 receipt 解析。
-        #  B2/B3 这类"要写判定文件的判官"用的就是 workspace-write。)
+        # sandbox must be workspace-write: this stage **declares an output file**, which a read-only sandbox cannot write.
+        # (Copying the r7 judge's read-only setting would be wrong — the r7 judge writes no file; its judgment is parsed from the receipt.
+        #  Judges such as B2/B3 that "must write a judgment file" use workspace-write.)
         run_stage("mt_reviewer_turn.md", slots, rv_out, sandbox="workspace-write", effort=JUDGE_EFFORT,
                   timeout=600, dry=dry, model=JUDGE_MODEL)
         if dry:
@@ -472,15 +472,15 @@ def multiturn_exchange(slug, rev, draft_path, rounds=None, dry=False):
         try:
             rv = json.load(open(rv_out))
         except Exception:
-            log(f"    mt r{r}: 审稿人轮无可解析输出 → 停"); break
+            log(f"    mt r{r}: reviewer turn produced no parseable output → stop"); break
 
-        # ★ 新意判据在代码里算(DESIGN_LOGIC §4 原则 3:裁决归代码)
+        # ★ Compute the novelty criterion in code (DESIGN_LOGIC §4 principle 3: decisions belong in code)
         fu = str(rv.get("followup", ""))
         qt = str(rv.get("quote", "")).strip()[:80].lower()
         sims = [difflib.SequenceMatcher(None, str(p["followup"]), fu).ratio() for p in prev]
         dup_quote = any(str(p["quote"]).strip()[:80].lower() == qt for p in prev)
         if prev and (max(sims) >= MT_NOVELTY_SIM or dup_quote):
-            log(f"    mt r{r}: 追问不新(sim={max(sims):.2f} dup_quote={dup_quote}) → 饱和,停止")
+            log(f"    mt r{r}: follow-up is not novel (sim={max(sims):.2f} dup_quote={dup_quote}) → saturated, stop")
             exchange.append({"round": r, "saturated": True, "similarity": round(max(sims), 3)})
             break
 
@@ -494,17 +494,17 @@ def multiturn_exchange(slug, rev, draft_path, rounds=None, dry=False):
         try:
             au = json.load(open(au_out))
         except Exception:
-            log(f"    mt r{r}: 作者轮无可解析输出 → 停"); break
+            log(f"    mt r{r}: author turn produced no parseable output → stop"); break
 
-        # 红线检出(代码判,不问引擎)
+        # Red-line detection (judge in code; do not ask the engine)
         newnums = [x for x in (au.get("new_numbers_introduced") or []) if str(x).strip()]
         badev = [e for e in (au.get("evidence_used") or []) if any(rj in str(e) for rj in rejected)]
         if newnums:
             red_flags.append({"round": r, "kind": "fabricated_numbers", "detail": newnums})
-            log(f"    🔴 mt r{r}: 作者在压力下引入了不在证据池的数字 {newnums}")
+            log(f"    🔴 mt r{r}: under pressure, the author introduced numbers absent from the evidence pool {newnums}")
         if badev:
             red_flags.append({"round": r, "kind": "cited_rejected_experiment", "detail": badev})
-            log(f"    🔴 mt r{r}: 作者把 REJECT 的实验列为证据 {badev}")
+            log(f"    🔴 mt r{r}: the author cited REJECT experiments as evidence {badev}")
 
         exchange.append({"round": r, "quote": rv.get("quote"), "followup": fu,
                          "targets_concern": rv.get("targets_concern"),
@@ -517,9 +517,9 @@ def multiturn_exchange(slug, rev, draft_path, rounds=None, dry=False):
         with open(hist_path, "a") as f:
             f.write(f"\n[Reviewer Q{r}] {fu}\n[Authors A{r}] {au.get('answer')}\n")
         log(f"    mt r{r}: conceded={au.get('conceded')} "
-            f"sim={round(max(sims),3) if sims else '-'} 锚句「{str(rv.get('quote'))[:40]}…」")
+            f"sim={round(max(sims),3) if sims else '-'} anchor sentence \"{str(rv.get('quote'))[:40]}…\"")
 
-    # 塌掉的 claim = 作者让步或收窄之处 —— 这是本 stage 的真正产出
+    # Collapsed claim = where the author concedes or narrows — this is the real output of this stage
     collapsed = [e for e in exchange if e.get("conceded") or e.get("narrowed_claim")]
     res = {"reviewer": rid, "rounds_run": len([e for e in exchange if not e.get("saturated")]),
            "max_rounds": n, "saturated": any(e.get("saturated") for e in exchange),
@@ -529,8 +529,8 @@ def multiturn_exchange(slug, rev, draft_path, rounds=None, dry=False):
     if not dry:
         json.dump(res, open(f"{camp}/ledger/mt_{rid}_exchange.json", "w"),
                   ensure_ascii=False, indent=1)
-    log(f"  mt {rid}: 跑了 {res['rounds_run']} 轮,{len(collapsed)} 处塌陷,"
-        f"{len(red_flags)} 条红线{'(饱和提前停)' if res['saturated'] else ''}")
+    log(f"  mt {rid}: ran {res['rounds_run']} rounds, {len(collapsed)} collapses, "
+        f"{len(red_flags)} red lines{' (stopped early at saturation)' if res['saturated'] else ''}")
     return res
 
 
@@ -542,10 +542,10 @@ def route_back(g):
     txt = " ".join(str(ds.get(k, "")) for k in ("blocker", "advice", "reasoning", "veto")).lower()
     if any(w in txt for w in ("need experiment", "needs experiment", "missing data", "no data",
                               "empirical evidence", "run an experiment", "additional experiment",
-                              "ablation", "需要实验", "补实验", "缺数据", "缺证据")):
+                              "ablation", "experiment required", "add an experiment", "data missing", "evidence missing")):
         return ("r4", "evidence shortage -> needs an experiment (r4), not a rewrite")
     if any(w in txt for w in ("misdiagnos", "wrong concern", "mischaracter", "misread",
-                              "actually about", "真正的心结", "误判", "诊断错")):
+                              "actually about", "the real concern", "misjudged", "incorrect diagnosis")):
         return ("r2", "concern misdiagnosed -> re-run diagnosis (r2)")
     return ("r6", "text-level gap -> rewrite (r6)")
 
@@ -630,9 +630,9 @@ def _persuade_judge(rid, oa, concern_desc, stub, dry=False):
     case = {"review": f"Reviewer {rid}'s specific concern under adjudication:\n{concern_desc}",
             "reviewer_profile": prof, "initial_overall": oa, "rebuttal": stub}
     ds, ds_ok = cheap_judge(case, None, rid, "s_exp.deepseek")
-    primary = "codex" if ds is None else cg.primary_judge(case)   # 降级:只剩 codex 一家,它就是主判
+    primary = "codex" if ds is None else cg.primary_judge(case)   # Degradation: only the codex family remains, so it is the primary judge
     if ds is None:
-        ds_ok = True                                 # 无便宜档 → 不做便宜拒,直接上权威判官
+        ds_ok = True                                 # No cheap tier → do not cheap-reject; go directly to the authoritative judge
     if not ds_ok and primary != "codex":             # strict zone: DeepSeek is co-equal -> valid cheap-reject
         rp = str(ds.get("raise_potential", "")).lower()
         return {"verdict": "LOWER_BOUND" if rp == "high" else "CONCEDE", "ds": ds, "codex": None,
@@ -823,7 +823,7 @@ def _cheaper_warrant_for(concern_label, desc, evidence_map):
 
 
 def experiment_ante(slug, req, card, dry=False):
-    """ANTE guard (before any GPU run), '合议才拦' (conservative): per served concern, judge (a) the best
+    """ANTE guard (before any GPU run), 'block only by consensus' (conservative): per served concern, judge (a) the best
     cheaper warrant and (b) the experiment's best-case, via the SAME frozen consensus. NOT_NEEDED iff a
     cheaper warrant already clears the bar for every served concern; GREENLIGHT iff best-case clears for
     >=1; else REDESIGN (even the best possible result won't get consensus -> don't burn the run)."""
@@ -869,7 +869,7 @@ def _queue_upsert(slug, req, dry=False):
 
 def experiment_redesign(slug, req, expid, basis, iteration, dry=False):
     """DRIVE-side planner (NOT the judge; runs on the writer/default engine, not JUDGE_MODEL). Reads the
-    concern 心结 + the failing result (or best-case) + the judge's WHY, emits WHY it cannot persuade + a
+    real concern + the failing result (or best-case) + the judge's WHY, emits WHY it cannot persuade + a
     concrete stronger experiment_request + a feasibility verdict. Infeasible -> honest concession."""
     edir = f"{ROOT}/campaigns/{slug}/experiments/{expid}"
     out = f"{edir}/redesign_iter{iteration}.json"
@@ -981,11 +981,11 @@ def experiment_loop(slug, req, card, dry=False):
 
 
 def route_strategies(strategies, rev):
-    """按 MANIFEST 的 route 段给出**有序阶梯**(先写谁、不过再写谁)。
+    """Return an **ordered ladder** from the route section of MANIFEST (which one writes first, and which writes next if it fails).
 
-    为什么是阶梯而不是"挑一个":实测既无法按质量也无法按成本挑出最优
-    (见 reviewer_loop 的依据),所以不假装能挑 —— 用一个可辩护的默认顺序,
-    过门就停,不过再往下走。收益来自"少写",不来自"挑对"。
+    Why a ladder rather than "pick one": empirical results cannot identify the best by either quality or cost
+    (see the evidence in reviewer_loop), so do not pretend selection is possible — use a defensible default order,
+    stop once the gate clears, and proceed down the ladder only after failure. The gain comes from "writing fewer," not from "picking correctly."
     """
     by_id = {s["id"]: s for s in strategies}
     mf = {}
@@ -996,7 +996,7 @@ def route_strategies(strategies, rev):
     oa = rev.get("initial_overall")
     order = (mf.get("by_zone") or {}).get(str(oa)) or mf.get("default_ladder") or []
     ladder = [by_id[i] for i in order if i in by_id]
-    ladder += [s for s in strategies if s["id"] not in {x["id"] for x in ladder}]   # 兜底:补齐未列出的
+    ladder += [s for s in strategies if s["id"] not in {x["id"] for x in ladder}]   # Fallback: append all unlisted strategies
     return ladder
 
 
@@ -1020,17 +1020,17 @@ def reviewer_loop(slug, rev, max_iter, dry=False, want_strategies=None):
         rdir = f"{dd}/round{rnd}"
         if not dry:
             os.makedirs(rdir, exist_ok=True)
-        # ★ 策略级惰性阶梯(③ 路由 + ④ 成本优化,合并为同一个问题)
-        # 此前:每轮把 N 个策略**全写一遍**再选最优。依据实测 cost.jsonl(01-wdData):
-        #   · 写作 447k in/次 vs 判官 16k in/次 → **写作占 94% 的 token**,判官占 6%。
-        #     所以"全写 N 个"是唯一的大头;级联判官优化的是那 6% 里的零头。
-        #   · 9/9 全清分区 bar(判据饱和)→ 质量挑不出策略高下。
-        #   · 策略间成本只差 8% → 成本也挑不出高下。
-        #   ⇒ "挑哪个"无据可依,但"少写几个"收益确定:N 3→1 省 63% 的总 token。
-        # 故:按阶梯写第一个 → 过门即停;不过才写下一个。省下的就是没写的那些。
-        # `--fanout-all` 恢复旧行为(做策略对比评测时才需要全写)。
+        # ★ Strategy-level lazy ladder (③ routing + ④ cost optimization, combined into the same problem)
+        # Previously: write **all N strategies** every round, then select the best. Based on empirical cost.jsonl data (01-wdData):
+        #   · Writing 447k in/call vs judge 16k in/call → **writing accounts for 94% of token**, judge 6%.
+        #     Thus "write all N" is the sole dominant cost; the judge cascade optimizes only a fraction of that 6%.
+        #   · 9/9 cleared the zone bar (criterion saturation) → quality cannot distinguish the strategies.
+        #   · Strategy costs differ by only 8% → cost cannot distinguish them either.
+        #   ⇒ There is no evidence for "which one to pick," but the benefit of "writing fewer" is certain: N 3→1 saves 63% of total token.
+        # Therefore: write the first on the ladder → stop immediately if it clears the gate; write the next only if it fails. The unwritten strategies are the savings.
+        # `--fanout-all` restores the old behavior (write all strategies only for strategy-comparison evaluations).
         ladder = strategies if FANOUT_ALL else route_strategies(strategies, rev)
-        log(f"  策略阶梯{'(FANOUT_ALL 全写)' if FANOUT_ALL else ''}: "
+        log(f"  strategy ladder{' (FANOUT_ALL writes all)' if FANOUT_ALL else ''}: "
             f"{' → '.join(s['id'] for s in ladder)}")
         drafts, cand, records, picked = [], [], {}, None
         for s in ladder:
@@ -1041,22 +1041,22 @@ def reviewer_loop(slug, rev, max_iter, dry=False, want_strategies=None):
                       out, effort=WRITE_EFFORT, timeout=1200, dry=dry)
             if dry:
                 continue
-            if not os.path.exists(out):          # #20: 阶梯首个就写不出来必须暴露,不静默
-                log(f"  MoE WARNING: round{rnd} {rev['id']} 策略 {s['id']} 未产出 draft")
+            if not os.path.exists(out):          # #20: failure to write even the first ladder entry must be surfaced, never silent
+                log(f"  MoE WARNING: round{rnd} {rev['id']} strategy {s['id']} produced no draft")
                 continue
             d = open(out).read()
             drafts.append((s["id"], d))
             ce = cheap_eval(slug, rev, d)
             cand.append((s["id"], d, ce))
-            if best_ever is None or ce["rank"] > best_ever[0]:      # H15 全局 best-so-far
+            if best_ever is None or ce["rank"] > best_ever[0]:      # H15 global best-so-far
                 best_ever = (ce["rank"], s["id"], d)
-            # H17: 每个**实际写出来**的策略都留判定;阶梯下未写的策略没有记录 —— 这是设计,
-            # 不是丢数据(gate ledger 的 ladder 字段记下了完整阶梯与实际走到第几层)。
+            # H17: retain a judgment for every strategy **actually written**; unwritten strategies farther down the ladder have no record — this is by design,
+            # not data loss (the ladder field in the gate ledger records the complete ladder and how many levels were actually traversed).
             records[s["id"]] = {"strategy": s["id"], "ammo_hits": ce["ammo"], "deepseek": ce["ds"],
                                 "ds_ok": ce["ds_ok"], "codex": None, "consensus": None,
                                 "codex_run": False, "stop": False}
             if not ce["ds_ok"]:
-                continue                         # 便宜门拒 → 直接写下一个策略,不花权威判官
+                continue                         # Cheap gate rejects → write the next strategy directly, without spending an authoritative-judge call
             g = gate(slug, rev, d)
             records[s["id"]].update(codex=g.get("codex"), consensus=g.get("consensus") or None,
                                     codex_run=True, stop=bool(g.get("stop")))
@@ -1067,11 +1067,11 @@ def reviewer_loop(slug, rev, max_iter, dry=False, want_strategies=None):
             if g.get("stop"):
                 saved = len(ladder) - len(drafts)
                 if saved > 0:
-                    log(f"    成本路由:{s['id']} 过门 → 省下 {saved} 次写作(每次 ≈447k in token)")
-                break                            # ← 省下的 2/3 就在这一行
+                    log(f"    cost routing: {s['id']} cleared the gate → saved {saved} writing calls (≈447k in token each)")
+                break                            # ← This line is where the 2/3 savings occur
         if dry or not drafts:
             return {"reviewer": rev["id"], "status": "DRY" if dry else "NO_DRAFT", "round": rnd}
-        if picked is None:                       # 没有一个够格上权威判官 → 取便宜门排名最高的
+        if picked is None:                       # None qualified for the authoritative judge → take the highest-ranked by the cheap gate
             sid0, d0, ce0 = max(cand, key=lambda x: x[2]["rank"])
             picked = (sid0, d0, {"stop": False, "ds": ce0["ds"], "ammo": ce0["ammo"], "consensus": {}})
 
@@ -1079,10 +1079,10 @@ def reviewer_loop(slug, rev, max_iter, dry=False, want_strategies=None):
         route, route_reason = route_back(g)      # H13: typed route-back
         json.dump({"round": rnd, "reviewer": rev["id"], "oa": rev.get("initial_overall"),
                    "picked": sid, "stop": bool(g.get("stop")), "ammo": len(g.get("ammo") or []),
-                   # ★ M2 教训:旧 gate ledger 只记 {round,picked,stop,ammo},没有每策略分数,
-                   # 也没记判据版本 —— 以致 NAFY 的旧 bar 判定成了无法识别的过期数据。
-                   # 现在把家族性与 harness 版本一起落盘,让每条记录自带可追溯的判据身份。
-                   # 阶梯留痕:完整顺序 + 实际写了几层 —— 这样"未写的策略没记录"可被区分于"丢数据"
+                   # ★ M2 lesson: the old gate ledger recorded only {round,picked,stop,ammo}, without per-strategy scores,
+                   # and did not record the criterion version — causing NAFY's old bar judgment to become unidentifiable stale data.
+                   # Now persist family identity together with the harness version, so every record carries a traceable criterion identity.
+                   # Ladder audit trail: complete order + number of levels actually written — this distinguishes "unwritten strategy has no record" from "data loss"
                    "ladder": [x["id"] for x in ladder], "written": [d[0] for d in drafts],
                    "fanout_all": FANOUT_ALL,
                    "cross_family": (not NO_DEEPSEEK),
@@ -1101,19 +1101,19 @@ def reviewer_loop(slug, rev, max_iter, dry=False, want_strategies=None):
             if b2_ok and amm_ok:
                 open(f"{dd}/{rev['id']}.md", "w").write(best)
                 return {"reviewer": rev["id"], "round": rnd, "strategy": sid,
-                        # 降级模式绝不报 PASS:那会让单家族结果被误当成真的跨家族 ACQUIT
+                        # Degraded mode must never report PASS: that would let a single-family result be mistaken for a genuine cross-family ACQUIT
                         "status": ("PASS_SINGLE_FAMILY" if NO_DEEPSEEK else "PASS"),
                         "cross_family": (not NO_DEEPSEEK)}
             # Cleared raise/strength but blocked before PASS by fabrication (B2) and/or ammunition (B3).
-            # #24 同类修正(静默截断):原先 fab[:300] / ammo_fix[:400] 会把判官的发现
-            # 悄悄砍掉大半 —— B3 一次给 5 条命中,每条含引文(~95 字符)+ 改写建议,
-            # 400 字符只塞得下 1-2 条,剩下的在下一轮根本传不到写手手里,循环必然白跑。
-            # 现在:预算放大到能装完整反馈,且截断必须**显式记日志**(不许静默)。
+            # Fix in the same class as #24 (silent truncation): fab[:300] / ammo_fix[:400] previously removed
+            # most judge findings silently — one B3 run yields 5 hits, each with a quote (~95 characters) + rewrite advice;
+            # 400 characters can hold only 1-2 hits, and the remainder never reaches the writer in the next round, guaranteeing a wasted loop.
+            # Now: enlarge the budget enough to hold complete feedback, and truncation must be **logged explicitly** (never silently).
             fab = join_budget((b2.get("unsupported_claims") or []) + (b2.get("invented_citations") or [])
                                + (b2.get("reasons") or []), 3000, "B2") if not b2_ok else ""
-            # ★ 先排序再装箱:拦截类(B3_BLOCKING)必须先进 seed,建议类
-            # (not_direct/deletable)才是可丢的。单测发现 union-of-3 后命中达 12 条
-            # /4305 字符,只靠加大预算装不下 —— 重要的必须优先。
+            # ★ Sort before packing: blocking categories (B3_BLOCKING) must enter the seed first; only advisory categories
+            # (not_direct/deletable) may be dropped. The unit test found 12 hits
+            # /4305 characters after union-of-3; increasing the budget alone cannot fit them all — important items must come first.
             _hits = sorted((amm.get("hits") or []),
                            key=lambda h: 0 if str(h.get("category", "")).strip() in B3_BLOCKING else 1)
             ammo_fix = join_budget([f"\"{h.get('quote','')}\" -> {h.get('rewrite','')}"
@@ -1212,32 +1212,32 @@ def run_paper(slug, from_stage="r0a", dry=False):
         run_stage("r5_evidence_merge.md", {"SLUG": slug}, f"{camp}/ledger/evidence_pool.json",
                   sandbox="workspace-write", effort="high", dry=dry)
 
-    # ★ 驱动级硬闸(2026-09-29,01-wdData/37ch 踩坑后加):r6 绝不在没有 evidence_pool
-    # 的情况下写作。stage prompt 里的 fail-closed 只是**给引擎的指令**,引擎可能不遵守;
-    # 唯一可靠的强制在这里。
-    # 病根:r6_write.md / b2 都写过"evidence_pool 若无则退回 evidence_map.json",而
-    # evidence_map 是 r1 产的**未过滤**证据底(无 evidence_status、未剔除 REJECT 实验)。
-    # 后果实测:37ch 的稿把 01-E-overlap 写成 "our overlap stress test measured",
-    # 而该实验 ACCEPTANCE=REJECT → B2 判 FAIL,整轮 HONEST_CONCEDE。
+    # ★ Driver-level hard gate (added after the 2026-09-29, 01-wdData/37ch failure): r6 must never write without evidence_pool.
+    # The fail-closed language in the stage prompt is only an **instruction to the engine**, which the engine may disobey;
+    # the only reliable enforcement is here.
+    # Root cause: r6_write.md / b2 both said "fall back to evidence_map.json if evidence_pool is absent," but
+    # evidence_map is the **unfiltered** evidence base produced by r1 (no evidence_status, REJECT experiments not removed).
+    # Empirical consequence: the 37ch draft wrote "our overlap stress test measured" for 01-E-overlap,
+    # but that experiment had ACCEPTANCE=REJECT → B2 judged FAIL, and the entire round ended in HONEST_CONCEDE.
     if "r6r7" in do:
         pool = f"{camp}/ledger/evidence_pool.json"
         if not os.path.exists(pool):
             emap = f"{camp}/ledger/evidence_map.json"
             if os.path.exists(emap):
-                log(f"  evidence_pool.json 缺失 → 回填 r5_evidence_merge(r6 不得用未过滤证据写作)")
+                log(f"  evidence_pool.json missing → backfill with r5_evidence_merge (r6 must not write from unfiltered evidence)")
                 run_stage("r5_evidence_merge.md", {"SLUG": slug}, pool,
                           sandbox="workspace-write", effort="high", dry=dry)
             if not os.path.exists(pool) and not dry:
-                log(f"FATAL: {slug} 无 evidence_pool.json 且回填失败 —— 拒绝跑 r6r7。"
-                    f" 未过滤证据会把 REJECT 的实验写成已完成证据(见 37ch 实测)。"
-                    f" 先修好 r5_evidence_merge 再来。")
+                log(f"FATAL: {slug} has no evidence_pool.json and backfill failed — refusing to run r6r7."
+                    f" Unfiltered evidence would present a REJECT experiment as completed evidence (see the 37ch empirical result)."
+                    f" Fix r5_evidence_merge before retrying.")
                 return []
 
     results = []
     if "r6r7" in do:
         targets = card.get("target", {})
         want = set(targets.get("require_raise_on", [])) | set(targets.get("maintain", []))
-        max_iter = int(MAX_ITER_OVERRIDE or card.get("max_iter", 4))   # --max-iter:成本旋钮,不改契约文件
+        max_iter = int(MAX_ITER_OVERRIDE or card.get("max_iter", 4))   # --max-iter: cost control, without changing the contract file
         n_strat = card.get("n_strategies")           # #20: reconcile card roster with MANIFEST
         for rev in card.get("reviewers", []):
             if rev["id"] in want or not want:
@@ -1245,9 +1245,9 @@ def run_paper(slug, from_stage="r0a", dry=False):
                 results.append(reviewer_loop(slug, rev, max_iter, dry=dry, want_strategies=n_strat))
         if not dry:                               # H11: never clobber real loop_results.json on a dry run
             json.dump(results, open(f"{camp}/ledger/loop_results.json", "w"), ensure_ascii=False, indent=1)
-    # ② 多轮交锋:交付前压力测试。**不是拦门** —— 不影响 r6r7 的 PASS 判定,
-    # 产出"哪些 claim 在追问下塌掉",供回 r6 收窄或进 honest-concede 清单。
-    # 只对已产出终稿的 reviewer 跑(拿不到稿就没得压)。
+    # ② Multi-turn exchange: pre-delivery stress test. **Not a gate** — does not affect the r6r7 PASS judgment;
+    # outputs "which claim collapses under follow-up," for narrowing in r6 or inclusion in the honest-concede list.
+    # Run only for reviewer entries with a completed final draft (there is nothing to stress-test without a draft).
     if "mt" in do:
         targets = card.get("target", {})
         want = set(targets.get("require_raise_on", [])) | set(targets.get("maintain", []))
@@ -1256,7 +1256,7 @@ def run_paper(slug, from_stage="r0a", dry=False):
                 continue
             final = f"{camp}/drafts/{rev['id']}.md"
             if not os.path.exists(final) and not dry:
-                log(f"  mt {rev['id']}: 无终稿({final}),跳过")
+                log(f"  mt {rev['id']}: no final draft ({final}), skipping")
                 continue
             multiturn_exchange(slug, rev, final, dry=dry)
 
@@ -1291,15 +1291,15 @@ def main():
     ap.add_argument("--write-effort", default="high")
     ap.add_argument("--judge-effort", default="xhigh")
     ap.add_argument("--mt-rounds", type=int, default=None,
-                    help="② 多轮交锋的最大轮数(默认 3;追问不新即提前饱和停止)")
+                    help="② maximum number of rounds in the multi-turn exchange (default 3; stop early at saturation when a follow-up is not novel)")
     ap.add_argument("--b3-repeats", type=int, default=None,
-                    help="B3 连跑次数取命中并集(默认 3;实测单次漏检率 ~20%%)")
+                    help="number of consecutive B3 runs whose hit union is taken (default 3; empirically measured single-run miss rate ~20%%)")
     ap.add_argument("--fanout-all", action="store_true",
-                    help="恢复旧行为:每轮把 N 个策略全写一遍(贵 3×,仅策略对比评测用)")
+                    help="restore old behavior: write all N strategies every round (3× more expensive; use only for strategy-comparison evaluations)")
     ap.add_argument("--no-deepseek", action="store_true",
-                    help="单家族降级:DeepSeek 不可用时用纯 codex 判官(丢跨家族合议,产物标 degraded)")
+                    help="single-family degradation: use only the codex judge when DeepSeek is unavailable (loses the cross-family consensus gate; output marked degraded)")
     ap.add_argument("--max-iter", type=int, default=None,
-                    help="覆盖 card 的 max_iter(成本旋钮;验证跑建议 1-2)")
+                    help="override the card's max_iter (cost control; 1-2 recommended for validation runs)")
     ap.add_argument("--dry-run", action="store_true")
     a = ap.parse_args()
     MODEL, JUDGE_MODEL = a.model, a.judge_model
@@ -1312,11 +1312,11 @@ def main():
     if a.mt_rounds:
         MT_ROUNDS = a.mt_rounds
     if FANOUT_ALL:
-        log("⚠️ --fanout-all:每轮全写 N 个策略,写作成本 ×N(实测每次 ≈447k in token)。")
+        log("⚠️ --fanout-all: write all N strategies every round; writing cost ×N (empirically ≈447k in token per call).")
     if NO_DEEPSEEK:
-        log("⚠️ 单家族降级模式(--no-deepseek):跨家族合议不成立,GOAL.md 不可违反 #4 被放弃。"
-            "判官仍 ≠ 写手(H1 保住)。产物一律标 cross_family=false / status=PASS_SINGLE_FAMILY,"
-            "不得当作真 ACQUIT 使用。")
+        log("⚠️ Single-family degraded mode (--no-deepseek): the cross-family consensus gate does not hold; GOAL.md inviolable rule #4 is abandoned."
+            "The judge still ≠ the writer (H1 preserved). All output is marked cross_family=false / status=PASS_SINGLE_FAMILY,"
+            "and must not be used as a genuine ACQUIT.")
     if MODEL and JUDGE_MODEL and MODEL == JUDGE_MODEL:
         log(f"WARNING: writer MODEL == JUDGE_MODEL ({MODEL}); family-B independence collapses "
             f"(anti-Goodhart weakened). DeepSeek is still cross-family, but pin a distinct --judge-model.")

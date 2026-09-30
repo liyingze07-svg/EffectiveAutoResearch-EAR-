@@ -1,81 +1,81 @@
-# EMNLP/ARR Rebuttal-Quality Verifier — 现状说明
+# EMNLP/ARR Rebuttal-Quality Verifier — Current Status
 
-记录当前 **EMNLP/ARR 版**的 32 篇测试数据与 verifier 落地情况。ICLR 版见
-[`README.md`](README.md)（0.805）；两版是**两种不同的决策模型**，各自校准，互不覆盖。
+This document records the current state of the 32-paper test data and verifier implementation for the **EMNLP/ARR version**. See
+[`README.md`](README.md) for the ICLR version (0.805); the two versions are **two different decision models**, calibrated independently and neither superseding the other.
 
-> 一句话结论：EMNLP 版 v2 在 32 篇平衡集上 **macro-F1 = 0.718 / acc = 0.719**，
-> 从直接套用 ICLR prompt 的 **0.468（随机水平）**拉起来。核心不是"更会读 rebuttal"，
-> 而是发现 **ARR 边缘群的涨/平主要由审稿人的"起点分 + 上移空间"决定**，并把这个先验写进了 prompt。
+> One-sentence conclusion: EMNLP v2 achieves **macro-F1 = 0.718 / acc = 0.719** on the balanced set of 32 papers,
+> up from **0.468 (chance level)** when directly applying the ICLR prompt. The key is not "reading rebuttal better",
+> but discovering that **raise/same decisions in ARR borderline cases are driven mainly by the reviewer's "starting score + room to move"**, and encoding this prior into the prompt.
 
 ---
 
-## 一、数据：`data/emnlp_test32.jsonl`（32 篇，16 涨 / 16 平）
+## I. Data: `data/emnlp_test32.jsonl` (32 papers, 16 raise / 16 same)
 
-### 来源
-- 项目 `<arr-corpus>`（ACL Rolling Review 公开评审，ARR 2024 cycle）。
-- 每篇论文含 `reviews.json`（review 全文 + `scores.overall_assessment` 1–5、`soundness` 1–5、
-  `meta.confidence` 1–5）、`comments.json`（作者 rebuttal + 审稿人后续评论）。
+### Source
+- Project `<arr-corpus>` (public ACL Rolling Review reviews, ARR 2024 cycle).
+- Each paper contains `reviews.json` (full review text + `scores.overall_assessment` 1–5, `soundness` 1–5,
+  `meta.confidence` 1–5) and `comments.json` (author rebuttal + subsequent reviewer comments).
 
-### 标签怎么来的（关键：ground truth 来自审稿人自己的话，不是 LLM 判的）
-- **涨（raise）**：审稿人后续评论里**显式**说涨分，且**全部带 "from X to Y" 幅度**
-  （如 "I increased the score from 3 to 3.5"）。→ 16 篇，幅度 **Δ=0.5 ×11、Δ=1.0 ×5**。
-- **平（same）**：审稿人**显式**维持（"I will keep my score" / "maintain my rating unchanged"），
-  且评论中**无任何涨分语**。→ 16 篇。
-- 严格清洗：排除 excitement 轴（非 overall）、soundness-only、条件句（"if you…then I can raise"）、
-  否定句（"do not feel comfortable raising"）；一篇一条去重；review>350 字、rebuttal>250 字。
-- 构建脚本：[`../scripts/build_emnlp_test.py`](../scripts/build_emnlp_test.py)。
+### How the labels were obtained (critical: ground truth comes from the reviewers' own words, not an LLM judgment)
+- **Raise (`raise`)**: in a subsequent comment, the reviewer **explicitly** says that the score was raised, and **every case includes a "from X to Y" magnitude**
+  (e.g., "I increased the score from 3 to 3.5"). → 16 papers, magnitude **Δ=0.5 ×11, Δ=1.0 ×5**.
+- **Same (`same`)**: the reviewer **explicitly** keeps the score unchanged ("I will keep my score" / "maintain my rating unchanged"),
+  and the comment contains **no language indicating any score increase**. → 16 papers.
+- Strict cleaning: exclude the excitement axis (not overall), soundness-only changes, conditionals ("if you…then I can raise"),
+  and negations ("do not feel comfortable raising"); deduplicate to one entry per paper; review>350 words, rebuttal>250 words.
+- Build script: [`../scripts/build_emnlp_test.py`](../scripts/build_emnlp_test.py).
 
-### 防泄露
-- persona **不放改分后的 overall assessment 终值**。需要初始分时用**真实初始分**：
-  涨分用 "from **X**"、平用（未变的）终值 —— 都是 rebuttal 前的值，不泄露答案。
+### Leakage prevention
+- The persona **does not include the post-change final overall assessment**. When the initial score is needed, use the **true initial score**:
+  for raise cases use "from **X**"; for same cases use the (unchanged) final value — both are pre-rebuttal values and do not leak the answer.
 
-### 字段
-| 字段 | 含义 |
+### Fields
+| Field | Meaning |
 |---|---|
-| `note_id` | 案例唯一 id |
-| `gold` | `raise` / `same`（审稿人原话推出的真值）|
-| `reviewer_profile` | persona 文本（ARR 口径：confidence/5 + soundness/5；**不含 overall 终值**）|
-| `review` | 审稿人原始 review 全文（`## paper_summary` / `## summary_of_weaknesses` …）|
-| `rebuttal` | 作者对该审稿人的 rebuttal |
-| `_statement` | 审稿人表态原话（标签依据，供人工核验）|
-| `_final_oa` | 该 review 存档的 overall assessment（涨=终值 Y，平=初始）|
-| `_delta` | 涨分幅度（`_final_oa - _delta` = 真实初始分）|
+| `note_id` | Unique case id |
+| `gold` | `raise` / `same` (ground truth derived from the reviewer's original statement) |
+| `reviewer_profile` | Persona text (ARR convention: confidence/5 + soundness/5; **does not include the final overall value**) |
+| `review` | Full original reviewer review (`## paper_summary` / `## summary_of_weaknesses` …) |
+| `rebuttal` | The author's rebuttal to that reviewer |
+| `_statement` | The reviewer's original statement of position (basis for the label, for manual verification) |
+| `_final_oa` | The archived overall assessment for that review (raise = final value Y, same = initial value) |
+| `_delta` | Score-increase magnitude (`_final_oa - _delta` = true initial score) |
 
-带初始 OA 的变体（v2 verifier 用）：`data/cell_emnlp_ratingOA.jsonl`
-（由 [`../scripts/build_cells.py`](../scripts/build_cells.py) 生成，persona 加 "your overall assessment was X/5"）。
-
----
-
-## 二、Verifier：`prompt_template_emnlp.py`（v2）
-
-与 ICLR 版共用 [`verify_rebuttal.py`](verify_rebuttal.py)，通过 `--template prompt_template_emnlp` 切换。
-
-### 设计（数据驱动，非拍脑袋）
-1. **起点锚 + room-to-move 先验**：起点低(≤3)→倾向涨、高(≥3.5)→倾向平。
-   这是 ARR 边缘群的主导信号（见下方发现）。
-2. **fundamental-concern 闸门**：novelty 不足 / 前人已做 / 核心概念没定义 / contribution 有限
-   → 补实验也不解决，判平（即使起点低）。
-3. **empirical-concern 可赎回**：缺实验/baseline/细节不清被 rebuttal 补上 → 从低起点判涨（+0.5 小步）。
-
-### 模型与配置
-- **骨干模型：`deepseek-v4-pro`**（与 ICLR 版同一个；横评冠军）。
-- 端点 OpenAI 兼容：`DEEPSEEK_BASE_URL=https://api.deepseek.com`，走 `verify_rebuttal.py` 里的
-  `openai` 客户端。配置在 `rebuttal_verifier/.env`：`DEEPSEEK_API_KEY` / `DEEPSEEK_BASE_URL` /
-  `DEEPSEEK_MODEL=deepseek-v4-pro`。换模型改 `DEEPSEEK_MODEL` 即可（换后需重新横评，别默认"更大更好"）。
-
-### ⚠️ 输入契约（硬性）
-EMNLP 版**必须喂初始 overall assessment**（persona 里的锚点）。**没有它就退回随机水平**
-（纯文本推理 = 0.435–0.468）。这是与 ICLR 版最大的使用差异。
+Variant with initial OA (used by the v2 verifier): `data/cell_emnlp_ratingOA.jsonl`
+(generated by [`../scripts/build_cells.py`](../scripts/build_cells.py), with "your overall assessment was X/5" added to the persona).
 
 ---
 
-## 二.5、如何调用 verify（三种方式，全部走 `--template prompt_template_emnlp`）
+## II. Verifier: `prompt_template_emnlp.py` (v2)
 
-**输入字段**：`review`（必填）、`rebuttal`（必填）、`initial_overall`（EMNLP **必填**，rebuttal 前的 1–5 总分）、
-`confidence`（1–5）、`soundness`（1–5）；或直接给 `reviewer_profile` 自由文本覆盖上面几项。
-**输出**：`{reaction: raise|same|lower, quality: high|neutral|counterproductive, reasoning}`。
+Shares [`verify_rebuttal.py`](verify_rebuttal.py) with the ICLR version and switches via `--template prompt_template_emnlp`.
 
-**① Python 直接调**
+### Design (data-driven, not guesswork)
+1. **Starting-score anchor + room-to-move prior**: low starting score (≤3) → tends toward raise; high starting score (≥3.5) → tends toward same.
+   This is the dominant signal in ARR borderline cases (see findings below).
+2. **fundamental-concern gate**: insufficient novelty / prior work has already done it / core concept is undefined / limited contribution
+   → additional experiments do not resolve it either, so predict same (even with a low starting score).
+3. **empirical-concern is redeemable**: missing experiments/baselines or unclear details are supplied by the rebuttal → predict raise from a low starting score (+0.5 small step).
+
+### Model and configuration
+- **Backbone model: `deepseek-v4-pro`** (the same as in the ICLR version; winner of the model comparison).
+- OpenAI-compatible endpoint: `DEEPSEEK_BASE_URL=https://api.deepseek.com`, using the `openai` client in
+  `verify_rebuttal.py`. Configuration is in `rebuttal_verifier/.env`: `DEEPSEEK_API_KEY` / `DEEPSEEK_BASE_URL` /
+  `DEEPSEEK_MODEL=deepseek-v4-pro`. To change models, edit `DEEPSEEK_MODEL` (rerun the model comparison after switching; do not assume "bigger is better").
+
+### ⚠️ Input contract (mandatory)
+The EMNLP version **must receive the initial overall assessment** (the anchor in the persona). **Without it, performance falls back to chance level**
+(text-only reasoning = 0.435–0.468). This is the largest usage difference from the ICLR version.
+
+---
+
+## II.5. How to invoke verify (three methods, all using `--template prompt_template_emnlp`)
+
+**Input fields**: `review` (required), `rebuttal` (required), `initial_overall` (EMNLP **required**, the pre-rebuttal overall score from 1–5),
+`confidence` (1–5), `soundness` (1–5); alternatively, provide free-form `reviewer_profile` text directly to override the preceding fields.
+**Output**: `{reaction: raise|same|lower, quality: high|neutral|counterproductive, reasoning}`.
+
+**① Direct Python call**
 ```python
 import prompt_template_emnlp
 from verify_rebuttal import verify_one
@@ -87,116 +87,116 @@ verify_one({
 # -> {"reaction": "raise", "quality": "high", "reasoning": "..."}
 ```
 
-**按分数自动路由**：
-- `--template auto`：只按分数换 **prompt**，模型统一 deepseek-v4-pro（OA=3→诊断器，其他→v2）。
-- `--template route`：按分数换 **模型+prompt**——**OA=3 → GPT-5.5 + 诊断器**（横评中 GPT-5.5 对 OA=3 rebuttal 质量判别力最强，分离度 +0.28 vs pro +0.13，*caveat：在 xhigh reasoning 下测*），**其他分数 → deepseek-v4-pro + v2**。响应带 `model_used`/`template_used` 标注实际路由。
+**Automatic score-based routing**:
+- `--template auto`: switches the **prompt** based only on the score, with deepseek-v4-pro used for every case (OA=3 → diagnostic verifier, otherwise → v2).
+- `--template route`: switches the **model+prompt** based on the score — **OA=3 → GPT-5.5 + diagnostic verifier** (in the model comparison, GPT-5.5 had the strongest ability to distinguish rebuttal quality for OA=3, with separation +0.28 vs pro +0.13, *caveat: tested under xhigh reasoning*), **other scores → deepseek-v4-pro + v2**. The response includes `model_used`/`template_used` to identify the actual route.
 ```bash
 python verify_rebuttal.py --batch reviewers.jsonl --out preds.jsonl --template route
 ```
-`route` 模式需要 **`OPENAI_API_KEY`**（gpt-5.5 走 `https://api.openai.com/v1`）；缺 key 时 OA=3 **优雅回退**到 deepseek-v4-pro。无 key 又想用 GPT-5.5 时，可走远程 Codex 批处理（见项目根 README 的 Codex 流程）。
+`route` mode requires **`OPENAI_API_KEY`** (gpt-5.5 uses `https://api.openai.com/v1`); when the key is missing, OA=3 **gracefully falls back** to deepseek-v4-pro. To use GPT-5.5 without a key, use remote Codex batch processing (see the Codex workflow in the project-root README).
 
-**② 命令行（单条 / 批量，手动指定模板）**
+**② Command line (single case / batch, manually specified template)**
 ```bash
-# 单条：case.json 里含 initial_overall/confidence/soundness/review/rebuttal
+# Single case: case.json contains initial_overall/confidence/soundness/review/rebuttal
 python verify_rebuttal.py --case case.json --template prompt_template_emnlp
-# 批量：JSONL 每行一条
+# Batch: one entry per JSONL line
 python verify_rebuttal.py --batch cases.jsonl --out preds.jsonl --template prompt_template_emnlp
 ```
 
-**③ HTTP 服务（队友不用拿 DeepSeek key，见 `serve.py`）**
+**③ HTTP service (teammates do not need a DeepSeek key; see `serve.py`)**
 ```bash
-# 服务端（持有 key）：SERVICE_TOKENS 可选，配了就要求带 token
+# Server (holds the key): SERVICE_TOKENS is optional; if configured, a token is required
 cd rebuttal_verifier && pip install fastapi uvicorn
 SERVICE_TOKENS=alice-tok uvicorn serve:app --host 0.0.0.0 --port 8000
 ```
 ```bash
-# 调用方（只需一个 service-token）：venue 必须为 "emnlp"，且必须带 initial_overall
+# Caller (needs only one service-token): venue must be "emnlp", and initial_overall is required
 curl -s http://HOST:8000/verify -H "Authorization: Bearer alice-tok" \
   -H "Content-Type: application/json" \
   -d '{"venue":"emnlp","initial_overall":3,"confidence":4,"soundness":3,
        "review":"## summary_of_weaknesses ...","rebuttal":"We added ..."}'
 # -> {"reaction":"raise","quality":"high","reasoning":"..."}
 ```
-`GET /health` 会回报当前模型（`deepseek-v4-pro`）和是否开启鉴权。缺 `initial_overall` 时服务返回 400。
+`GET /health` reports the current model (`deepseek-v4-pro`) and whether authentication is enabled. The service returns 400 when `initial_overall` is missing.
 
 ---
 
-## 三、结果（同一 32 篇平衡集，逐条隔离，temp=0）
+## III. Results (same balanced set of 32 papers, isolated one by one, temp=0)
 
-| 方法 | acc | macro-F1 | 说明 |
+| Method | acc | macro-F1 | Description |
 |---|---|---|---|
-| ICLR-prompt 直接套用 | 0.469 | 0.468 | 随机水平，**不能迁移** |
-| EMNLP-prompt v1（纯文本 concern 分诊）| 0.438 | 0.435 | 无初始分，仍随机 |
-| 傻阈值 `初始OA<3.25→涨` | 0.688 | 0.683 | 单特征，揭示信号在起点分 |
-| **EMNLP-prompt v2（起点锚 + 先验）** | **0.719** | **0.718** | ✅ 当前落地版，预测文件 `data/emnlp_preds_v2b.jsonl` |
-| EMNLP-prompt v3（过度加强闸门）| 0.594 | 0.593 | 过拟合翻车，已回滚 |
+| Direct application of ICLR-prompt | 0.469 | 0.468 | Chance level, **not transferable** |
+| EMNLP-prompt v1 (text-only concern triage) | 0.438 | 0.435 | No initial score, still chance |
+| Naive threshold `initial OA<3.25→raise` | 0.688 | 0.683 | Single feature, revealing that the signal lies in the starting score |
+| **EMNLP-prompt v2 (starting-score anchor + prior)** | **0.719** | **0.718** | ✅ Current deployed version, prediction file `data/emnlp_preds_v2b.jsonl` |
+| EMNLP-prompt v3 (over-strengthened gate) | 0.594 | 0.593 | Overfit and failed; rolled back |
 
-**v2 混淆矩阵**（真判别，非挪阈值）：raise→11/5（召回0.69）、same→4/12（召回0.75）。
+**v2 confusion matrix** (actual classification, not threshold manipulation): raise→11/5 (recall 0.69), same→4/12 (recall 0.75).
 
-### 核心发现（这才是"会议差异"的真正内涵）
-- **信号在初始分里，不在 rebuttal 文本里**：单看起点分的一行 if 就到 0.68；LLM 纯文本推理在随机线。
-- 原因：ARR 这批是"审稿人亲自发帖表态"的**决策边界自选子群**，rebuttal 质量都差不多好、**不区分**涨/平，
-  真正区分的是审稿人**有没有上移空间**（低起点会涨、高起点已满意→维持）。
-- ICLR 反而有 0.8，是因为它用**全体评分 delta**、混入大量文本上明显可分的简单样本；ARR 这个集全是硬样本。
-
----
-
-## 四、诚实的边界
-
-- **样本小**：32 条，置信区间约 **±0.08**。v2 的 0.718 vs 傻阈值 0.683 在噪声内 —— 严谨说法是
-  **v2 追平"起点分天花板"、稳定到 ~0.72**；但相对 0.468 的 +0.25 远超噪声，是实打实的。
-- **不可约天花板**：错误集中在 **OA=3~3.5 区**，数据里就是 ~3 涨/3 平的硬币，文本定不下来。
-  在 32 条上继续抠 prompt = 追噪声（v3 已证明会翻车）。
-- **分布外**：这是**平衡集**上的数；真实分布（涨仅 ~20%）部署需按 base rate 重校阈值。
+### Core finding (this is the true meaning of the "conference difference")
+- **The signal is in the initial score, not the rebuttal text**: a one-line if using only the starting score reaches 0.68; LLM text-only reasoning remains at chance level.
+- The reason: this ARR set is a **decision-boundary, self-selected subgroup** in which "reviewers personally posted statements of position"; rebuttal quality is uniformly similar and good and **does not distinguish** raise from same,
+  while what actually distinguishes them is whether the reviewer **has room to move upward** (low starting score → raise; already satisfied at a high starting score → same).
+- ICLR, by contrast, reaches 0.8 because it uses **overall score delta** and includes many easy samples that are clearly separable from the text; this ARR set contains only hard samples.
 
 ---
 
-## 五、复现
+## IV. Honest boundaries
+
+- **Small sample**: 32 entries, with a confidence interval of approximately **±0.08**. The difference between v2's 0.718 and the naive threshold's 0.683 is within the noise — the rigorous statement is
+  **v2 matches the "starting-score ceiling" and is stable at ~0.72**; however, the +0.25 over 0.468 is far larger than the noise and is substantive.
+- **Irreducible ceiling**: errors are concentrated in the **OA=3~3.5 range**, where the data are effectively a coin flip of ~3 raise/3 same cases and the text cannot determine the result.
+  Further prompt tuning on 32 entries = fitting noise (v3 has already shown that it will fail).
+- **Out of distribution**: these values are for a **balanced set**; deployment on the real distribution (only ~20% raise) requires recalibrating the threshold for the base rate.
+
+---
+
+## V. Reproduction
 
 ```bash
-# 1) 建 32 篇测试集（读 <arr-corpus>）
+# 1) Build the 32-paper test set (reads <arr-corpus>)
 python scripts/build_emnlp_test.py
 
-# 2) 建带初始 OA 的变体
-python scripts/build_cells.py            # 产出 data/cell_emnlp_ratingOA.jsonl 等
+# 2) Build the variant with initial OA
+python scripts/build_cells.py            # Produces data/cell_emnlp_ratingOA.jsonl, etc.
 
-# 3) 跑 v2 verifier（需 rebuttal_verifier/.env 里的 DEEPSEEK_API_KEY）
+# 3) Run the v2 verifier (requires DEEPSEEK_API_KEY in rebuttal_verifier/.env)
 cd rebuttal_verifier
 python verify_rebuttal.py --batch ../data/cell_emnlp_ratingOA.jsonl \
        --out ../data/emnlp_preds_v2b.jsonl --template prompt_template_emnlp
 
-# 4) 打分见项目内 src/metrics.macro_f1（macro 只对有样本的类求平均）
+# 4) For scoring, see src/metrics.macro_f1 in the project (macro averages only over classes with samples)
 ```
 
 ---
 
-## 五.5、OA=3 raise-potential 诊断器（`prompt_template_emnlp_oa3.py`）
+## V.5. OA=3 raise-potential diagnostic verifier (`prompt_template_emnlp_oa3.py`)
 
-**给最关心的 borderline-3 场景专门做的。** 定位从"预测涨/平"转成"**判 rebuttal 够不够强、并给可行动诊断**"——因为在 OA=3，涨/平**受审稿人惰性主导、文本里无显著信号**（置换检验 p 均>0.05），但 rebuttal 的**质量**是有信号的（好 rebuttal 与明显弱的可分，尽管只 ~+0.13）。
+**Built specifically for the borderline-3 scenario of greatest interest.** The objective shifts from "predict raise/same" to "**judge whether the rebuttal is strong enough and provide an actionable diagnosis**" — because at OA=3, raise/same is **dominated by reviewer inertia, with no significant signal in the text** (all permutation-test p values >0.05), but rebuttal **quality** does contain signal (good rebuttal can be distinguished from clearly weak rebuttal, though only by ~+0.13).
 
-**调用**（多两个诊断字段）：
+**Invocation** (with two additional diagnostic fields):
 ```bash
 python verify_rebuttal.py --case case.json --template prompt_template_emnlp_oa3
 ```
-**输出**（比通用版多 3 个可行动字段）：
+**Output** (3 more actionable fields than the general version):
 ```json
 {"reaction":"same","raise_potential":"low","veto":"novelty",
- "blocker":"卡住分数的那一条首要顾虑",
- "advice":"一条能让这份 rebuttal 变强的具体改动",
+ "blocker":"The single primary concern blocking the score",
+ "advice":"One concrete change that would make this rebuttal stronger",
  "reasoning":"..."}
 ```
-- `reaction`/`raise_potential`：这份 rebuttal 是否**强到值得涨分**（不是"这个审稿人会不会改分"）。
-- `veto`：`none` | `no-delivery`（只承诺/反问/无新证据）| `off-target`（答了次要、blocker 还在）| `novelty`（顾虑是新颖性，补实验无用）。
-- `blocker` + `advice`：**给作者的行动清单**——弱在哪、怎么补。
+- `reaction`/`raise_potential`: whether this rebuttal is **strong enough to merit a score increase** (not "whether this reviewer will change the score").
+- `veto`: `none` | `no-delivery` (only promises/counterquestions/no new evidence) | `off-target` (addresses a secondary issue while the blocker remains) | `novelty` (the concern is novelty, so additional experiments are useless).
+- `blocker` + `advice`: **an action list for the author** — what is weak and how to remedy it.
 
-**性能（诚实）**：在 54 条 OA=3 上，对**真好 rebuttal 判"够强"召回 0.78**、对**明显弱的降到 0.67**、质量分离度 **+0.13**。这是个**软质量哨兵，不是利刃**——n=54 上 prompt 微调只在 [+0.06, +0.16] 噪声区间摆动，调不动。**真正的产品价值是 `blocker`/`advice` 的结构化诊断**，可直接用于改写自己的 rebuttal。
+**Performance (honest)**: on 54 OA=3 entries, recall is **0.78 when judging truly good rebuttal as "strong enough"**, while **clearly weak rebuttal falls to 0.67**, for quality separation of **+0.13**. This is a **soft quality sentinel, not a sharp blade** — on n=54, prompt fine-tuning only fluctuates within the [+0.06, +0.16] noise interval and cannot shift it. **The actual product value lies in the structured `blocker`/`advice` diagnosis**, which can be used directly to revise one's own rebuttal.
 
-## 六、下一步（若要稳超 0.72）
+## VI. Next steps (to reliably exceed 0.72)
 
-不是继续在 32 条抠 prompt，而是换地基：
-1. **扩测试集**：已有 670+328 条干净候选，建 ~150 条、切 **dev(调) / test(报)**，让改进"超噪声可信"。
-2. **self-consistency**：v2 多次采样投票，稳 +1~3 点。
-3. **few-shot**：从 held-out ARR 挑典型案例（低起点顶死→平、经验解决→涨），**必须在 dev 上验证**。
-4. 想突破文本天花板：引入文本外信号（其他审稿人分、meta-review、多轮讨论）——另一个建模层次。
+Do not continue tuning the prompt on 32 entries; replace the foundation instead:
+1. **Expand the test set**: 670+328 clean candidates already exist; build ~150 entries and split into **dev (tune) / test (report)** so that improvements are "credible beyond noise."
+2. **self-consistency**: vote across multiple v2 samples for a stable +1~3 points.
+3. **few-shot**: select representative cases from held-out ARR (low starting score but insurmountable → same; empirical issue resolved → raise); **must be validated on dev**.
+4. To break through the text ceiling: introduce signals outside the text (other reviewer scores, meta-review, multi-round discussion) — a different modeling level.
 
-现实上限估计 **~0.75–0.80**（受 OA 3–3.5 硬币区限制）。
+Estimated practical ceiling: **~0.75–0.80** (limited by the coin-flip OA 3–3.5 range).

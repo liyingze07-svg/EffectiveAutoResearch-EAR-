@@ -1,15 +1,15 @@
 {
-  "$comment": "REBUTTAL_CARD.json 示例 + 必填约定(EMNLP/ARR)。每个 campaign 一张卡片,instantiate.py 从它渲染 CLAUDE/GOAL/SPEC/VERIFY/RESOURCE;缺卡片时 r0a 从 papers/<slug> 抽。paper-agnostic:换 case = 换卡片,不改 harness。★必填/约定:reviewers[].id、reviewers[].initial_overall(EMNLP overall assessment,整数 /5 —— 分区 bar 与 verify 都用它;旧 ICLR 的 initial_rating(/10) 已弃用,仅 legacy 卡片兼容读取)、target.require_raise_on(P0,攻)、target.maintain(OA>=4,守)、n_strategies(须与 strategies/MANIFEST.json enabled 数一致)、allow_new_experiments(false 则驱动硬跳过 r4)、max_iter。",
+  "$comment": "REBUTTAL_CARD.json example + required conventions (EMNLP/ARR). One card per campaign; instantiate.py renders CLAUDE/GOAL/SPEC/VERIFY/RESOURCE from it; when a card is missing, r0a extracts the card from papers/<slug>. paper-agnostic: changing case = changing the card, without modifying the harness. ★Required/conventions: reviewers[].id, reviewers[].initial_overall (EMNLP overall assessment, integer /5 —— both the zone bar and verify use it; the old ICLR initial_rating(/10) is deprecated and read only for compatibility with legacy cards), target.require_raise_on(P0, offense), target.maintain(OA>=4, defense), n_strategies (must equal the number of enabled entries in strategies/MANIFEST.json), allow_new_experiments (when false, the driver must hard-skip r4), max_iter.",
   "title": "Learning to Rebut: A First-Principles Argument Compiler",
   "venue": "EMNLP/ARR 2026",
-  "word_limit": "per-reviewer 一个评论框(~300–600 词)",
+  "word_limit": "one comment box per reviewer (~300–600 words)",
   "allow_new_experiments": false,
   "n_strategies": 3,
   "max_iter": 4,
   "paper_claims": [
-    "C1: 我们提出机制 M,把 A 和 B 的冲突解决,这是核心贡献",
-    "C2: 在 benchmark X 上相对最强 baseline 提升 13.6 分",
-    "C3: 理论分析给出 M 的收敛保证(Thm 1)"
+    "C1: We propose mechanism M, which resolves the conflict between A and B; this is the core contribution",
+    "C2: On benchmark X, it improves by 13.6 points over the strongest baseline",
+    "C3: The theoretical analysis provides a convergence guarantee for M (Thm 1)"
   ],
   "reviewers": [
     {"id": "R1", "initial_overall": 2, "confidence": 4,
@@ -23,10 +23,10 @@
      "review_ref": "review.md#R3"}
   ],
   "concern_seeds": [
-    "R2: 方法只是 A+B 的组合,创新有限",
-    "R1: 缺少和 SOTA 方法 Z 的比较",
-    "R1: 消融不充分,不知道 M 是否真的有用",
-    "R3: 表述可以更清楚,§3.2 难读"
+    "R2: The method is merely a combination of A+B, with limited novelty",
+    "R1: A comparison with SOTA method Z is missing",
+    "R1: The ablation study is insufficient, so it is unclear whether M is actually useful",
+    "R3: The presentation could be clearer; §3.2 is difficult to read"
   ],
   "target": {"require_raise_on": ["R1", "R2"], "maintain": ["R3"], "min_delta": 1}
 }

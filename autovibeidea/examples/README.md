@@ -1,10 +1,10 @@
 # examples/
 
-这里放**脱敏精简**的真实运行记录。它们不是构造的样例：时间戳、分数、降级记录、以及被推翻的判断都来自实际 run。
+This directory contains **sanitized, condensed** records from real runs. They are not fabricated examples: the timestamps, scores, degradation records, and overturned judgments all come from actual runs.
 
-**已裁剪的内容**：各 idea 的机制细节、完整提案（`FINAL_PROPOSAL.md`）、以及仍在推进中方向的技术方案。保留的是**流程证据**——这才是读者需要看的部分。
+**Content removed**: mechanism details for each idea, complete proposals (`FINAL_PROPOSAL.md`), and technical plans for directions still in progress. What remains is **process evidence**—the part readers need to see.
 
-| 目录 | 内容 |
+| Directory | Contents |
 |---|---|
-| `search-demo/` | `/idea-search` 的一轮循环，展示可验证信号如何压过 LLM 评分、以及饱和度剪枝的边界（子候选为构造数据，已注明） |
-| `judge-run/` | 一次完整的 idea 发现运行（文献调研 → 批判 → 生成 → 筛选），含一个 novelty 判断被二轮补检推翻的案例 |
+| `search-demo/` | One `/idea-search` iteration, showing how verifiable signals override LLM scores and where saturation pruning applies (child candidates are explicitly labeled synthetic data) |
+| `judge-run/` | A complete idea-discovery run (literature survey → critique → generation → screening), including a case where a novelty judgment was overturned by a second retrieval pass |

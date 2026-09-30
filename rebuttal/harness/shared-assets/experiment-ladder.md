@@ -1,45 +1,45 @@
-# experiment-ladder.md — 实验决策规格
+# experiment-ladder.md — Experiment Decision Specification
 
-> 被 `stages/r3_triage_feasibility.md` 与 `stages/r4_experiment_redesign.md` 声明为输入。
-> 本文件只给**规格**(决策表 + 契约字段),不含推导过程。
+> Declared as an input by `stages/r3_triage_feasibility.md` and `stages/r4_experiment_redesign.md`.
+> This file provides only the **specification** (decision table + contract fields),not the derivation process.
 
-## warrant 回退阶梯
+## warrant fallback ladder
 
-| # | move | warrant 是什么 | 何时用 |
+| # | move | what the warrant is | when to use it |
 |---|---|---|---|
-| 1 | **已有** | 论文里已有的实验/表(reviewer 漏看) | 答案本就在 → 指位置 |
-| 2 | **论证无关** | 逻辑:E 测的不在我们 claim 的 scope 内 | E 与 claim 正交(**必须真正交,否则=躲**) |
-| 3 | **更便宜代理 E'** | 小实验 E' 承载同样证据重量 | E 太贵:子集/更少 seed/更小模型/单数据集+泛化论证 |
-| 4 | **pilot+方向** | 小规模先导结果当方向信号 | E' 还太贵:先导+camera-ready(**先导要独立站住,承诺不能是全部**) |
-| 5 | **文献** | 已有 paper 做过 E 或等价 | 别人证过 → 引 |
-| 6 | **让步+界定** | 逻辑:承认在 X 下是局限,claim scope 是 Y | 拿不到 warrant → 把弱点变 scope |
-| 7 | **真做 E** | E 本身的 raw(→ §1 执行) | E 可行且前 6 条都不够 |
+| 1 | **Existing** | an experiment/table already in the paper (overlooked by the reviewer) | the answer is already there → point to its location |
+| 2 | **Irrelevant by argument** | logic:E does not test anything within the scope of our claim | E is orthogonal to the claim (**it must be genuinely orthogonal,otherwise=this is evasion**) |
+| 3 | **Cheaper proxy E'** | a small experiment E' carries the same evidentiary weight | E is too expensive:a subset/fewer seeds/a smaller model/a single dataset+generalization argument |
+| 4 | **pilot+direction** | small-scale pilot results serve as a directional signal | E' is still too expensive:pilot+camera-ready (**the pilot must stand on its own,the promise cannot be everything**) |
+| 5 | **Literature** | an existing paper has performed E or an equivalent | someone else has established it → cite it |
+| 6 | **honest concession+scoping** | logic:acknowledge that it is a limitation under X,the claim scope is Y | no warrant is obtainable → turn the weakness into scope |
+| 7 | **Run E for real** | the raw output of E itself (→ execute §1) | E is feasible and the first 6 moves are all insufficient |
 
-**大多数"加不完"落在 3/5/6,不是 7。** 别默认往 7 冲。
+**Most cases of "endless requested additions" fall under 3/5/6,not 7.** Do not default to rushing toward 7.
 
 
-**大多数 concern 落在 3/5/6,不是 7。** 不要默认往 7 冲。
+**Most concern items fall under 3/5/6,not 7.** Do not default to rushing toward 7.
 
-**P0 闸**:当 concern 是 reviewer 明确点名要实验、或质疑「泛化性 / 缺实验 / 未验证 /
-只在 X 上测过」时,**落到 move-6 让步之前必须先评估 move-4 pilot**:有无可复用的
-基建/数据/代码能小规模跑一个先导?能跑就跑。只有 pilot 明确不可行(无基建 /
-需真人标注 / 远超时间预算)才让步,并写下 `pilot_rejected_reason`。
+**P0 gate**:when the concern is an explicit reviewer request for an experiment,or questions about 「generalization / insufficient experiments / not validated /
+tested only on X」,**before falling back to the move-6 honest concession you must first assess a move-4 pilot**:is there reusable
+infrastructure/data/code that can run a small-scale pilot? If it can be run,run it. Concede only when the pilot is clearly infeasible (no infrastructure /
+requires human annotation / far exceeds the time budget),and record `pilot_rejected_reason`.
 
-**时间预算**:move-7 的门槛随 rebuttal 剩余窗口变。时间紧或 E 高耗时 → 停在 3/5/6;
-窗口宽裕且 E 低耗时 → 倾向补。判据看 `experiment_request.budget` vs 剩余窗口。
+**Time budget**:the bar for move-7 varies with the time remaining in the rebuttal window. If time is tight or E is time-consuming → stop at 3/5/6;
+if the window is ample and E is quick to run → favor adding it. Base the decision on `experiment_request.budget` vs the remaining window.
 
-## 实验请求契约
+## Experiment Request Contract
 
-### 输入:`experiment_request`(rebuttal agent 写)
+### Input:`experiment_request`(written by the rebuttal agent)
 ```json
 {
   "concern_id": "R2-W3",
-  "goal": "回应 reviewer 的哪个 concern(一句话)",
-  "hypothesis": "要验证/展示什么(可证伪)",
-  "what_to_measure": "指标 + 在什么数据/模型上",
-  "baseline": "对照(真 baseline,非稻草人)",
-  "expected_or_falsifier": "预期结果 + 数值 falsifier(什么结果算失败)",
-  "resources": "需要的数据集 / 模型 / 代码入口",
-  "budget": "算力/时间上限"
+  "goal": "which reviewer concern to address (one sentence)",
+  "hypothesis": "what to verify/demonstrate (falsifiable)",
+  "what_to_measure": "metric + on which data/model",
+  "baseline": "control (a real baseline,not a straw man)",
+  "expected_or_falsifier": "expected result + numerical falsifier (what result counts as failure)",
+  "resources": "required dataset / model / code entry point",
+  "budget": "compute/time limit"
 }
 ```

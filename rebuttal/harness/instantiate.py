@@ -24,7 +24,7 @@ TEMPLATES = {"CLAUDE.md": "CLAUDE.tmpl.md", "GOAL.md": "GOAL.tmpl.md",
 
 def reviewers_table(revs):
     if not revs:
-        return "- (REBUTTAL_CARD.reviewers 为空 — 实例化失败)"
+        return "- (REBUTTAL_CARD.reviewers is empty — instantiation failed)"
     head = "| id | OA | conf | sound | present | contrib | review |\n|---|---|---|---|---|---|---|"
     rows = [head]
     for r in revs:
@@ -42,12 +42,12 @@ def bullets(items, empty):
 
 def target_sentence(t):
     if not t:
-        return "对所有 P0 reviewer 达成跨家族合议达标"
+        return "clear the cross-family consensus gate for every P0 reviewer"
     p0 = ", ".join(t.get("require_raise_on", []))
     keep = ", ".join(t.get("maintain", []))                         # #25: maintain zone (OA>=4)
-    s = f"对 P0 reviewer [{p0}] 达成 DeepSeek+Codex 合议达标(分区 bar,min_delta={t.get('min_delta',1)})"
+    s = f"clear the DeepSeek+Codex consensus gate for P0 reviewer [{p0}] (zone bar,min_delta={t.get('min_delta',1)})"
     if keep:
-        s += f";守住 [{keep}](维持不掉)"
+        s += f"; keep [{keep}] (do not let it drop)"
     return s
 
 
@@ -63,15 +63,15 @@ def build_values(card, slug, harness):
         "SLUG": slug,
         "HARNESS_DIR": harness,
         "PAPER_TITLE": card.get("title", slug),
-        "VENUE": card.get("venue", "(venue 未填)"),
-        "WORD_LIMIT": str(card.get("word_limit", "(未填,按 venue 规则)")),
+        "VENUE": card.get("venue", "(venue not provided)"),
+        "WORD_LIMIT": str(card.get("word_limit", "(not provided,follow venue rules)")),
         "N_STRATEGIES": str(card.get("n_strategies", 3)),
         "MAX_ITER": str(card.get("max_iter", 4)),
-        "ALLOW_NEW_EXPERIMENTS": ("允许补实验(走 ExpAuto 算力)"
-                                  if card.get("allow_new_experiments") else "本 case 不补实验(纯写作模式)"),
-        "PAPER_CLAIMS": bullets(card.get("paper_claims"), "- (无 paper_claims)"),
+        "ALLOW_NEW_EXPERIMENTS": ("New experiments are allowed (use ExpAuto compute)"
+                                  if card.get("allow_new_experiments") else "No new experiments for this case (writing-only mode)"),
+        "PAPER_CLAIMS": bullets(card.get("paper_claims"), "- (no paper_claims)"),
         "REVIEWERS_TABLE": reviewers_table(card.get("reviewers")),
-        "CONCERN_SEEDS": bullets(card.get("concern_seeds"), "- (无预抽 concern,r2 自行原子化)"),
+        "CONCERN_SEEDS": bullets(card.get("concern_seeds"), "- (no pre-extracted concern,r2 must atomize them itself)"),
         "TARGET": target_sentence(card.get("target")),
     }
 

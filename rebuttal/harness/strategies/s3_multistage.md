@@ -1,21 +1,21 @@
-# 策略 s3 — 补证据规划 / 让步翻盘(最会处理弱点)
+# Strategy s3 — Evidence Augmentation Planning / Concession-Based Turnaround (Best at Handling Weaknesses)
 
-> **必须先读 `CRAFT.md`**。本文件只定这个姿态的差异化取舍。
+> **You must read `CRAFT.md` first**. This file defines only the distinct tradeoffs of this stance.
 
-## 一句话理论
-**面对真实缺口/局限:先把每个 concern 分诊(现在能答 / 需补证据 / 真局限),补证据的补,真局限的体面认+界定,把弱点变 scope。** 弱稿唯一能翻盘的路。
+## One-Sentence Theory
+**When facing genuine gaps/limitations: first triage each concern (answerable now / requires additional evidence / genuine limitation), add evidence where needed, and make an honest concession plus a clear boundary for genuine limitations, turning weaknesses into scope.** The only path for a weak paper to turn the case around.
 
-## 适配画像
-有**真实缺口/局限**的 reviewer;或需要**补新实验**(r4)才能答的 concern;或 concern 分散、需系统整理的。
+## Best-Fit Profile
+A reviewer with **genuine gaps/limitations**; a concern that can be answered only with **additional new experiments** (r4); or scattered concerns that require systematic organization.
 
-## 差异化取舍
-1. **多阶段**:① 归纳该 reviewer 全部 concern → ② 对每个查 evidence_map(现在能答/需 r4 实验结果/真局限)→ ③ 针对性写。
-2. **优先消费 r4 真实实验结果**(results.json 的 `derived` + 诚实 caveat 一次陈述);这是弱稿翻盘的杠杆。
-3. **真局限走 CRAFT ②体面承认线 + 同句兜底**:认到那一点 → 立刻给"影响有限/已缓解/future work" → 收口。绝不空承诺("we will run"=弹药)。
-4. **结构清晰**:一 concern 一段,分诊→证据/让步→收口。
+## Distinct Tradeoffs
+1. **Multistage**: ① synthesize all concerns from this reviewer → ② check evidence_map for each one (answerable now/requires r4 experimental results/genuine limitation) → ③ write a targeted response.
+2. **Prioritize using genuine r4 experimental results** (`derived` in results.json + state the honest caveat once); this is the leverage for turning a weak paper around.
+3. **For genuine limitations, follow CRAFT's ② honest concession line + a fallback in the same sentence**: concede exactly that point → immediately state "limited impact/already mitigated/future work" → close. Never make an empty promise ("we will run"=ammunition).
+4. **Clear structure**: one paragraph per concern, triage → evidence/concession → close.
 
-## 失败模式(本策略最危险,CRAFT §2 是承重墙)
-- **滑跪**(reviewer 说啥认啥)、**自爆**(招供没被问的弱点)、让步展开成大段、表演式诚实。本策略让步最多 → §2 不滑跪不自爆纪律必须逐条守。
+## Failure Modes (Most Dangerous for This Strategy, CRAFT §2 Is the Load-Bearing Wall)
+- **Capitulation** (conceding whatever the reviewer says), **self-sabotage** (volunteering weaknesses that were not asked about), expanding a concession into a long passage, and performative honesty. This strategy makes the most concessions → every rule in §2 against capitulation and self-sabotage must be followed.
 
-## 与另两个的区别
-唯一系统处理"真实弱点 + 补证据规划"的——**弱稿/多缺口翻盘手**;s1 证据够硬时它不占优,但当 reviewer 的心结是真缺口时,只有它能体面地把弱点转成可接受的 scope。
+## Difference from the Other Two
+The only strategy that systematically handles "genuine weaknesses + evidence augmentation planning"—the **turnaround specialist for weak papers/multiple gaps**; it has no advantage when s1 has sufficiently strong evidence, but when the reviewer's real concern is a genuine gap, only this strategy can use honest concession to turn the weakness into an acceptable scope.

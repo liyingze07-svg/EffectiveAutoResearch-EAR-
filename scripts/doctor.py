@@ -16,7 +16,9 @@ ROOT = Path(__file__).resolve().parents[1]
 def main():
     ap = argparse.ArgumentParser(description=__doc__)
     ap.add_argument("--offline", action="store_true", help="check only the zero-cost demo prerequisites")
-    ap.add_argument("--component", choices=("all", "autovibeidea", "rebuttal"), default="all")
+    ap.add_argument("--component", choices=("all", "autovibeidea", "autonomousmath", "rebuttal"), default="all")
+    ap.add_argument("--backend", choices=("codex", "claude"), default="codex",
+                    help="AutonomousMath coordinator backend")
     args = ap.parse_args()
     failures = []
 
@@ -33,16 +35,23 @@ def main():
 
     check(platform.system() == "Linux", "supported shell environment: Linux / WSL2",
           "other systems are not validated; use Linux or run the Python-only offline demo")
-    binary = shutil.which("codex") or shutil.which("codex.exe")
-    check(bool(binary), "Codex CLI (required by BOTH full pipelines)", "npm install -g @openai/codex")
+    driver = args.backend if args.component == "autonomousmath" else "codex"
+    binary = shutil.which(driver) or shutil.which(driver + ".exe")
+    check(bool(binary), f"{driver.title()} CLI", f"install and authenticate {driver}")
     if binary:
         try:
             result = subprocess.run([binary, "--version"], capture_output=True, text=True, timeout=10)
-            check(result.returncode == 0, "Codex executable starts")
+            check(result.returncode == 0, f"{driver.title()} executable starts")
             if result.returncode == 0:
                 print(f"CLI: {result.stdout.strip()}")
         except (OSError, subprocess.TimeoutExpired):
-            check(False, "Codex executable starts")
+            check(False, f"{driver.title()} executable starts")
+    if args.component in ("all", "autonomousmath"):
+        for command in ("pdflatex", "bibtex", "pdfinfo", "pdftotext"):
+            check(bool(shutil.which(command)), f"autonomousmath: {command}")
+        if args.backend == "claude":
+            check(bool(shutil.which("claude")), "autonomousmath: Claude CLI")
+            check(bool(shutil.which("codex")), "autonomousmath: Codex terminal reviewer")
     if args.component in ("all", "autovibeidea"):
         for command in ("bash", "flock", "nohup", "tee"):
             check(bool(shutil.which(command)), f"autovibeidea: {command}")

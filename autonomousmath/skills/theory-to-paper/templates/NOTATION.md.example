@@ -1,0 +1,31 @@
+# Locked paper architecture
+
+Replace this drafting template with the actual established results before writing.
+
+## Central question and contribution
+
+State the research question, the precise gap in prior work, and the established result in plain language. Name the key mathematical mechanism and the scope in which it applies.
+
+## Contribution order and evidence
+
+For each contribution, record: exact claim; source proof path; verified assumptions; Harden corrections; main section; appendix proof; known limitations. Unsupported directions remain absent from headline claims.
+
+## Theorem and label map
+
+| Statement | Label | Source proof | Main section | Appendix |
+|---|---|---|---|---|
+| Main theorem | thm:main | supplied proof | results.tex | proof-main.tex |
+
+Assign unique labels before fan-out. Restated theorems in the appendix reference the main label rather than defining a duplicate.
+
+## Notation and conventions
+
+For each symbol/macro, record its meaning, domain, units, boundary conventions and first definition. Lock probabilistic expectations, asymptotic variables, complexity conventions and denominators explicitly where relevant. One concept has one name across all files.
+
+## Section jobs
+
+Record what each section establishes, which earlier results it requires, and what later reasoning it supports. Write technical sections and proofs before title, abstract and introduction. Adapt section names to the actual paper.
+
+## Citations and writing checks
+
+Map each bib key to a verified original source and the specific claim it supports. Match claims to proof strength. Require complete numbered reasoning, precise assumptions, no draft remarks, no duplicate labels, and a clean compilation. Preserve truthful scientific scope and verification status.

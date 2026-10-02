@@ -1,8 +1,8 @@
 # EAR — Effective Auto Research
 
-> **Turn research directions into proposals, and reviewer feedback into responses.**
+> **Turn research directions into proposals and mathematical papers, and reviewer feedback into responses.**
 
-EAR is an automated research workbench for **research planning and rebuttal drafting**. It organizes literature surveys, critical analysis, idea generation, proposal refinement, and response drafting into staged workflows, giving researchers both drafts and the intermediate materials behind them.
+EAR is an automated research workbench for **research planning, mathematical research, and rebuttal drafting**. It preserves the materials behind each result: literature surveys, critical analysis, proofs, manuscripts, independent reviews, and response drafts.
 
 Choosing a research direction is only the beginning: you still need to understand existing work, identify gaps, compare candidate ideas, and develop a concrete proposal. After receiving reviews, you need to organize responses grounded in the paper, connecting each reviewer's concerns with the information the Area Chair needs to see.
 
@@ -11,9 +11,10 @@ EAR provides a dedicated entry point for each stage:
 | Workflow | Input | Core process | Main outputs |
 | --- | --- | --- | --- |
 | [**AutoVibeIdea**](autovibeidea/) | Research direction and target venue | Literature survey → critical analysis → idea generation → screening → refinement | Literature landscape, research gap matrix, ranked candidate ideas, and a research proposal draft |
+| [**AutonomousMath**](autonomousmath/) | Research direction or proposal | Goal-driven tool loop → proofs → manuscript → independent terminal review → revision; optional genetic optimization | Proofs, LaTeX/PDF papers, version-bound review reports, resumable batches, and strategy evolution |
 | [**AutoRebuttal**](rebuttal/) | Paper and its reviews | Staged drafting and review | Response drafts for selected reviewers and a comment to the Area Chair (AC) |
 
-**Before submission, use AutoVibeIdea to develop a research proposal; after submission, use AutoRebuttal to organize your responses to reviews.** Both subprojects can run independently from a complete EAR checkout. Neither requires you to complete the other workflow first.
+Use AutoVibeIdea to develop a proposal, AutonomousMath to pursue mathematical research and write a paper, and AutoRebuttal to organize responses after reviews arrive. All three can run independently from a complete EAR checkout.
 
 ---
 
@@ -102,6 +103,35 @@ AutoVibeIdea is useful when entering a research area, comparing possible researc
 
 ---
 
+## AutonomousMath: From Direction to Reviewed Mathematical Paper
+
+AutonomousMath preserves the complete original engine as a composed goal prompt,
+six research skills, and eight optional workflow adapters. Claude or Codex
+coordinates the loop, chooses tools and research actions, develops natural-language
+proofs, writes and compiles the paper, and revises from independent review feedback.
+A portable supervisor provides batches, continuation and checkpoints.
+
+The genetic optimizer can change research prompts, skills, worker code and
+configuration while keeping the final reviewer fixed. It compares strategies on
+the same task set, prioritizes paper quality and successful completion, and exposes
+progress and controls through a local dashboard. Lean is an optional final-checking
+interface after terminal acceptance.
+
+Try the complete control flow without model calls:
+
+```bash
+python3 -m autonomousmath doctor --offline
+python3 -m autonomousmath run --offline --workspace workspaces/math-demo
+python3 -m autonomousmath.optimizer evolve \
+  --workspace workspaces/evolution-demo --offline --generations 2
+```
+
+Offline reviews are synthetic fixtures and never count as real paper acceptance.
+For live Claude/Codex runs, continuous operation and the dashboard, see
+[the AutonomousMath guide](autonomousmath/README.md).
+
+---
+
 ## AutoRebuttal: From Reviewer Feedback to Response Drafts
 
 AutoRebuttal is designed for rebuttal workflows in **EMNLP / ACL Rolling Review**. Given a paper and its reviews, it drafts responses for selected reviewers and a comment to the Area Chair (AC).
@@ -147,17 +177,19 @@ AutoRebuttal is useful after reviews arrive and you need to organize response ma
 
 ## Repository Structure
 
-Clone the complete EAR repository once, then enter either subproject as needed. Root-level scripts provide shared checks and an offline demo.
+Clone the complete EAR repository once, then use the workflow you need. Root-level scripts provide shared checks and an offline demo.
 
 ```text
 EAR/
 ├── autovibeidea/          # Research planning workflow
+├── autonomousmath/       # Complete math engine, genetic optimizer and dashboard
 ├── rebuttal/              # Rebuttal drafting workflow
 └── scripts/
     ├── doctor.py          # Local environment and dependency checks
     ├── offline_demo.py    # Offline demo with no model calls
     ├── isolated_demo.sh   # Isolated offline demo on Linux
-    └── secret_scan.py     # Shared secret scanner for both subprojects
+    ├── secret_scan.py     # Shared secret scanner
+    └── public_source_audit.py # Portable source and private-material audit
 ```
 
 Detailed configuration and operation instructions live in each subproject's README. This root README provides the project overview and shared entry points.
@@ -210,7 +242,8 @@ The path must be a **new directory that does not already exist**. If it exists, 
 
 ### 3. Configure the live environment
 
-Both live workflows share these requirements:
+AutoVibeIdea and AutoRebuttal share these live requirements. AutonomousMath also
+supports a Claude coordinator; see its guide for the LaTeX and reviewer prerequisites.
 
 | Component | Requirement |
 | --- | --- |
@@ -346,10 +379,11 @@ Live runs send prompts and relevant input and tool content to the configured ser
 | Workflow | Services used |
 | --- | --- |
 | AutoVibeIdea | Codex / OpenAI, with the OpenAI API as an optional route |
+| AutonomousMath | Codex / OpenAI or Claude / Anthropic; terminal-review route is configurable |
 | AutoRebuttal | Codex / OpenAI and DeepSeek, or explicitly configured endpoints |
 | Enabled web search and MCP integrations | May contact additional external services |
 
-The default agent shell policy is:
+The default agent shell policy for AutoVibeIdea and AutoRebuttal is:
 
 | Setting | Default behavior |
 | --- | --- |
@@ -358,6 +392,11 @@ The default agent shell policy is:
 | Shell network access | Disabled |
 
 AutoVibeIdea's `--allow-network` also enables live web search. Shell network restrictions do not block CLI-to-model API traffic or direct verifier/API calls.
+
+AutonomousMath's Codex research worker defaults to `workspace-write` with shell
+network access enabled for literature and novelty checks; its JSON configuration
+can set `network_access=false`. Terminal Codex reviews use fresh read-only sessions.
+Claude execution uses its CLI tool permissions; see the AutonomousMath guide.
 
 `workspace-write` limits writes, but it is not a confidentiality boundary: the CLI may still read host files that its permissions allow, and MCP tools have their own permissions.
 
@@ -373,7 +412,7 @@ API conversation files are retained to support resuming a conversation; temporar
 
 ### Pre-commit checks
 
-EAR provides a shared secret scanner covering both subprojects.
+EAR provides a shared secret scanner covering all subprojects.
 
 After `git add` and before committing, run this from the repository root:
 

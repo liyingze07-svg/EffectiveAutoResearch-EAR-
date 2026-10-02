@@ -30,7 +30,7 @@ This skill combines three evaluation modules to screen research ideas before the
 
 - **Module A: Novelty Assessment** — Adapted from the ARIS `novelty-check` skill. Systematically verifies whether each idea's core claims are genuinely novel against recent literature.
 - **Module B: Venue Reviewer Simulation** — Adapted from the ICML/VLDB multi-reviewer prompt system. Simulates a real review committee (3 reviewers + meta-review) evaluating the idea as if it were a submission to the target venue.
-- **Module C: Strategic Fit Assessment** — Deepened from the 4-dimension researcher-fit framework. Evaluates whether the idea is strategically sound for the researcher's long-term trajectory.
+- **Module C: Strategic Fit Assessment** — Checks whether a precise research claim can be evaluated with accessible evidence, an achievable budget and the user's stated constraints.
 
 The final output is a ranked list of ideas with per-idea breakdowns, composite scores, and actionable recommendations.
 
@@ -261,73 +261,33 @@ Convert each reviewer's verdict to a numeric score:
 
 ## Module C: Strategic Fit Assessment
 
-This module deepens the 4-dimension researcher-fit framework (provenance in `README.md`) into a quantified 5-dimension evaluation. The local agent performs this assessment directly — no external LLM call needed.
+The local agent checks the research plan directly; no external LLM call is needed.
+Start with the claim, the available inputs, an estimate of the minimum convincing
+study or proof, and the user's explicit requirements. Do not require an industry
+application, a multi-paper roadmap or exclusive team resources. A pure-theory
+proposal can qualify through precise proof obligations and accessible mathematical
+inputs.
 
-For EACH idea, evaluate on these 5 dimensions (1-10 each):
+For each idea, score four checks from 1 to 10:
 
-### 1. Longevity (1-10)
+| Check | 1-3: unresolved blocker | 4-6: plausible but incomplete | 7-10: supported execution plan |
+|-------|------------------------|------------------------------|--------------------------------|
+| **Falsifiability** | No precise claim or identifiable failure condition | Claim is stated; decisive test or proof obligation needs sharpening | Explicit assumptions and a diagnostic, counterexample search or proof obligation can distinguish success from failure |
+| **Evidence access** | Essential data, baselines, sources or mathematical inputs cannot be obtained | Named inputs exist but access/preparation is still uncertain | Required inputs are accessible, and collection or verification can be reproduced |
+| **Budget completion** | Minimum convincing result exceeds the user's stated resources | A smaller study or proof milestone seems achievable; iteration costs are uncertain | Time/compute/funding estimates, a first decisive check and a stopping condition fit the stated budget |
+| **User constraint fit** | Conflicts with a stated capability, interest or scope requirement | Compatible with known constraints, or user preferences/capabilities are unspecified | Explicit user interests and capabilities match the task; required learning and tooling have been included |
 
-Is the core problem persistent, or is it a transient fad?
-
-| Score Range | Meaning |
-|-------------|---------|
-| 1-3 | Likely obsolete within 1 year (e.g., tied to a specific model version or API) |
-| 4-6 | Relevant for 2-3 years (e.g., current architectural paradigm) |
-| 7-10 | Addresses a fundamental, long-standing problem (e.g., generalization, efficiency, interpretability) |
-
-Ask: "Will researchers still care about this problem in 5 years?"
-
-### 2. Research Roadmap Viability (1-10)
-
-Can this idea grow into a multi-paper research arc?
-
-| Score Range | Meaning |
-|-------------|---------|
-| 1-3 | One-off finding, no natural follow-up work |
-| 4-6 | One clear extension paper possible |
-| 7-10 | Opens a new sub-area; 3+ papers are naturally achievable (foundational contribution → extensions → system/application) |
-
-Ask: "After Paper 1, what are Papers 2 and 3?"
-
-### 3. Application Grounding (1-10)
-
-Does the idea connect to real-world needs?
-
-| Score Range | Meaning |
-|-------------|---------|
-| 1-3 | Pure theoretical curiosity with no foreseeable application |
-| 4-6 | Benchmark-only demonstration (e.g., improves CIFAR-10 accuracy) |
-| 7-10 | Clear industry or societal application (e.g., healthcare, sustainability, production ML systems) |
-
-Ask: "Who outside academia would care about this result?"
-
-### 4. Execution Uniqueness (1-10)
-
-Does the researcher (or team) have a unique advantage in executing this idea?
-
-| Score Range | Meaning |
-|-------------|---------|
-| 1-3 | Any competent team could do this equally well; high risk of being scooped |
-| 4-6 | Moderate advantage (e.g., some relevant prior work, partial infrastructure) |
-| 7-10 | Strong unique position (e.g., proprietary data, unique computational resources, rare domain expertise, established collaboration) |
-
-Ask: "Why should THIS team pursue this, rather than a team at Google/DeepMind/FAIR?"
-
-### 5. Iteration Readiness (1-10)
-
-How fast is the experimental feedback loop?
-
-| Score Range | Meaning |
-|-------------|---------|
-| 1-3 | Each iteration takes weeks (e.g., large-scale pre-training, human studies) |
-| 4-6 | Each iteration takes days (e.g., medium-scale training, moderate compute) |
-| 7-10 | Iterations within hours; rapid signal on whether the idea works (e.g., small diagnostic experiments, existing benchmarks, fast prototyping) |
-
-Ask: "How quickly can we know if this idea is working or dead?"
+For each score, cite the plan detail or user statement that supports it. If an
+input is unknown, assign a provisional 5 and identify what must be established
+before execution; do not infer a personal preference, expertise or permission.
+Known inaccessible evidence or a violated user constraint remains a blocker even
+if the weighted composite is high. Recommend resolving it or reducing scope before
+execution.
 
 ### Strategic Score Calculation
 
-**Strategic Score** = average of all 5 dimension scores (rounded to 1 decimal place).
+**Strategic Score** = average of the four check scores (rounded to 1 decimal place).
+The `strategic` field and 0-10 scale remain unchanged for downstream compatibility.
 
 ### Strategic Report (per idea)
 
@@ -337,12 +297,11 @@ Ask: "How quickly can we know if this idea is working or dead?"
 - **Dimensions**:
   | Dimension | Score | Justification |
   |-----------|-------|---------------|
-  | Longevity | X/10 | [1-2 sentences] |
-  | Roadmap Viability | X/10 | [1-2 sentences] |
-  | Application Grounding | X/10 | [1-2 sentences] |
-  | Execution Uniqueness | X/10 | [1-2 sentences] |
-  | Iteration Readiness | X/10 | [1-2 sentences] |
-- **Strategic recommendation**: [1-2 sentences on whether this is a good bet for the researcher]
+  | Falsifiability | X/10 | [claim and decisive test/proof obligation] |
+  | Evidence access | X/10 | [accessible inputs and unresolved access needs] |
+  | Budget completion | X/10 | [minimum result, resource estimate and stopping condition] |
+  | User constraint fit | X/10 | [explicitly stated constraints; unknowns remain provisional] |
+- **Strategic recommendation**: [execute, resolve a named blocker, or reduce scope; explain why]
 ```
 
 ---
@@ -363,7 +322,7 @@ COMPOSITE = (
 Where:
 - **Novelty_Score** = Module A score (0-10)
 - **Venue_Score** = Module B score (average of 3 reviewer verdicts, mapped to numeric, 0-10)
-- **Strategic_Score** = Module C score (average of 5 dimensions, 0-10)
+- **Strategic_Score** = Module C score (average of four research-plan checks, 0-10)
 - **Feasibility_Score** = Carried from the `/idea-gen` output. If not available (e.g., ideas were provided directly), the local agent estimates feasibility on a 0-10 scale based on: computational requirements, data availability, timeline, and implementation complexity.
 
 Default weights: `novelty=0.25, venue=0.35, strategic=0.20, feasibility=0.20`
@@ -463,7 +422,7 @@ Full detailed report with per-idea breakdown across all 3 modules.
 [Full 3-reviewer + meta-review output]
 
 #### Module C: Strategic Fit Assessment
-[Full 5-dimension strategic report]
+[Full research-plan fit report, including evidence and unresolved inputs]
 
 #### Composite Score
 | Component | Score | Weight | Weighted |
@@ -524,11 +483,10 @@ Concise ranked summary for quick reference and handoff to downstream skills.
 - Top risk: [the single biggest execution risk]
 
 #### Module C: Strategic Fit
-- Longevity: X/10 — [1 line]
-- Roadmap Viability: X/10 — [1 line]
-- Application Grounding: X/10 — [1 line]
-- Execution Uniqueness: X/10 — [1 line]
-- Iteration Readiness: X/10 — [1 line]
+- Falsifiability: X/10 — [claim and decisive test/proof obligation]
+- Evidence access: X/10 — [accessible inputs and unresolved access needs]
+- Budget completion: X/10 — [minimum result, estimate and stopping condition]
+- User constraint fit: X/10 — [explicit constraints or provisional unknowns]
 
 ---
 

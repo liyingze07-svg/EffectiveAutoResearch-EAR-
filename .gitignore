@@ -18,6 +18,17 @@ __pycache__/
 .pytest_cache/
 .venv/
 
+# AutonomousMath runtime state, papers, evolution candidates and dashboard tokens
+/autonomousmath/workspace/
+/autonomousmath/workspaces/
+/autonomousmath/config.local.json
+/autonomousmath/.runtime/
+/workspaces/
+/.autonomousmath/
+*.local.json
+.DS_Store
+__MACOSX/
+
 # Private research inputs, campaigns, and local demo output
 /rebuttal/papers/
 /rebuttal/campaigns/

@@ -1,6 +1,6 @@
 ---
 name: idea-gen
-description: Generate and rank research ideas given a broad direction. Brainstorms 8-12 ideas via external LLM, filters by feasibility, novelty, impact, and a 4-dimension researcher-fit framework. Use when user says "find ideas", "brainstorm ideas", "generate research ideas", "come up with ideas", "what can we work on", or wants to explore a research area for publishable directions.
+description: Generate and rank research ideas given a broad direction. Brainstorms 8-12 ideas via external LLM, then checks feasibility, novelty, impact, falsifiability, available evidence, budget, and the user's stated constraints. Use when user says "find ideas", "brainstorm ideas", "generate research ideas", "come up with ideas", "what can we work on", or wants to explore a research area for publishable directions.
 argument-hint: [research-direction]
 allowed-tools: Bash(*), Read, Write, Grep, Glob, WebSearch, WebFetch, Agent, mcp__codex__codex, mcp__codex__codex-reply
 ---
@@ -11,7 +11,7 @@ Generate publishable research ideas for: $ARGUMENTS
 
 ## Overview
 
-Given a broad research direction from the user, systematically generate, validate, and rank concrete research ideas. This skill uses an external LLM for divergent brainstorming, then applies multiple filtering layers — feasibility, novelty quick-check, impact estimation, and a 4-dimension researcher-fit evaluation framework — to distill 8-12 raw ideas down to 4-6 high-quality, actionable research directions.
+Given a broad research direction from the user, systematically generate, validate, and rank concrete research ideas. This skill uses an external LLM for divergent brainstorming, then checks feasibility, novelty, impact and whether each proposal can produce verifiable evidence within the user's stated resources and interests. Distill 8-12 raw ideas down to 4-6 actionable research directions.
 
 This skill is designed to compose with the `/lit-survey` skill (run first for best results) and feeds into `/idea-screen` and `/idea-refine` downstream.
 
@@ -303,22 +303,29 @@ Eliminate `LOW IMPACT` ideas where neither a positive nor negative result would 
 
 **After Phase 3**: Typically 8-12 ideas reduce to 5-8 survivors. Record all eliminated ideas and their elimination reasons.
 
-### Phase 4: Researcher-Fit Filter (4-Dimension)
+### Phase 4: Researcher-Fit Filter
 
-Apply the 4-dimension researcher-fit evaluation framework. This is a structured scoring system that captures dimensions often missed by pure novelty/feasibility analysis.
+Assess whether the proposed research can deliver a checkable result for this task.
+Use the hypothesis or theorem, the evidence plan, resource estimates and only the
+constraints the user actually stated. Pure theory and empirical work are both
+eligible; neither a deployed application nor a unique institutional advantage is
+required.
 
-> Framework provenance: this four-dimension rubric is adapted from a publicly published research-topic-selection methodology. See the acknowledgements section in `README.md`.
+For each surviving idea, score the following checks from 1 to 5 and record the
+concrete evidence supporting each score:
 
-For each surviving idea from Phase 3, score on four dimensions (1-5 scale each):
+| Check | Score 1 | Score 3 | Score 5 |
+|-------|---------|---------|---------|
+| **Falsifiability** | No precise claim or possible disconfirming result | A claim is stated, but its decisive test or proof obligation needs sharpening | A precise claim has explicit assumptions and a counterexample, diagnostic, or proof obligation that can expose failure |
+| **Evidence access** | Essential data, baseline, source or mathematical input is unavailable | Evidence exists, with a named access or preparation step still unresolved | Required sources, data/code or mathematical inputs are accessible and a reproducible evidence plan is specified |
+| **Budget completion** | The plan exceeds the user's time, compute or funding limits | A plausible minimum study or proof milestone exists; some resource estimates remain uncertain | The minimum convincing result fits a stated budget, with estimated iterations and a stopping condition |
+| **User constraint fit** | Conflicts with a stated interest, capability or scope constraint | Compatible with known constraints, or preferences/capabilities are unspecified | Fits explicitly stated interests and capabilities, with any required learning or tooling accounted for |
 
-| Dimension | Score (1-5) | Scoring Criteria |
-|-----------|-------------|------------------|
-| **Longevity** | | Will this topic still be relevant in 3-5 years? Score 5 if it addresses a fundamental question. Score 1 if it rides a transient trend that may be obsolete in 1-2 years. |
-| **Passion alignment** | | Does this align with the researcher's stated interests, skills, and existing expertise? If the user has not stated preferences, default to score 3. If they have (e.g., "I work on systems" or "I'm interested in theory"), score accordingly. |
-| **Application potential** | | Can this strengthen a paper's motivation with real-world impact? Score 5 if it directly improves a deployed system or addresses a practitioner pain point. Score 1 if it is purely theoretical with no foreseeable application. |
-| **Uniqueness** | | Can the researcher make a unique contribution here that others cannot easily replicate? Score 5 if the idea leverages a unique dataset, insight, or methodological strength. Score 1 if any well-funded lab could do this faster. |
-
-**Composite score** = Longevity + Passion + Application + Uniqueness (out of 20).
+**Researcher-fit score** = sum of these four checks (out of 20). Keep the existing
+`scores.researcher_fit` field for downstream compatibility. Unknown inputs receive
+a provisional 3 with the missing evidence written down; never invent user
+expertise, access permissions, interests or resource limits. Scores 2 and 4 denote
+intermediate evidence between the anchors.
 
 **Elimination rule**: Ideas scoring below FILTER_THRESHOLD (12/20) are eliminated. Record the scores and the reason (which dimension(s) dragged the score down).
 
@@ -326,9 +333,13 @@ For each surviving idea from Phase 3, score on four dimensions (1-5 scale each):
 1. Lower the threshold to 10/20
 2. Keep the top 3 ideas regardless of score
 3. Log: "⚠️ All ideas below threshold 12/20. Lowered to 10/20, keeping top 3."
-4. If still no ideas survive at 10/20, keep the single highest-scoring idea and log: "⚠️ Emergency: keeping highest-scoring idea (score: X/20) despite low score"
+4. If still no ideas survive at 10/20, keep the single highest-scoring idea for further investigation and log: "⚠️ Emergency: keeping highest-scoring idea (score: X/20) despite low score"
 
-**After Phase 4**: Target SURVIVING_TARGET (4-6) ideas. If more than 6 survive, keep all but note that the top 6 by composite score are recommended. If fewer than 4 survive, revisit eliminated ideas from Phase 3 that scored `MEDIUM IMPACT` or `FEASIBLE WITH CAVEATS` and re-evaluate with the He framework — some may pass on a second look.
+This fallback may retain provisional ideas for investigation, but cannot override
+a known violation of the user's constraints or unavailable essential evidence.
+If every idea has such a blocker, report the blockers and propose a smaller
+research task instead of labelling any idea ready to execute.
+**After Phase 4**: Target SURVIVING_TARGET (4-6) ideas. If more than 6 survive, keep all but note that the top 6 by composite score are recommended. If fewer than 4 survive, revisit ideas from Phase 3 marked `MEDIUM IMPACT` or `FEASIBLE WITH CAVEATS`: sharpen their falsifiable claim, verify required inputs, reduce the minimum study or proof to fit the budget, and check it against explicit user constraints. Re-score only when those concrete revisions or new evidence resolve an earlier weakness; do not change a rating merely to fill the target count.
 
 ### Phase 5: Anti-Pattern Check
 
@@ -447,7 +458,8 @@ This file contains the filtered, scored, and ranked ideas — the actionable out
 - **Risk**: [level] — [justification]
 - **Effort**: [N] person-weeks
 - **Closest work**: [paper] — delta: [difference]
-- **He Score**: Longevity [X] + Passion [X] + Application [X] + Uniqueness [X] = [XX]/20
+- **Researcher-fit score**: Falsifiability [X] + Evidence access [X] + Budget completion [X] + User constraint fit [X] = [XX]/20
+- **Fit evidence and unknowns**: [claim/test; accessible inputs; budget estimate; explicitly stated constraints; unresolved inputs]
 - **Anti-pattern flags**: [none / list of flags with explanations]
 - **Quick novelty**: [LIKELY NOVEL / NEEDS DEEPER CHECK]
 - **Why this ranks #1**: [1-2 sentences explaining why this is the top recommendation]
@@ -470,7 +482,7 @@ This file contains the filtered, scored, and ranked ideas — the actionable out
 | IDEA-XX | [title] | Feasibility | [e.g., Requires unavailable dataset (ImageNet-22k with annotations)] |
 | IDEA-XX | [title] | Novelty | [e.g., Already published: "Paper Title" (Author et al., 2025)] |
 | IDEA-XX | [title] | Impact | [e.g., Neither positive nor negative result would change practice] |
-| IDEA-XX | [title] | He Filter | [e.g., Score 10/20 — Longevity 2 (trend-dependent), Uniqueness 2 (easily replicated)] |
+| IDEA-XX | [title] | Researcher-Fit Filter | [e.g., Score 10/20 — Evidence access 2 (essential inputs unresolved), Budget completion 2 (minimum study exceeds available compute)] |
 
 ---
 
@@ -494,7 +506,7 @@ This file contains the filtered, scored, and ranked ideas — the actionable out
 - Brainstorming model: gpt-5.4 with xhigh reasoning effort
 - Filtering pipeline: Feasibility -> Novelty quick-check -> Impact -> Researcher-Fit Filter (threshold: 12/20) -> Anti-pattern check
 - Novelty checks are quick (2-3 searches per idea); run `/idea-screen` for deep novelty verification
-- Researcher-Fit scores reflect researcher-agnostic assessment unless user provided preference information
+- Researcher-Fit scores reflect the proposal's checkable evidence plan and stated user constraints; unspecified preferences or capabilities remain provisional
 ```
 
 #### Writing procedure:

@@ -1,0 +1,33 @@
+\documentclass{article}
+\usepackage{iclr2026_conference,times}
+\usepackage{amsmath,amssymb,amsthm}
+\usepackage{graphicx,booktabs,microtype,url}
+
+\newtheorem{theorem}{Theorem}
+\newtheorem{proposition}{Proposition}
+\newtheorem{lemma}{Lemma}
+\newtheorem{corollary}{Corollary}
+\theoremstyle{definition}
+\newtheorem{definition}{Definition}
+\theoremstyle{remark}
+\newtheorem{remark}{Remark}
+
+% Add only the shared notation locked in NOTATION.md.
+\title{Research Paper Title}
+\author{Anonymous authors\\Paper under double-blind review}
+
+\begin{document}
+\maketitle
+\begin{abstract}
+\input{sections/abstract}
+\end{abstract}
+\input{sections/intro}
+\input{sections/setting}
+\input{sections/results}
+\input{sections/related}
+\input{sections/discussion}
+\bibliography{refs}
+\bibliographystyle{iclr2026_conference}
+\appendix
+\input{appendix/proof-main}
+\end{document}

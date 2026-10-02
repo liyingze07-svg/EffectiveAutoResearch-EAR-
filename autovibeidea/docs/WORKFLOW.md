@@ -182,12 +182,12 @@ Generate 8-12 ideas from the literature landscape and apply multiple filters to 
                             │ Remaining: 5-8 ideas
                             ▼
               ┌────────────────────────────────────────────────┐
-              │ Phase 4: Professor He's four-dimension scoring │
+              │ Phase 4: Research-plan and user fit             │
               │                                                │
-              │  Longevity     (1-5)                           │
-              │  Passion       (1-5)                           │
-              │  Application   (1-5)                           │
-              │  Uniqueness    (1-5)                           │
+              │  Falsifiability       (1-5)                    │
+              │  Evidence access      (1-5)                    │
+              │  Budget completion    (1-5)                    │
+              │  User constraint fit  (1-5)                    │
               │                                                │
               │  Pass threshold: >= 12/20                      │
               └─────────────┬──────────────────────────────────┘
@@ -215,7 +215,7 @@ Generate 8-12 ideas from the literature landscape and apply multiple filters to 
 ### Output Files
 
 - **`outputs/IDEAS_RAW.md`** -- All generated ideas (including elimination records)
-- **`outputs/IDEAS_FILTERED.md`** -- Surviving ideas ranked by He Score + elimination table + risk distribution
+- **`outputs/IDEAS_FILTERED.md`** -- Surviving ideas ranked by researcher-fit score (20-point scale) + supporting evidence/unknowns + elimination table + risk distribution
 
 ---
 
@@ -310,17 +310,19 @@ Step 5: Verdict → Numeric mapping
     └──→ Venue Score = Mean of three reviewers (1 decimal place)
 ```
 
-### Module C: Strategic assessment (5 dimensions)
+### Module C: Research-plan and user fit
 
 | Dimension | Score Range | Key Question |
 |------|---------|----------|
-| **Longevity** Durability | 1-10 | Will researchers still care about this problem in 5 years? |
-| **Roadmap Viability** Roadmap | 1-10 | After Paper 1, what are Papers 2 and 3? |
-| **Application Grounding** Practical grounding | 1-10 | Who outside academia would care about this result? |
-| **Execution Uniqueness** Execution uniqueness | 1-10 | Why this team rather than Google/DeepMind/FAIR? |
-| **Iteration Readiness** Iteration speed | 1-10 | How quickly can we determine whether this idea works? |
+| **Falsifiability** | 1-10 | What test, counterexample or proof obligation can expose an incorrect claim? |
+| **Evidence access** | 1-10 | Are the required data, baselines, sources or mathematical inputs accessible? |
+| **Budget completion** | 1-10 | Does the minimum convincing result fit the stated resources and stopping condition? |
+| **User constraint fit** | 1-10 | Does the plan satisfy the user's explicit interests, capabilities and scope constraints? |
 
-**Strategic Score** = Mean across 5 dimensions (1 decimal place)
+**Strategic Score** = Mean across the four checks (1 decimal place). Record evidence
+for each rating; unknown inputs are provisional rather than invented. Known access
+or constraint blockers must be resolved before execution. Theory proposals can
+qualify through precise proof obligations without an industry application.
 
 ---
 
@@ -527,7 +529,7 @@ Fix only the 2 biggest problems per round instead of addressing every review com
     Literature search / PDF / Zotero / Obsidian       Landscape critique Phase 2a (xhigh) ← v2
     Gap identification & thematic synthesis                      Critique-anchored idea generation Phase 2b (xhigh) ← v2
     Initial screening: feasibility / quick novelty check / impact        Novelty cross-validation (Phase C)
-    Professor He's four-dimension scoring                          Reviewer simulation: 3 reviewers + meta-review (xhigh)
+    Research-plan checks + stated user constraints                Reviewer simulation: 3 reviewers + meta-review (xhigh)
     Anti-pattern check                               Standard iterative review: 7-dimension scoring (xhigh)
     Skeleton extraction / Problem Anchor               Re-review: same thread codex-reply (xhigh)
     Theoretical grounding analysis (Phase 1.4.T) ← v2          Socratic dialogue (active-questioning mode) ← v2
@@ -605,7 +607,7 @@ The pipeline (`/idea-pipeline`) places checkpoints between stages so users can i
 | Checkpoint | Presented Content | User Options | AUTO_PROCEED Behavior |
 |------------|---------|---------|-------------------|
 | **1 (After survey)** | Paper count, gap count, top 3 themes | Confirm / adjust scope / search again | Continue automatically with current results |
-| **2 (After generation)** | Surviving ideas + He Score + Risk | Select ideas / change direction / regenerate | Screen all filtered ideas |
+| **2 (After generation)** | Surviving ideas + researcher-fit score + evidence/unknowns + risk | Select ideas / change direction / regenerate | Screen all filtered ideas |
 | **3 (After screening)** | Ranked table + Composite Score + reviewer consensus | Confirm refinement / select specific ideas / change venue | Refine the top REFINE_TOP_N ideas |
 | **4 (After refinement)** | Final score + Verdict + method paper | Accept / continue iterating / adjust manually | Produce final report |
 

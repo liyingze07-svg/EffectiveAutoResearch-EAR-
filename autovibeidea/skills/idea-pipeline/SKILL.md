@@ -108,8 +108,8 @@ Invoke `/idea-gen "$ARGUMENTS"` via the Skill tool.
 Append to `outputs/PIPELINE_LOG.md`:
 ```
 ## [Timestamp] Phase 2 Complete: Idea Generation
-- Generated X ideas, filtered to Y after He filter (threshold 12/20)
-- Top ideas: [list titles with He scores]
+- Generated X ideas, filtered to Y after researcher-fit checks (threshold 12/20)
+- Top ideas: [list titles with researcher-fit scores and unresolved inputs]
 - **Auto-decision**: Screening ALL Y filtered ideas in Phase 3
 ```
 
@@ -186,7 +186,7 @@ Aggregate all outputs into `outputs/IDEA_DISCOVERY_REPORT.md`:
 [summary from Phase 1, with link to full outputs/LANDSCAPE.md]
 
 ## Ideas Generated and Filtered
-| # | Title | He Score | Feasibility | Status |
+| # | Title | Researcher-Fit Score | Feasibility | Status |
 |---|-------|----------|-------------|--------|
 [all ideas from Phase 2 with their fate]
 
@@ -212,7 +212,7 @@ Aggregate all outputs into `outputs/IDEA_DISCOVERY_REPORT.md`:
 | Idea | Stage | Reason |
 |------|-------|--------|
 | ... | Phase 2 (feasibility) | Requires unavailable dataset |
-| ... | Phase 2 (He filter) | Score 10/20 |
+| ... | Researcher-Fit Filter | Score 10/20; evidence access or budget blocker |
 | ... | Phase 3 (novelty) | Already published by [paper] |
 | ... | Phase 3 (venue) | All reviewers: Reject |
 

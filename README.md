@@ -4,6 +4,10 @@
 
 EAR is an automated research workbench for **research planning, mathematical research, and rebuttal drafting**. It preserves the materials behind each result: literature surveys, critical analysis, proofs, manuscripts, independent reviews, and response drafts.
 
+**Technical report (v6):** [English PDF](docs/technical-report/v6/reports/EAR_Technical_Report_EN.pdf) · [中文 PDF](docs/technical-report/v6/reports/EAR_Technical_Report_CN.pdf) · [Bilingual ZIP](docs/technical-report/EAR_Technical_Report_v6_Bilingual_Public.zip?raw=true) · [Source, figures and data](docs/technical-report/)
+
+The report explains how EAR targets **active human time** across the research lifecycle, connecting critical idea search, autonomous mathematical research and strategy evolution, and rebuttal optimization to their evaluation results.
+
 Choosing a research direction is only the beginning: you still need to understand existing work, identify gaps, compare candidate ideas, and develop a concrete proposal. After receiving reviews, you need to organize responses grounded in the paper, connecting each reviewer's concerns with the information the Area Chair needs to see.
 
 EAR provides a dedicated entry point for each stage:
@@ -184,6 +188,7 @@ EAR/
 ├── autovibeidea/          # Research planning workflow
 ├── autonomousmath/       # Complete math engine, genetic optimizer and dashboard
 ├── rebuttal/              # Rebuttal drafting workflow
+├── docs/technical-report/ # Bilingual report, source, figures, data and ZIP
 └── scripts/
     ├── doctor.py          # Local environment and dependency checks
     ├── offline_demo.py    # Offline demo with no model calls

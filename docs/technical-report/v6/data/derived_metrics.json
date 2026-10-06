@@ -1,0 +1,267 @@
+{
+  "basis": "Released aggregate counts and score sums; evaluator F1 values are reported aggregate inputs.",
+  "active_human_time_measured": false,
+  "reporting_window": {
+    "label": "G0 initialization plus three evolution generations G1-G3",
+    "selection": "Retrospective reporting slice chosen for this edition after observing the archive, not a prespecified stopping rule.",
+    "scope": "Results describe this stage; the underlying archive also contains subsequent generations. Full original records are retained separately.",
+    "generation_success_denominator": "All research episodes in that generation, including failed and unwritten attempts",
+    "strategy_success_denominator": "Four research episodes in the selected strategy batch; separate from whole-population success"
+  },
+  "population_totals": {
+    "episodes": 64,
+    "research_invocations": 630,
+    "written_manuscripts": 28,
+    "selected_best_assessor_passes": 15,
+    "population_pass_rate": 0.234375,
+    "written_conditional_pass_rate": 0.5357142857142857,
+    "research_invocations_per_pass": 42.0
+  },
+  "inner_rounds": [
+    {
+      "round": 0,
+      "manuscripts": 28,
+      "current_passes": 3,
+      "current_pass_rate": 0.10714285714285714,
+      "current_mean_score": 4.6475,
+      "selected_best_passes_at_cutoff": 3,
+      "selected_best_mean_score_at_cutoff": 4.6475
+    },
+    {
+      "round": 1,
+      "manuscripts": 28,
+      "current_passes": 10,
+      "current_pass_rate": 0.35714285714285715,
+      "current_mean_score": 5.247142857142856,
+      "selected_best_passes_at_cutoff": 10,
+      "selected_best_mean_score_at_cutoff": 5.270357142857143
+    },
+    {
+      "round": 2,
+      "manuscripts": 28,
+      "current_passes": 10,
+      "current_pass_rate": 0.35714285714285715,
+      "current_mean_score": 5.497857142857143,
+      "selected_best_passes_at_cutoff": 12,
+      "selected_best_mean_score_at_cutoff": 5.568214285714285
+    },
+    {
+      "round": 3,
+      "manuscripts": 28,
+      "current_passes": 12,
+      "current_pass_rate": 0.42857142857142855,
+      "current_mean_score": 5.674642857142857,
+      "selected_best_passes_at_cutoff": 15,
+      "selected_best_mean_score_at_cutoff": 5.790357142857142
+    }
+  ],
+  "inner_last_minus_initial_mean": 1.0271428571428567,
+  "inner_individual_summary": {
+    "final_vs_initial": {
+      "improved": 27,
+      "declined": 1,
+      "tied": 0
+    },
+    "last_round_below_own_best_score": 13,
+    "selected_best_pass_but_last_round_not_pass": 3
+  },
+  "generation_population": [
+    {
+      "generation": 0,
+      "episodes": 12,
+      "research_invocations": 169,
+      "written_manuscripts": 1,
+      "selected_best_assessor_passes": 0,
+      "population_pass_rate": 0.0
+    },
+    {
+      "generation": 1,
+      "episodes": 16,
+      "research_invocations": 155,
+      "written_manuscripts": 5,
+      "selected_best_assessor_passes": 1,
+      "population_pass_rate": 0.0625
+    },
+    {
+      "generation": 2,
+      "episodes": 16,
+      "research_invocations": 148,
+      "written_manuscripts": 8,
+      "selected_best_assessor_passes": 5,
+      "population_pass_rate": 0.3125
+    },
+    {
+      "generation": 3,
+      "episodes": 20,
+      "research_invocations": 158,
+      "written_manuscripts": 14,
+      "selected_best_assessor_passes": 9,
+      "population_pass_rate": 0.45
+    }
+  ],
+  "generation_comparison": [
+    {
+      "generation": 0,
+      "role": "baseline",
+      "episodes": 4,
+      "research_invocations": 53,
+      "written_manuscripts": 1,
+      "selected_best_assessor_passes": 0,
+      "mean_historical_fitness": -0.2325,
+      "pass_rate": 0.0,
+      "research_invocations_per_pass": null
+    },
+    {
+      "generation": 0,
+      "role": "selected",
+      "episodes": 4,
+      "research_invocations": 53,
+      "written_manuscripts": 1,
+      "selected_best_assessor_passes": 0,
+      "mean_historical_fitness": -0.2325,
+      "pass_rate": 0.0,
+      "research_invocations_per_pass": null
+    },
+    {
+      "generation": 1,
+      "role": "baseline",
+      "episodes": 4,
+      "research_invocations": 40,
+      "written_manuscripts": 2,
+      "selected_best_assessor_passes": 0,
+      "mean_historical_fitness": 2.7,
+      "pass_rate": 0.0,
+      "research_invocations_per_pass": null
+    },
+    {
+      "generation": 1,
+      "role": "selected",
+      "episodes": 4,
+      "research_invocations": 40,
+      "written_manuscripts": 2,
+      "selected_best_assessor_passes": 0,
+      "mean_historical_fitness": 2.7,
+      "pass_rate": 0.0,
+      "research_invocations_per_pass": null
+    },
+    {
+      "generation": 2,
+      "role": "baseline",
+      "episodes": 4,
+      "research_invocations": 24,
+      "written_manuscripts": 1,
+      "selected_best_assessor_passes": 0,
+      "mean_historical_fitness": 0.5825,
+      "pass_rate": 0.0,
+      "research_invocations_per_pass": null
+    },
+    {
+      "generation": 2,
+      "role": "selected",
+      "episodes": 4,
+      "research_invocations": 45,
+      "written_manuscripts": 3,
+      "selected_best_assessor_passes": 2,
+      "mean_historical_fitness": 4.9825,
+      "pass_rate": 0.5,
+      "research_invocations_per_pass": 22.5
+    },
+    {
+      "generation": 3,
+      "role": "baseline",
+      "episodes": 4,
+      "research_invocations": 41,
+      "written_manuscripts": 3,
+      "selected_best_assessor_passes": 2,
+      "mean_historical_fitness": 4.6675,
+      "pass_rate": 0.5,
+      "research_invocations_per_pass": 20.5
+    },
+    {
+      "generation": 3,
+      "role": "selected",
+      "episodes": 4,
+      "research_invocations": 29,
+      "written_manuscripts": 3,
+      "selected_best_assessor_passes": 3,
+      "mean_historical_fitness": 5.0675,
+      "pass_rate": 0.75,
+      "research_invocations_per_pass": 9.666666666666666
+    }
+  ],
+  "selected_cost": [
+    {
+      "generation": 3,
+      "role": "baseline",
+      "episodes": 4,
+      "selected_best_assessor_passes": 2,
+      "research_invocations": 41,
+      "reviewer_requests": 12,
+      "review_roll_invocations": 36,
+      "refinement_attempts_reconstructed": 9,
+      "outer_invocation_proxy": 86,
+      "research_invocations_per_pass": 20.5,
+      "outer_proxy_per_pass": 43.0
+    },
+    {
+      "generation": 3,
+      "role": "selected",
+      "episodes": 4,
+      "selected_best_assessor_passes": 3,
+      "research_invocations": 29,
+      "reviewer_requests": 12,
+      "review_roll_invocations": 36,
+      "refinement_attempts_reconstructed": 9,
+      "outer_invocation_proxy": 74,
+      "research_invocations_per_pass": 9.666666666666666,
+      "outer_proxy_per_pass": 24.666666666666668
+    }
+  ],
+  "observed_cost_reductions": [
+    {
+      "generation": 3,
+      "research_invocations_per_pass_reduction_percent": 52.845528455284565,
+      "outer_proxy_per_pass_reduction_percent": 42.63565891472868
+    }
+  ],
+  "strict_retained_vote_diagnostic": {
+    "comparison": "Selected strategy versus baseline in generation 3",
+    "episodes_per_role": 4,
+    "rule": "All three retained votes Accept AND each retained score at least 7",
+    "selected_satisfying": 1,
+    "baseline_satisfying": 1,
+    "new_review_executed": false
+  },
+  "rebuttal_evaluator_reported": [
+    {
+      "result_id": "E4-A",
+      "task": "rating_change_prediction",
+      "sample": "ICLR_2025_balanced",
+      "source_cohort_n": 36,
+      "metric_framing": "raise_same_macro_f1",
+      "reported_value": 0.805,
+      "model": "DeepSeek V4 Pro",
+      "setting": "isolated_zero_shot_temperature_0"
+    },
+    {
+      "result_id": "E4-B",
+      "task": "rating_change_prediction",
+      "sample": "ICLR_2025_full",
+      "source_cohort_n": 57,
+      "metric_framing": "raise_same_lower_macro_f1",
+      "reported_value": 0.503,
+      "model": "DeepSeek V4 Pro",
+      "setting": "isolated_zero_shot_temperature_0"
+    },
+    {
+      "result_id": "E4-C",
+      "task": "rating_change_prediction",
+      "sample": "ICLR_2025_full",
+      "source_cohort_n": 57,
+      "metric_framing": "reported_raise_same_macro_f1",
+      "reported_value": 0.755,
+      "model": "DeepSeek V4 Pro",
+      "setting": "isolated_zero_shot_temperature_0"
+    }
+  ]
+}

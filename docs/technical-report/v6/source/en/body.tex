@@ -1,0 +1,221 @@
+% Page 1: public authorship; output-paper identities are omitted.
+\thispagestyle{cover}
+\vspace*{5mm}
+\noindent{\sffamily\small\color{teal}\bfseries EFFECTIVE AUTO RESEARCH}\par
+\vspace{3mm}
+\noindent{\sffamily\fontsize{61}{65}\selectfont\bfseries EAR}\par
+\vspace{3mm}
+\noindent{\sffamily\fontsize{24}{31}\selectfont\bfseries Accelerating the Research Lifecycle\par\noindent with Human Time as the Primary Resource}\par
+\vspace{4mm}
+\noindent{\sffamily\large\color{muted}Idea discovery · Autonomous mathematics · Rebuttal optimization}\par
+\vspace{3mm}
+\ReportAuthors
+\vspace{3mm}
+\noindent\textcolor{teal}{\rule{\textwidth}{1.2pt}}\par
+\vspace{3mm}
+\Lead{How can a research system reduce the human work needed to produce a credible contribution?}
+EAR connects three workflows through persistent evidence and revision decisions. AutoVibeIdea searches, critiques, and refines research proposals. AutonomousMath conducts complete investigations and evolves the harness that guides them. AutoRebuttal organizes concerns, existing evidence, supplementary work, and response strategies.
+
+The common design objective is to reduce active human time under a research quality requirement. Agents take over repeated retrieval, orchestration, execution, and drafting; people retain judgments about value, correctness, and final responsibility. Intermediate findings become reusable material for both the next action and the next research strategy.
+
+This report presents mechanisms and grouped historical evidence through G3. Across 28 completed manuscripts, current-round model-assessor passes rise from 3 to 12 over four rounds. The G3 selected strategy passes 75\% of episodes ($3/4$), versus 50\% ($2/4$) for the original strategy, with 52.8\% fewer research calls per pass. These observations support research revision and evolved strategy selection. The public package provides aggregate data, evaluation protocols, and reconstruction scripts.\src{1,10}
+\begin{insight}
+\textbf{Resource hierarchy}\quad Human time $H$ is primary. Cycle time $T$ describes elapsed progress; machine cost $C$ determines whether the workflow is affordable.
+\end{insight}
+\vfill
+\noindent{\small\color{muted}English technical report · October 2026 · Methods and empirical evidence.}
+
+% Page 2
+\Page{01 / Objective}{Put human time where judgment matters}{Reduce active work while meeting a research quality requirement.}
+\Lead{The scarce resource is the attention and work of the people responsible for the research.}
+Automation is valuable when it reduces the total human effort required to complete a credible task. Generating an attractive proposal or running a model unattended is an intermediate action. The relevant outcome includes the work needed to inspect, repair, and use what the system delivers. EAR's organizing objective is
+\[
+\min H\qquad\text{subject to}\qquad Q\ge Q_{\min},\quad C\le B.
+\]
+$Q_{\min}$ specifies the required deliverable and checking standard; $B$ is the machine budget. $H$ includes literature reading, derivation and implementation, active coordination, technical review, error correction, and failed work. Elapsed cycle time $T$ is recorded separately, including waiting and unattended execution.
+\Sub{Three design choices follow from this goal}
+First, selection must happen early. An unproductive direction can consume substantial downstream proof, implementation, experiment, and writing effort. Retrieval and critique should expose reasons to continue or stop before these commitments grow.
+
+Second, execution must preserve its own state. Targets, partial results, failed routes, and the next action should survive an interrupted session. This lets an agent continue a small research loop and reduces the need for a person to reconstruct the background and issue another instruction.
+
+Third, delivery must make checking efficient. A result should arrive with its assumptions, evidence, code, and unresolved issues. The person reviewing it can then inspect the technical points that carry the conclusion.
+\begin{insight}
+\textbf{Count the entire task.}\quad A saved drafting hour and an added checking hour belong to the same human-time account. Quality, active work, elapsed time, and machine usage are recorded in their own units.
+\end{insight}
+The following pages use search records, manuscript scores, and model calls to show what the system has achieved so far. These results inform the design; measuring human time saved requires recording people's active work during use.
+
+% Page 3
+\Page{02 / System}{Three workflows, one research lifecycle}{Persistent artifacts connect independently usable workflows.}
+\Fig{\resizebox{.92\textwidth}{!}{\SystemOverview}}{The three workflows have independent entry points. Saved proposals, proofs, manuscripts, and evidence maps provide interfaces between them. People retain the consequential judgments.}
+\begin{center}\small
+\begin{tabularx}{\textwidth}{P{34mm}Y Y}
+\toprule
+\textbf{Workflow} & \textbf{Input} & \textbf{Deliverable}\\
+\midrule
+AutoVibeIdea & Direction, venue requirements, resources & Literature basis, ranked candidates, executable proposal\\
+AutonomousMath & Direction or proposal, research goal & Proofs, negative findings, manuscript, assessment records\\
+AutoRebuttal & Paper, reviews, response constraints & Evidence map, responses, supplementary-work record\\
+\bottomrule
+\end{tabularx}
+\end{center}
+\captionof{table}{Inputs and outputs retain the information needed for another stage or another revision.}
+\Sub{What connects the stages?}
+Each workflow starts with an explicit goal, uses task-specific tools, and keeps materials that justify its decisions. A proposal points to literature concerns and validation plans. A manuscript points to statements, proof attempts, and audits. A response points to reviewer concerns and available evidence. These interfaces reduce repeated explanation and make resumed work inspectable.
+
+The report develops four claims: evidence changes idea selection (C1); inner research revision improves observed assessor metrics (C2); evolved strategy selection improves observed output throughput and calls per pass in the historical comparison (C3); and evidence-grounded rebuttal optimization has an implemented feedback loop and evaluated feedback models (C4). Literature-based idea generation, autonomous scientific workflows, reflective prompt evolution, and evidence-grounded author-response methods provide useful points of comparison.\src{2,3,4,5}
+
+People retain value, correctness, and final-claim judgments; agents handle repeated preparation and execution around them.\src{1,10}
+
+% Page 4
+\Page{03 / Idea discovery}{Make search critical at every expansion}{Retrieval, critique, and evaluation sharpen each candidate.}
+\Lead{The purpose of search is to allocate research effort to a grounded problem and a viable route.}
+\Fig{\resizebox{.91\textwidth}{!}{\CriticalTree}}{A node carries a problem, assumptions, method, and validation plan. Expansion produces more specific candidates; renewed checks determine pruning and further investment.}
+\begin{center}\small
+\begin{tabularx}{\textwidth}{P{25mm}Y P{17mm}}
+\toprule
+\textbf{Signal} & \textbf{Decision it supports} & \textbf{Weight}\\
+\midrule
+Novelty & Retrieve nearby work and assess a substantive difference & .25\\
+Venue & Assess significance, rigor, and venue expectations & .35\\
+Strategic & Check falsifiability, evidence access, and resource fit & .20\\
+Feasibility & Assess implementation, compute, data, and timeline & .20\\
+\bottomrule
+\end{tabularx}
+\end{center}
+\captionof{table}{The four current screening signals combine reasons for pursuing a candidate with reasons it can be executed.}
+Literature concerns have identifiers, and each proposed idea names the concerns it addresses. This gives critique a concrete object: a missing assumption, an unsupported claim, an unresolved scope, or an inadequate comparison. Scores retain their reasons so that a person can assess the basis of a ranking.
+
+The current search uses UCT-guided best-first expansion. Its controller tracks nodes, pruning, and value updates; candidate generation and critique supply new information. The implemented expansion does not require a complete random rollout. Review perspectives can also share a prompt: simulated venue reviewers are viewpoints, with the actual tool calls recorded separately.
+
+\noindent\small The surviving proposal retains the nearest work, key differences, and validation plan for the person's next decision.\src{1}
+
+% Page 5
+\Page{04 / Technical integration}{Turn project commands into research actions}{Claude Code organizes the task; Codex MCP returns critique and evaluation.}
+\Fig{\resizebox{.97\textwidth}{!}{\HarnessAccess}}{Human direction enters through project commands. The host organizes inputs and tool calls, saves results, and uses feedback to support the next choice.}
+\Sub{A small interface with explicit responsibilities}
+The early integration uses slash commands such as \texttt{/start}, \texttt{/idea-screen}, and \texttt{/idea-refine}. A command file describes the task, required inputs, tool route, output files, and completion conditions. The host reads these instructions and coordinates execution. Codex MCP provides a tool boundary for candidate analysis, novelty critique, and venue-oriented evaluation.
+
+For screening, the host supplies the candidate, its central claims, and the literature context to \texttt{mcp\_\_codex\_\_codex}. The returned material contains differences, judgments, and reasons. The host saves those results with the proposal, allowing later refinement to work from the same evidence rather than a recalled conversational summary.
+\Sub{What the integration record establishes}
+An early recorded workflow invokes Codex MCP for critical analysis and candidate generation, then applies novelty and venue screening and chooses candidates for refinement. A later resource limitation leads to a documented fallback to host-side self-review. The record preserves the route actually used and the resulting research materials.
+
+This interface reduces repeated task explanation, input assembly, and file management. The person still gives direction and reviews choices; feedback makes those choices more specific. The later tree controller builds on the same need to retain candidates and judgments, while organizing their expansion across nodes. Public examples describe the interface without publishing case content or session identifiers.\src{1,10}
+
+% Page 6
+\Page{05 / E1: search decisions}{New evidence can change the next investment}{A rescreen turns a promising candidate into a documented decision to stop.}
+\Lead{A search result becomes useful when it changes what the research process does next.}
+In the retained screening example, renewed retrieval finds three nearby works across two candidates. For one anonymous candidate, the novelty score falls from $8/10$ to $4/10$, and the recommendation changes from cautious continuation to abandonment. The additional sources change the assessment of its claimed difference.
+\begin{insight}
+\textbf{Evidence $\longrightarrow$ decision}\quad Initial assessment: novelty $8/10$, continue cautiously. Renewed evidence: overlapping prior work. Updated assessment: $4/10$, abandon the candidate and preserve the reason.
+\end{insight}
+\Sub{Why this is useful upstream}
+The initial investigation had missed relevant neighboring work. After those sources enter the analysis, the proposed mechanism no longer provides the expected distinction. Stopping at this point avoids committing subsequent proof, implementation, experimentation, and writing to that route. Saving the difference analysis also prevents another session from restarting the same discussion without its negative finding.
+
+This is C1: the system revises a research decision when evidence changes. The observed score belongs to this screening record, where its basis can be inspected. The useful output is the combination of sources, comparison, revised judgment, and next action.
+\Sub{The same interface supports a decision to continue}
+A surviving candidate needs more than a favorable score. Refinement specifies the question, assumptions, argument structure, implementation route, and tests for the central claims. A collaborator can then assess the plan and continue from a common starting point.
+
+The two decisions serve the same human-time goal. Early pruning prevents downstream commitments with a weak rationale; a grounded proposal reduces the work of repeatedly clarifying a direction that is worth pursuing. The person retains the final judgment about value and available resources. The agent supplies the repeated retrieval, comparison, and structured preparation that make that judgment easier.\src{1,10}
+
+% Page 7
+\Page{06 / Mathematical research}{Connect the two research loops}{The inner loop does a complete investigation; the outer loop improves how it is done.}
+\Fig{\resizebox{.96\textwidth}{!}{\MathDualLoop}}{A candidate harness enters the complete research loop. Manuscripts, outcomes, and failure feedback return to fixed assessment and strategy evolution. The resulting strategy guides later episodes.}
+Mathematical and algorithmic tasks often provide clear local feedback. A statement has assumptions and a target property; a failed proof exposes an unsupported step; a counterexample or numerical check can direct the next attempt. Partial lemmas and failed routes remain useful when the investigation continues.
+
+The inner engine chooses tools for search, proof, skeptical checking, claim hardening, writing, and revision. Persistent state lets it resume from its current target and materials. This reduces repeated orchestration and background reconstruction. Research on attention residue and interrupted work motivates treating those transitions as a burden on attention and effort.\src{6,7}
+
+The outer controller receives complete episode evidence. It compares reusable strategies, keeps the best strategy and the original strategy, and creates variants using failure-guided changes. The next candidate then runs through the inner engine again, including manuscript delivery and assessment.
+
+The loops address different sources of effort. One maintains the current investigation; the other changes the procedure responsible for repeated failures and repairs. Their shared aim is a better deliverable with less manual coordination and rework. The fixed assessor provides the outcome signal used to evaluate those changes. Pages 9--12 examine the completed historical episodes that connect these mechanisms to measured results.\src{1,10}
+
+% Page 8
+\Page{07 / Harness evolution}{Change the procedure, then test complete episodes}{Prompts and parameters are research-policy choices that affect later trajectories.}
+\Lead{An offspring earns its place by running the research procedure and delivering assessable results.}
+The historical genome contains stage instructions and strategy parameters. Its operator set includes targeted mutation, semantic crossover, exploration, and elite retention. A coach uses outcome counts, proof failures, weak-contribution findings, and assessor feedback to modify the next strategy. A permanent original strategy remains a reference.
+
+The editable interface in the portable implementation also includes worker code, skills, tools, and configuration. This extends what can be changed while the terminal referee stays outside the candidate's editable scope. The historical measurements concern the prompts and parameters that were actually executed.
+\Sub{Selection follows the recorded quality signals}
+Historical episode fitness $f$ uses the best valid manuscript score for a written candidate. Other outcomes receive $0.5$ for retreat, $0$ for screening rejection, $-0.5$ for failed search, and $-2$ for budget exhaustion or a trivial contribution. Tournament selection ranks mean fitness; the retained elite uses
+\[
+B(h)=\frac13\left(\frac{\overline f(h)+2}{12}
+      +\operatorname{written\_rate}(h)
+      +\operatorname{assessor\_pass\_rate}(h)\right).
+\]
+The current portable interface uses a three-signal comparison based on normalized mean quality, manuscript completion, and model-terminal passes. These are distinct versioned implementations of quality-guided selection.
+\Sub{What a strategy edit changes}
+Recorded descendants narrow the shortlist, raise the expected proof-success threshold, reduce attempted targets, require a concrete central lemma, and move source-backed skeptical checks earlier. Such changes affect where effort is committed before proving and writing become expensive.
+
+The framework learns a research procedure from completed attempts. It does not train the foundation model's weights. The overall objective remains human time; the current fitness signals operationalize quality and delivery, while invocation records describe the measured execution work.\src{1,10}
+
+% Page 9
+\Page{08 / Evaluation setup}{Define outcomes and comparison units}{One historical protocol, explicit cohorts, and complete denominators.}
+\Lead{The unit of analysis is an episode that runs a strategy through research and manuscript assessment.}
+The displayed phase covers G0 initialization and three evolutionary generations, G1--G3: 64 episodes, 630 recorded research calls, 28 completed manuscripts, and 15 historical assessor passes for the selected best versions. The overall episode pass rate is $15/64=23.4\%$. Each strategy batch contains four episodes. Strategies may select a precise target from their direction, so the comparison includes research selection as part of the procedure.
+\begin{center}\small
+\begin{tabularx}{\textwidth}{P{39mm}Y}
+\toprule
+\textbf{Definition} & \textbf{Recorded rule}\\
+\midrule
+Research outcome & Proof/write completion and failures recorded separately\\
+Historical scoring round & Three fresh model sessions with a common assessment rubric\\
+Aggregate pass & At least one of the three sessions returns Accept\\
+Delivered version & Restore the manuscript round with the highest mean score\\
+Inner-loop cohort & The same 28 completed manuscripts, four scoring rounds each\\
+\bottomrule
+\end{tabularx}
+\end{center}
+\captionof{table}{The legacy model-assessment protocol used for all historical results in this report.}
+An initial assessment is followed by three refinement and review rounds. The scorer preserves a best-version snapshot and restores it at the end. A pass is the recorded flag attached to that selected version. This makes the outcome definition consistent even when the final chronological round receives a lower score.
+
+The research call counter records stage invocations. Review invocations are matched to retained review-history records; refinement attempts are reconstructed from noninitial score rounds and the scorer's one-attempt rule. Failed episodes remain in the totals. These units allow the output and work to be compared together.
+
+Under a stricter check requiring three Accept votes and a score of at least seven from each assessor, both G3 strategies qualify in $1/4$ attempts. Pass counts in this report use the historical rule in the table above. G0--G3 was selected for display after examining the archive; all reported totals describe that phase. The accompanying data contain the full scoring definitions and cost calculations.\src{10}
+
+% Page 10
+\Page{09 / E2: the inner loop}{Revision improves the observed assessment profile}{A fixed manuscript cohort makes the rounds comparable.}
+\Fig{\earfigure{inner_progress}}{Four scoring rounds for the same 28 completed manuscripts. Current-round pass counts and mean assessment scores describe each round; selected-best delivery is a separate statistic.}
+The current-round pass counts are $3,10,10,12$ out of 28. Their corresponding mean scores are $4.65,5.25,5.50,5.67$. From the initial assessment to the third refinement round, the observed pass fraction changes from $10.7\%$ to $42.9\%$.
+
+The loop returns findings to research and writing. A proof issue calls for repair of the argument or its assumptions. A contribution issue can change the target or claim. An exposition issue directs another manuscript revision. Saving these findings lets the next action address a located deficiency instead of requiring another broad instruction from the person supervising the task.
+\Sub{Delivery also needs version selection}
+The scorer restores the highest-mean version for each manuscript. After each scoring-round prefix, selected-best pass counts are $3,10,12,15$. The final 15 passes combine the best retained rounds for different manuscripts; they are distinct from the 12 passes in the final chronological round.
+
+Both operations matter: feedback improves the observed cohort profile, and version retention preserves useful earlier progress. C2 is supported by the grouped round measurements and the restored-version records. The human-time mechanism is the transfer of repeated diagnosis and revision work into a persistent loop, with technical checking retained in the person's responsibilities.\src{10}
+
+% Page 11
+\Page{10 / E3: strategy evolution}{The selected strategy reaches a 75\% pass rate}{Each generation tests its revised research approach on complete attempts.}
+\Fig{\earfigure{evolution_progress}}{Model-assessment pass rate for the strategy selected in each generation. G0 initializes the search; G1--G3 are three evolution generations. Every point includes four attempts, including failures and unfinished manuscripts.}
+
+\Sub{Use the last round's problems to change the next approach}
+After each generation, the system gathers failed attempts and reviewer comments, edits the strategy, and runs another batch of research. Recorded changes shorten the candidate list, require a central lemma and a plausible proof route before choosing a target, and raise the contribution requirement. Subsequent research attempts test those changes.
+
+\Sub{From zero passes to three out of four}
+The selected strategies in G0 and G1 produce no passes in their four attempts. G2 produces two passes; G3 produces three. The 75\% result therefore means $3/4$ attempts. Keeping four attempts at every point makes the selected strategies' progress within this phase easy to read.
+
+The curve shows the strategy selected in each generation. Across all candidate strategies and the original strategy in G3, nine of twenty attempts pass, for an overall rate of 45\%. The released data retain the complete counts for every generation.\src{10}
+
+\begin{insight}
+\textbf{The outer loop changes how research is done.}\quad Problems found in one investigation become changes to the next strategy. Researchers can inspect the changes and their results before adopting that approach.
+\end{insight}
+
+% Page 12
+\Page{11 / E3: execution work}{Fewer research calls per passing manuscript}{Report the work, the output count, and the optimization effort together.}
+\Fig{\earfigure{cost_comparison}}{G3 calls per manuscript that passes model assessment. The right panel adds recorded review calls and revision attempts reconstructed from the logs.}
+\begin{center}\small
+\begin{tabularx}{\textwidth}{Yrrrr}
+\toprule
+\textbf{Comparison} & \textbf{Calls} & \textbf{Total calls} & \textbf{Passes} & \textbf{Episodes}\\
+\midrule
+G3 original & 41 & 86 & 2 & 4\\
+G3 selected & 29 & 74 & 3 & 4\\
+\bottomrule
+\end{tabularx}
+\end{center}
+\captionof{table}{Raw numerators and denominators for the G3 selected-strategy comparison.}
+In G3, research calls per pass are $29/3$ versus $41/2$, a 52.8\% reduction. Including review and revision, the ratio is $74/3$ versus $86/2$, a 42.6\% reduction. Fewer research calls per episode and a higher pass fraction jointly produce this result.
+
+Both strategies record 36 review invocations and nine reconstructed refinement attempts. The original strategy therefore uses $41+36+9=86$ outer invocations, compared with $29+36+9=74$ for the selected strategy. Across the full G0--G3 population, strategy evaluation consumes 630 research calls for 15 passes, or 42 research calls per pass. This separate total retains the work spent searching for a useful harness.
+
+In this comparison, fewer research calls produce more manuscripts that pass model assessment. The count covers research, review, and reconstructed revision attempts. Strategy coaching, nested tool calls, token charges, and people's time are recorded separately or remain unmeasured.\src{10}
+
+\input{ending.tex}

@@ -1,0 +1,70 @@
+% Shared visual report style. Compile from source/en or source/cn with XeLaTeX.
+\usepackage[margin=20mm,top=20mm,bottom=21mm,headheight=16pt,headsep=7mm]{geometry}
+\usepackage{fontspec}
+\setmainfont{TeX Gyre Pagella}
+\setsansfont{TeX Gyre Heros}
+\setmonofont{DejaVu Sans Mono}[Scale=.83]
+\setCJKmainfont{Noto Serif CJK SC}
+\setCJKsansfont{Noto Sans CJK SC}
+\usepackage{amsmath,amssymb,mathtools}
+\usepackage{graphicx,xcolor,tikz,booktabs,tabularx,array,colortbl}
+\usetikzlibrary{arrows.meta,positioning,calc,fit,backgrounds,shapes.geometric}
+\usepackage{enumitem,fancyhdr,hyperref,caption,tcolorbox,lastpage}
+\definecolor{navy}{HTML}{14283F}
+\definecolor{teal}{HTML}{147D83}
+\definecolor{amber}{HTML}{E1A34A}
+\definecolor{muted}{HTML}{65758B}
+\definecolor{warm}{HTML}{F7F8FA}
+\ifearcn
+  \newcommand{\earlang}{cn}
+  \newcommand{\earfooter}{人时为核心 · 质量约束 · 持续改进}
+  \hypersetup{pdftitle={EAR：以人时为核心，加速科研全生命周期}}
+  \setlength{\parindent}{1.8em}
+  \linespread{1.22}
+\else
+  \newcommand{\earlang}{en}
+  \newcommand{\earfooter}{Human time · Research quality · Continuous improvement}
+  \hypersetup{pdftitle={EAR: Accelerating the Research Lifecycle with Human Time as the Primary Resource}}
+  \setlength{\parindent}{0pt}
+  \linespread{1.12}
+\fi
+\hypersetup{colorlinks=true,linkcolor=teal,urlcolor=teal,citecolor=teal,
+ pdfauthor={Yingze Li, Dong Wang, Ben Wu, Xianglong Liu, Hongzhi Wang},
+ pdfsubject={Technical report on idea discovery, autonomous mathematical research and rebuttal optimization},
+ pdfkeywords={EAR, research automation, human time, harness evolution, research workflows}}
+\urlstyle{same}
+\setlength{\parskip}{4.5pt}
+\color{navy}
+\setlist[itemize]{leftmargin=1.4em,topsep=3pt,itemsep=3pt,parsep=0pt}
+\setlist[enumerate]{leftmargin=1.8em,topsep=3pt,itemsep=3pt,parsep=0pt}
+\renewcommand{\arraystretch}{1.28}
+\newcolumntype{Y}{>{\raggedright\arraybackslash}X}
+\newcolumntype{P}[1]{>{\raggedright\arraybackslash}p{#1}}
+\captionsetup{font=small,labelfont={bf,sf},textfont=small,justification=raggedright,singlelinecheck=false,skip=5pt}
+\pagestyle{fancy}\fancyhf{}
+\fancyhead[L]{\sffamily\small\textcolor{muted}{EAR / TECHNICAL REPORT}}
+\fancyhead[R]{\sffamily\small\textcolor{muted}{\leftmark}}
+\fancyfoot[L]{\sffamily\footnotesize\textcolor{muted}{\earfooter}}
+\fancyfoot[R]{\sffamily\small\textcolor{navy}{\thepage\ / \pageref*{LastPage}}}
+\renewcommand{\headrulewidth}{.3pt}
+\renewcommand{\footrulewidth}{0pt}
+\fancypagestyle{cover}{\fancyhf{}
+ \fancyfoot[L]{\sffamily\footnotesize\textcolor{muted}{October 2026\quad\ifearcn 中文技术报告\else English technical report\fi}}
+ \fancyfoot[R]{\sffamily\small 01 / \pageref*{LastPage}}
+ \renewcommand{\headrulewidth}{0pt}}
+\newcommand{\src}[1]{\textsuperscript{\textcolor{teal}{[#1]}}}
+\newcommand{\Page}[3]{\clearpage\normalsize\markboth{#1}{}
+ \noindent{\sffamily\small\color{teal}\bfseries #1}\par\vspace{2mm}
+ \noindent{\sffamily\fontsize{22}{29}\selectfont\bfseries #2}\par\vspace{2.5mm}
+ \noindent{\sffamily\large\color{muted}#3}\par\vspace{3mm}}
+\newcommand{\Sub}[1]{\par\vspace{2mm}\noindent{\sffamily\bfseries\large #1}\par\vspace{.5mm}}
+\newcommand{\Lead}[1]{\noindent{\bfseries #1}\par}
+\newcommand{\Fig}[2]{\begin{center}#1\end{center}\vspace{-2mm}\captionof{figure}{#2}\vspace{2mm}}
+\newcommand{\earfigure}[1]{\includegraphics[width=.97\textwidth]{../../figures/\earlang/#1.pdf}}
+\newtcolorbox{insight}[1][]{colback=teal!5,colframe=teal!30,boxrule=.45pt,arc=2pt,left=9pt,right=9pt,top=7pt,bottom=7pt,fontupper=\sffamily\small,#1}
+\newtcolorbox{scope}[1][]{colback=warm,colframe=navy!14,boxrule=.4pt,arc=2pt,left=8pt,right=8pt,top=6pt,bottom=6pt,fontupper=\small,#1}
+\newcommand{\ReportAuthors}{%
+ \noindent{\sffamily\normalsize\bfseries Yingze Li\quad Dong Wang\quad Ben Wu}\par
+ \noindent{\sffamily\normalsize\bfseries Xianglong Liu\quad Hongzhi Wang\textsuperscript{*}}\par
+ \vspace{1mm}\noindent{\sffamily\small Harbin Institute of Technology}\par
+ \noindent{\sffamily\footnotesize\textsuperscript{*}\ifearcn 通讯作者\else Corresponding author\fi}\par}

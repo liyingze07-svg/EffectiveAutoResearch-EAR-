@@ -1,0 +1,78 @@
+% Rebuttal and closing pages, revised from a first-time reader's perspective.
+\Page{12 / Rebuttal}{Start with the concerns that matter most}{Find existing answers, fill the evidence gaps, then write the response.}
+\Lead{The author's first decision is which concerns the paper already answers and which require more research.}
+\Fig{\resizebox{.95\textwidth}{!}{\RebuttalFlow}}{Group related review comments and find the supporting evidence. When evidence is missing, do the necessary work before drafting, checking, and revising the response.}
+
+\Sub{Find the answer before deciding what to add}
+Several reviewers may raise the same issue. EAR brings those comments together, locates the relevant argument or experiment, and checks what is missing: an explanation, a proof, or an experiment. It organizes existing answers and requests additional research for unresolved gaps. One new experiment can then support several related replies.\src{1,5,9}
+
+\Sub{Spend the available time on decisive concerns}
+Open community methods and author experience provide starting strategies. The system compares the order of arguments, choice of evidence, and wording, with attention to concerns that affect the assessment of the paper. The implementation expresses this as an optimization objective:
+\[
+\max_{\theta}\ \mathbb E[\Delta R\mid\mathrm{Context},\theta]
+\quad\text{subject to}\quad H\le H_B,\ C\le B,\ T\le D.
+\]
+Context contains the paper, reviews, and available evidence; $\theta$ is the response strategy, $\Delta R$ is the desired rating change, and $D$ is the deadline. The aim is to choose a promising response within the available human time, machine budget, and deadline.
+
+\begin{insight}
+\textbf{Models suggest changes; authors check the technical content.}\quad Model feedback asks whether the response addresses the concern, whether its arguments have support, and whether the rating may rise, stay the same, or fall. Authors check new technical results and the final response.
+\end{insight}
+
+\Page{13 / Response strategies}{Keep the useful draft and fix what remains}{Start with existing methods, and carry each round's work into the next.}
+\Fig{\resizebox{.95\textwidth}{!}{\RebuttalPopulation}}{Try different approaches, compare model feedback, and keep the better draft. Unanswered questions and suggested changes guide the next revision.}
+
+\Sub{Begin with a few informed approaches}
+The initial strategies come from public response methods and author experience. One may start with existing evidence, another with the reviewer's main concern, and another with the missing validation. They use the same paper and reviews but organize the work and response differently.
+
+\Sub{Keep the draft, the remaining questions, and the advice}
+The system retains the best response found so far and records what remains unclear, where evidence is missing, and what to change next. The next round starts from those materials. This is black-box optimization: compare candidate responses and use feedback to change the strategy, without calculating a derivative of the rating with respect to the writing strategy.
+
+\Sub{A recorded example changes strategy after feedback}
+In one anonymous two-round record, the first selected draft does not meet the internal model's evaluation requirements. The system keeps the draft and advice, then selects another strategy in the second round and passes that evaluation. The record shows a change in approach in response to feedback; the outcome is an internal model check.
+
+Once a draft passes the content evaluation, the system stops trying the remaining strategies in that round. It then checks whether the response is faithful to the paper and evidence, and whether its wording is accurate. Problems trigger another revision; completed checks lead to author review.\src{1,10}
+
+\Page{14 / E4: predicting rating changes}{Can the model predict rating changes?}{Use completed review cases to check the model's judgments.}
+\Lead{The model reads the paper, initial review, and recorded author response, then predicts whether the rating rises, stays the same, or falls.}
+The final rating is used only to check the prediction. The difference between initial and final ratings supplies the true label. Each case is evaluated separately, so information from other cases does not enter its context.\src{1,8,10}
+
+\begin{center}\small
+\begin{tabularx}{\textwidth}{P{29mm}Y P{22mm}}
+\toprule
+\textbf{Historical cases} & \textbf{Prediction task} & \textbf{Macro-F1}\\
+\midrule
+36 balanced cases & Rise versus no change; 18 cases each & .805\\
+57-case full test & Rise, no change, or fall & .503\\
+Same 57-case source & Source-reported rise/no-change metric & .755\\
+\bottomrule
+\end{tabularx}
+\end{center}
+\captionof{table}{Recorded DeepSeek V4 Pro results. Macro-F1 averages the F1 score of each class; values closer to one are better. The three rows use different evaluation settings.}
+
+\Sub{Stronger on rising and unchanged ratings; weaker on falling ratings}
+The balanced 36-case test gives a macro-F1 of .805 for distinguishing a rise from no change. The full test includes six falling ratings and gives .503 across three classes; F1 for the falling-rating class is zero. Looking at the individual classes reveals errors that one overall score would hide.
+
+\Sub{Use the feedback to revise drafts, and check its basis}
+EAR uses rating predictions alongside evidence checks when comparing responses. Further prompt changes did not improve the held-out results in the recorded comparison, so the system retains the original zero-shot prompt. Model weights were not updated.
+
+\begin{insight}
+\textbf{These numbers evaluate prediction.}\quad The test uses historical responses that have already been written. Whether new system-generated responses improve real reviewer ratings requires a separate experiment.
+\end{insight}
+
+\Page{15 / What this means for researchers}{Keep research moving; keep people on the key decisions}{EAR carries repeated work forward from choosing a problem to revising a paper and answering reviews.}
+Research repeatedly follows a familiar sequence: read the literature, find a gap, try an approach, discover a problem, and revise the result. Reconstructing the background, assigning the next step, and checking omissions take the researcher's time. EAR connects these steps so that existing materials and feedback remain useful in the next action.
+
+\Sub{Choosing a problem: let new evidence change the commitment}
+The search module compares candidates with existing work. In the recorded example, newly found close work leads to a candidate being abandoned, with the reason preserved. Researchers can inspect those differences before committing to substantial derivation or experimentation.
+
+\Sub{Doing the research: connect attempts, checks, and revisions}
+The inner loop retains proofs, code, failed approaches, and review comments, then works on the specific problems identified. Among the same 28 manuscripts, current-version model-assessment passes rise from three initially to twelve after the third revision. The outer loop changes the research strategy. In the displayed phase through G3, that generation's selected strategy passes three of four attempts and uses 52.8\% fewer research calls per pass than the original strategy evaluated in the same G3 generation.\src{10}
+
+\Sub{Answering reviews: focus on the concerns still unresolved}
+The response module groups repeated questions, finds existing support, requests missing research when necessary, and compares and revises drafts. Each round preserves useful material and advice for the next step. Authors can focus their checks on the key evidence, technical conclusions, and final wording.
+
+\begin{insight}
+\textbf{One decision can move the next stretch of work forward.}\quad People set the direction and standards and check key results. Agents continue searching, trying, and revising. The researcher returns to new results and a clear record of changes, ready to decide what follows.
+\end{insight}
+
+This report shows working processes, model-assessment results, and call counts. Actual savings in active human time still need to be recorded during use.

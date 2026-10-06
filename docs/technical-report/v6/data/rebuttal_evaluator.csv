@@ -1,0 +1,4 @@
+result_id,task,sample,source_cohort_n,metric_framing,reported_value,model,setting
+E4-A,rating_change_prediction,ICLR_2025_balanced,36,raise_same_macro_f1,0.805,DeepSeek V4 Pro,isolated_zero_shot_temperature_0
+E4-B,rating_change_prediction,ICLR_2025_full,57,raise_same_lower_macro_f1,0.503,DeepSeek V4 Pro,isolated_zero_shot_temperature_0
+E4-C,rating_change_prediction,ICLR_2025_full,57,reported_raise_same_macro_f1,0.755,DeepSeek V4 Pro,isolated_zero_shot_temperature_0

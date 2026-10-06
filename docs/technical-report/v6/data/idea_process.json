@@ -1,0 +1,21 @@
+{
+  "evidence_id": "E1",
+  "kind": "anonymized_process_case",
+  "candidate_count_affected": 2,
+  "nearby_works_found_on_rescreen": 3,
+  "candidates": [
+    {
+      "candidate": "A",
+      "initial_novelty_score": 8,
+      "rescreen_novelty_score": 4,
+      "decision": "abandon"
+    },
+    {
+      "candidate": "B",
+      "initial_novelty_score": 8,
+      "rescreen_novelty_score": 5
+    }
+  ],
+  "score_scale_max": 10,
+  "interpretation": "Retrieved nearby work changed recorded novelty judgments and candidate decisions."
+}

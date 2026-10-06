@@ -464,7 +464,7 @@ Shell 网络开关不阻断 Codex 模型通信或直接的 DeepSeek API 调用�
 
 在线运行会将论文、审稿意见、草稿及相关工具结果发送给配置的 Codex/OpenAI、DeepSeek，或显式指定的其他服务端点。
 
-案例目录、回执、日志和 CLI 会话历史可能在本地保留输入与输出。服务端保留方式取决于服务商及账户设置。完整说明见 [EAR 数据处理文档](../README.md#execution-safety-and-data-handling)。
+案例目录、回执、日志和 CLI 会话历史可能在本地保留输入与输出。服务端保留方式取决于服务商及账户设置。完整说明见 [EAR 数据处理文档](../docs/operations.md#execution-safety-and-data-handling)。
 
 ---
 

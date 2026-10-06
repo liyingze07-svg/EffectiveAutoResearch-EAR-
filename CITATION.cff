@@ -1,0 +1,34 @@
+cff-version: 1.2.0
+message: "If EAR supports your research, please cite the technical report and record the code revision you used."
+title: "EAR: Effective Auto Research"
+type: software
+authors:
+  - family-names: Li
+    given-names: Yingze
+  - family-names: Wang
+    given-names: Dong
+  - family-names: Wu
+    given-names: Ben
+repository-code: "https://github.com/liyingze07-svg/EffectiveAutoResearch-EAR-"
+url: "https://github.com/liyingze07-svg/EffectiveAutoResearch-EAR-"
+license: MIT
+preferred-citation:
+  type: report
+  title: "EAR: Accelerating the Research Lifecycle with Human Time as the Primary Resource"
+  authors:
+    - family-names: Li
+      given-names: Yingze
+    - family-names: Wang
+      given-names: Dong
+    - family-names: Wu
+      given-names: Ben
+    - family-names: Liu
+      given-names: Xianglong
+    - family-names: Wang
+      given-names: Hongzhi
+  year: 2026
+  month: 10
+  version: "6"
+  institution:
+    name: "Harbin Institute of Technology"
+  url: "https://github.com/liyingze07-svg/EffectiveAutoResearch-EAR-"

@@ -7,10 +7,19 @@ it does not inspect or publish ignored runtime research outputs.
 from __future__ import annotations
 
 import argparse
+import hashlib
 import ipaddress
 from pathlib import Path
 import re
 import subprocess
+
+
+# Published release from e287d39; its 48 members match the unpacked v6 report.
+# Pin the exact archive, not an extension: other ZIP files remain disallowed.
+RELEASE_ARCHIVES = {
+    "docs/technical-report/EAR_Technical_Report_v6_Bilingual_Public.zip":
+        "e4244a835f96eeab507d563d387803c1a2f5cc22e9f9b5639c31d9bebe8dd31c",
+}
 
 
 def main() -> int:
@@ -36,6 +45,11 @@ def main() -> int:
         if not p.is_file() or p.is_symlink():
             continue
         data = p.read_bytes()
+        if name in RELEASE_ARCHIVES:
+            if hashlib.sha256(data).hexdigest() != RELEASE_ARCHIVES[name]:
+                print(f"HIT release archive checksum mismatch: {name} [content redacted]")
+                failures += 1
+            continue
         if b"\0" in data:
             if p.suffix not in {".png", ".jpg", ".jpeg", ".pdf"}:
                 print(f"HIT binary runtime material: {name} [content redacted]")

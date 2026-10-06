@@ -1,0 +1,39 @@
+name: Offline checks
+
+on:
+  push:
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  offline:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    strategy:
+      fail-fast: false
+      matrix:
+        python-version: ["3.10", "3.12"]
+    env:
+      PYTHONDONTWRITEBYTECODE: "1"
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: ${{ matrix.python-version }}
+      - name: Verify released report files and arithmetic
+        run: python scripts/check_report.py
+      - name: Run the zero-model workflow demo
+        run: python scripts/offline_demo.py
+      - name: Check the research engine, reviewer and optimizer
+        run: python -m unittest discover -s autonomousmath/tests -v
+      - name: Check rebuttal pure functions
+        run: python rebuttal/scripts/test_orchestrate.py
+      - name: Check shared entrypoints and report validation
+        run: python -m unittest discover -s tests -v
+      - name: Check portable source and accidental secrets
+        run: |
+          python scripts/public_source_audit.py
+          python scripts/secret_scan.py

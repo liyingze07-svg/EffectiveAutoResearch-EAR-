@@ -531,7 +531,7 @@ bash ../scripts/isolated_demo.sh
 
 在线运行时，提示词、检索文本和相关文件可能发送给配置的模型服务。本地输出与日志目录、API 会话 JSON 文件及 Codex 会话历史中也可能保留这些内容；启动器会在在线执行前打印提示。
 
-完整说明见 [EAR 数据处理文档](../README.md#execution-safety-and-data-handling)。
+完整说明见 [EAR 数据处理文档](../docs/operations.md#execution-safety-and-data-handling)。
 
 ---
 

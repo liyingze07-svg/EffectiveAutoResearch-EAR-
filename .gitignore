@@ -60,3 +60,6 @@ batch_tasks/
 
 # Internal design documents (not public)
 DESIGN_RATIONALE.md
+
+# Workspaces created by the unified EAR launcher
+/runs/

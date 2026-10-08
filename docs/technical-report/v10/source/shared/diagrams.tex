@@ -1,0 +1,166 @@
+% Editable, bilingual mechanism diagrams. Only public workflow labels appear here.
+% The entry document defines \ifearcn; shared/style.tex supplies colors and TikZ.
+\newcommand{\earlabeltext}[2]{\ifearcn#1\else#2\fi}
+\tikzset{
+  earbox/.style={draw=navy!60,fill=navy!5,text=ink,line width=.85pt,rounded corners=1pt,
+    minimum height=13mm,text width=30mm,align=center,
+    font=\sffamily\small,inner sep=5pt},
+  earteal/.style={earbox,draw=teal!90,fill=teal!16},
+  earamber/.style={earbox,draw=amber!90,fill=amber!16},
+  eararrow/.style={-{Stealth[length=2.2mm]},line width=1pt,draw=navy!90},
+  earfeedback/.style={-{Stealth[length=2.2mm]},line width=1.05pt,draw=teal},
+  earlabel/.style={font=\sffamily\footnotesize,text=navy!88,align=center},
+}
+
+\newcommand{\SystemOverview}{%
+\begin{tikzpicture}[x=1mm,y=1mm]
+  \node[earamber,text width=44mm,minimum height=29mm] (idea) at (26,0)
+    {\textcolor{teal}{\bfseries\earlabeltext{01 · 问题发现}{01 · Idea discovery}}\\[2mm]
+     \earlabeltext{方向与文献\\$\rightarrow$ 有依据的提案}{Direction and literature\\$\rightarrow$ grounded proposal}};
+  \node[earbox,text width=44mm,minimum height=29mm] (math) at (87,0)
+    {\textcolor{teal}{\bfseries\earlabeltext{02 · 数学研究}{02 · Math research}}\\[2mm]
+     \earlabeltext{研究目标\\$\rightarrow$ 证明与稿件}{Research target\\$\rightarrow$ proof and manuscript}};
+  \node[earteal,text width=44mm,minimum height=29mm] (reb) at (148,0)
+    {\textcolor{teal}{\bfseries\earlabeltext{03 · 评审回应}{03 · Rebuttal optimization}}\\[2mm]
+     \earlabeltext{稿件与审稿意见\\$\rightarrow$ 补证据与回应}{Paper and external reviews\\$\rightarrow$ evidence and responses}};
+  \draw[eararrow] (idea)--(math); \draw[eararrow] (math)--(reb);
+  \node[earlabel,text width=47mm] at (26,-27)
+    {\earlabeltext{人：价值与方向判断}{Human: value and direction}};
+  \node[earlabel,text width=47mm] at (87,-27)
+    {\earlabeltext{人：关键技术判断}{Human: key technical judgments}};
+  \node[earlabel,text width=47mm] at (148,-27)
+    {\earlabeltext{人：最终研究责任}{Human: final research responsibility}};
+  \draw[earfeedback] (reb.south) -- (148,-41) -- (87,-41) -- (math.south);
+  \node[earlabel,fill=paper,inner sep=3pt] at (117,-41)
+    {\earlabeltext{评审反馈形成新研究任务}{Review feedback creates research tasks}};
+\end{tikzpicture}}
+
+\newcommand{\CriticalTree}{%
+\begin{tikzpicture}[x=1mm,y=1mm]
+  \node[earamber,text width=33mm] (root) at (52,1)
+    {\bfseries\earlabeltext{方向＋约束}{Direction + constraints}};
+  \node[earbox,text width=25mm,minimum height=20mm] (a) at (8,-27)
+    {\earlabeltext{候选 A\\问题／方法\\验证计划}{Candidate A\\Question / method\\Test plan}};
+  \node[earteal,text width=25mm,minimum height=20mm] (b) at (52,-27)
+    {\earlabeltext{候选 B\\问题／方法\\验证计划}{Candidate B\\Question / method\\Test plan}};
+  \node[earbox,text width=25mm,minimum height=20mm] (c) at (96,-27)
+    {\earlabeltext{候选 C\\问题／方法\\验证计划}{Candidate C\\Question / method\\Test plan}};
+  \draw[eararrow] (root)--(a); \draw[eararrow] (root)--(b); \draw[eararrow] (root)--(c);
+  \node[earbox,text width=25mm,minimum height=17mm] (b1) at (31,-63)
+    {\earlabeltext{B1：补全细节\\重新检索与评价}{B1: specify details\\Retrieve and reassess}};
+  \node[earteal,text width=25mm,minimum height=17mm] (b2) at (76,-63)
+    {\earlabeltext{B2：继续推进\\精修研究提案}{B2: develop further\\Refine the proposal}};
+  \draw[eararrow] (b)--(b1); \draw[eararrow] (b)--(b2);
+  \draw[navy!60,line width=1pt] (a.south)--++(0,-7);
+  \node[earlabel,text width=18mm] at (5,-57)
+    {\earlabeltext{保存\\剪枝理由}{Prune;\\keep reason}};
+  \node[earbox,text width=35mm,minimum height=57mm] (cycle) at (149,-35)
+    {\textcolor{teal}{\bfseries\earlabeltext{每轮节点更新}{At each expansion}}\\[2mm]
+     \earlabeltext{扩展候选}{Expand candidates}\\$\downarrow$\\
+     \earlabeltext{检索与多视角批判}{Retrieve and critique}\\$\downarrow$\\
+     \earlabeltext{评分、剪枝与回传}{Score, prune, backpropagate}};
+  \draw[earfeedback] (cycle.north east)--++(6,0) |- (cycle.south east);
+  \node[earlabel,text width=165mm] at (85,-88)
+    {\earlabeltext{UCT 引导优先扩展；节点逐步具体化，检索证据持续改变取舍。}{UCT-guided best-first expansion; retrieved evidence updates which branches merit further work.}};
+\end{tikzpicture}}
+
+\newcommand{\HarnessAccess}{%
+\begin{tikzpicture}[x=1mm,y=1mm]
+  \node[earamber,text width=30mm,minimum height=27mm] (human) at (17,0)
+    {\bfseries\earlabeltext{人的方向与判断}{Human direction}\\[1mm]\mdseries
+     \earlabeltext{给定约束\\审阅并选择下一步}{Set constraints\\Review and choose next steps}};
+  \node[earbox,text width=41mm,minimum height=27mm] (host) at (76,0)
+    {\bfseries Claude Code Harness\\[1mm]\mdseries
+     \earlabeltext{组织研究任务\\调度工具与反馈}{Organize research tasks\\Coordinate tools and feedback}};
+  \node[earteal,text width=35mm,minimum height=27mm] (judge) at (143,0)
+    {\bfseries Codex MCP\\[1mm]\mdseries
+     \earlabeltext{批判、生成与评分\\返回理由与建议}{Critique, generate, score\\Return reasons and advice}};
+  \draw[eararrow] (human.east)--(host.west);
+  \draw[earfeedback] ($(host.west)+(0,-4)$)--($(human.east)+(0,-4)$);
+  \draw[eararrow] (host.east)--(judge.west);
+  \draw[earfeedback] ($(judge.west)+(0,-4)$)--($(host.east)+(0,-4)$);
+  \node[earbox,text width=104mm,minimum height=18mm] (saved) at (98,-42)
+    {\earlabeltext{保存文献、候选、筛选与精修报告\\反馈决定继续、退出或补齐提案}{Save literature, candidates, screening and refinement reports\\Use feedback to continue, exit, or complete the proposal}};
+  \draw[eararrow] (host.south)--(saved.north west);
+  \draw[eararrow] (judge.south)--(saved.north east);
+  \node[earlabel,text width=169mm] at (86,-66)
+    {\earlabeltext{方向与约束\quad 候选筛选\quad 提案精修}{Direction and constraints\quad Candidate screening\quad Proposal refinement}\\[1mm]
+     \earlabeltext{真实交互接入：人仍参与阶段推进，结果作为下一步的输入。}{Interactive integration: humans advance stages; saved outputs feed the next decision.}};
+\end{tikzpicture}}
+
+\newcommand{\MathDualLoop}{%
+\begin{tikzpicture}[x=1mm,y=1mm]
+  \node[earamber,text width=32mm,minimum height=24mm] (pop) at (17,-12)
+    {\bfseries\earlabeltext{外层：策略种群}{Outer: strategy population}\\[1mm]\mdseries
+     \earlabeltext{既有 Harness\\与后续变体}{Existing harness\\and later variants}};
+  \begin{scope}[on background layer]
+    \filldraw[fill=teal!8,draw=teal!65,line width=.85pt,rounded corners=2pt] (45,3) rectangle (125,-58);
+  \end{scope}
+  \node[font=\sffamily\small\bfseries,text=teal] at (85,-5)
+    {\earlabeltext{内层：完整研究尝试}{Inner: a complete research episode}};
+  \node[earbox,text width=23mm,minimum height=17mm] (do) at (64,-25)
+    {\earlabeltext{选题、推理\\证明／构造}{Select, reason\\Prove / construct}};
+  \node[earteal,text width=23mm,minimum height=17mm] (check) at (106,-25)
+    {\earlabeltext{质疑、检查\\反馈与诊断}{Challenge, check\\Feedback / diagnosis}};
+  \node[earbox,text width=34mm,minimum height=15mm] (fix) at (85,-48)
+    {\earlabeltext{修正、强化主张与写作}{Repair, harden claims, write}};
+  \draw[eararrow] (do)--(check);
+  \draw[earfeedback] (check.south)--(fix.east);
+  \draw[earfeedback] (fix.west)--(do.south);
+  \draw[eararrow] (pop.east)--(do.west);
+  \node[earteal,text width=31mm,minimum height=31mm] (eval) at (152,-25)
+    {\bfseries\earlabeltext{固定终审}{Fixed referee}\\[1mm]\mdseries
+     \earlabeltext{完整稿件与研究结果\\质量／完成／通过}{Full manuscript\\Quality, delivery\\Assessor pass}};
+  \draw[eararrow] (check.east)--node[earlabel,above]{\earlabeltext{产物}{Artifacts}} (eval.west);
+  \node[earbox,text width=43mm,minimum height=17mm] (elite) at (143,-80)
+    {\earlabeltext{保留较好策略\\同时保留初始策略}{Keep better strategies\\Keep the original strategy}};
+  \node[earamber,text width=65mm,minimum height=17mm] (breed) at (57,-80)
+    {\earlabeltext{定向变异／语义交叉／探索\\评价与失败画像指导下一代}{Mutation / crossover / exploration\\Feedback guides offspring}};
+  \draw[eararrow] (eval.south)--(elite.north);
+  \draw[eararrow] (elite.west)--(breed.east);
+  \draw[earfeedback] (breed.west)-|(pop.south);
+  \node[earlabel,text width=170mm] at (86,-104)
+    {\earlabeltext{每个候选策略运行完整研究；历史评价允许各策略自行寻找研究目标。}{Each candidate runs the full research procedure; historical strategies seek their own targets.}};
+\end{tikzpicture}}
+
+\newcommand{\RebuttalFlow}{%
+\begin{tikzpicture}[x=1mm,y=1mm]
+  \node[earbox,text width=31mm,minimum height=22mm] (context) at (18,0)
+    {\earlabeltext{论文与评审\\已有证据与期限}{Paper + reviews\\Evidence + time}};
+  \node[earamber,text width=35mm,minimum height=22mm] (concerns) at (76,0)
+    {\earlabeltext{合并相同问题\\查找已有答案}{Group comments\\Find evidence}};
+  \node[earteal,text width=37mm,minimum height=22mm] (new) at (139,0)
+    {\earlabeltext{补齐缺失的证明\\或实验}{Add missing proofs\\or experiments}};
+  \node[earbox,text width=37mm,minimum height=22mm] (draft) at (139,-40)
+    {\earlabeltext{选用对应证据\\起草回应}{Use the evidence\\Draft the response}};
+  \node[earteal,text width=35mm,minimum height=22mm] (judge) at (76,-40)
+    {\earlabeltext{模型评价与证据检查\\找出没回答的问题}{Model feedback\\Check evidence\\Open questions}};
+  \node[earbox,text width=31mm,minimum height=22mm] (human) at (18,-40)
+    {\earlabeltext{作者审阅\\提交回应}{Author checks\\Final response}};
+  \draw[eararrow] (context)--(concerns); \draw[eararrow] (concerns)--(new);
+  \draw[eararrow] (new)--(draft); \draw[eararrow] (draft)--(judge); \draw[eararrow] (judge)--(human);
+  \draw[eararrow] (concerns.south)--node[earlabel,sloped,above]{\earlabeltext{已有证据足够}{Evidence ready}} (draft.north west);
+  \draw[earfeedback] (judge.south)--++(0,-13)-|(draft.south);
+  \node[earlabel,fill=paper,inner sep=2pt] at (108,-53)
+    {\earlabeltext{保留有效内容，继续修改}{Keep useful parts; revise}};
+\end{tikzpicture}}
+
+\newcommand{\RebuttalPopulation}{%
+\begin{tikzpicture}[x=1mm,y=1mm]
+  \node[earamber,text width=36mm,minimum height=25mm] (seed) at (20,0)
+    {\bfseries\earlabeltext{已有回应方法}{Existing methods}\\[1mm]\mdseries
+     \earlabeltext{社区方法＋作者经验}{Community methods\\Author experience}};
+  \node[earbox,text width=36mm,minimum height=25mm] (draft) at (80,0)
+    {\earlabeltext{尝试不同写法\\使用同一份材料}{Try different drafts\\Use the same sources}};
+  \node[earteal,text width=36mm,minimum height=25mm] (eval) at (140,0)
+    {\earlabeltext{比较模型评价\\检查事实与证据}{Compare feedback\\Check facts and evidence}};
+  \node[earteal,text width=36mm,minimum height=22mm] (keep) at (140,-43)
+    {\earlabeltext{保留较好草稿\\和有用的证据}{Keep the better draft\\and useful evidence}};
+  \node[earbox,text width=61mm,minimum height=22mm] (update) at (63,-43)
+    {\earlabeltext{记下未回答的问题和修改建议\\接着现有草稿继续改}{Keep open questions and advice\\Revise the current draft}};
+  \draw[eararrow] (seed)--(draft); \draw[eararrow] (draft)--(eval);
+  \draw[eararrow] (eval)--(keep); \draw[earfeedback] (keep)--(update);
+  \draw[earfeedback] (update.north)--(draft.south);
+  \node[earlabel,text width=164mm] at (84,-69)
+    {\earlabeltext{比较候选，保留较好版本，按反馈修改，再比较。}{Compare drafts, keep useful work, revise, and compare again.}};
+\end{tikzpicture}}

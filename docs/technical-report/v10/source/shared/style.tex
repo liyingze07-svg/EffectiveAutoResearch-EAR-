@@ -1,0 +1,127 @@
+% EAR v10: modern research report, layout option B.
+\usepackage[a4paper,left=25mm,right=25mm,top=22mm,bottom=22mm,headheight=24pt,headsep=6mm]{geometry}
+\usepackage{fontspec}
+\setmainfont{texgyrepagella-regular.otf}[BoldFont=texgyrepagella-bold.otf,ItalicFont=texgyrepagella-italic.otf,BoldItalicFont=texgyrepagella-bolditalic.otf]
+\IfFontExistsTF{AvenirNext-Regular}{
+ \setsansfont{AvenirNext-Regular}[BoldFont=AvenirNext-DemiBold,ItalicFont=AvenirNext-Italic,BoldItalicFont=AvenirNext-DemiBoldItalic]
+ \newfontface\coverbrand{AvenirNext-Heavy}\typeout{EAR LATIN DISPLAY: Avenir Next}
+}{
+ \setsansfont{texgyreheros-regular.otf}[BoldFont=texgyreheros-bold.otf,ItalicFont=texgyreheros-italic.otf,BoldItalicFont=texgyreheros-bolditalic.otf]
+ \newfontface\coverbrand{texgyreheros-bold.otf}\typeout{EAR LATIN DISPLAY: TeX Gyre Heros}
+}
+\IfFontExistsTF{DejaVu Sans Mono}{\setmonofont{DejaVu Sans Mono}[Scale=.83]}{\setmonofont{lmmono10-regular.otf}[Scale=.88]}
+\IfFontExistsTF{STSongti-SC-Regular}{
+ \setCJKmainfont{STSongti-SC-Regular}[BoldFont=STSongti-SC-Bold,ItalicFont=STSongti-SC-Regular,ItalicFeatures={FakeSlant=.15}]
+ \typeout{EAR CJK BODY: Songti SC}
+}{\IfFontExistsTF{Noto Serif CJK SC}{
+ \setCJKmainfont{Noto Serif CJK SC}\typeout{EAR CJK BODY: Noto Serif CJK SC}
+}{\IfFontExistsTF{Source Han Serif SC}{
+ \setCJKmainfont{Source Han Serif SC}\typeout{EAR CJK BODY: Source Han Serif SC}
+}{\setCJKmainfont{FandolSong-Regular.otf}[BoldFont=FandolSong-Bold.otf,ItalicFont=FandolKai-Regular.otf]\typeout{EAR CJK BODY: FandolSong}}}}
+\IfFontExistsTF{HiraginoSansGB-W3}{
+ \setCJKsansfont{HiraginoSansGB-W3}[BoldFont=HiraginoSansGB-W6]
+ \typeout{EAR CJK HEADINGS: Hiragino Sans GB}
+}{\IfFontExistsTF{Noto Sans CJK SC}{
+ \setCJKsansfont{Noto Sans CJK SC}\typeout{EAR CJK HEADINGS: Noto Sans CJK SC}
+}{\IfFontExistsTF{Source Han Sans SC}{
+ \setCJKsansfont{Source Han Sans SC}\typeout{EAR CJK HEADINGS: Source Han Sans SC}
+}{\setCJKsansfont{FandolHei-Regular.otf}[BoldFont=FandolHei-Bold.otf]\typeout{EAR CJK HEADINGS: FandolHei}}}}
+\setCJKmonofont{FandolFang-Regular.otf}
+\usepackage{amsmath,amssymb,mathtools}
+\usepackage{graphicx,xcolor,tikz,booktabs,tabularx,array,colortbl}
+\usetikzlibrary{arrows.meta,positioning,calc,fit,backgrounds,shapes.geometric}
+\usepackage{enumitem,fancyhdr,hyperref,caption,tcolorbox,lastpage,needspace,float,placeins,tocloft}
+\tcbuselibrary{skins,breakable}
+\definecolor{navy}{HTML}{263C5C}
+\definecolor{teal}{HTML}{58739A}
+\definecolor{amber}{HTML}{A18563}
+\definecolor{muted}{HTML}{5C6674}
+\definecolor{ink}{HTML}{232A32}
+\definecolor{warm}{HTML}{F4F5F7}
+\definecolor{paper}{HTML}{FFFFFF}
+\definecolor{coverink}{HTML}{FFFFFF}
+\definecolor{coverpaper}{HTML}{263C5C}
+\definecolor{coversage}{HTML}{58739A}
+\definecolor{covermuted}{HTML}{5C6674}
+\newcommand{\earlang}{cn}
+\newcommand{\earfooter}{Effective Auto Research}
+\pagecolor{white}
+\linespread{1.23}
+\setlength{\parindent}{2em}
+\setlength{\parskip}{4pt}
+\setlength{\emergencystretch}{2em}
+\raggedbottom
+\widowpenalty=10000
+\clubpenalty=10000
+\color{ink}
+\ctexset{
+ section={format=\sffamily\fontsize{20}{26}\selectfont\bfseries\color{ink},name={},number=\arabic{section},aftername=\quad,beforeskip=20pt,afterskip=10pt},
+ subsection={format=\sffamily\fontsize{14}{19}\selectfont\bfseries\color{ink},aftername=\quad,beforeskip=15pt,afterskip=7pt},
+ subsubsection={format=\sffamily\normalsize\bfseries\color{navy},aftername=\quad,beforeskip=12pt,afterskip=6pt}
+}
+\setcounter{secnumdepth}{3}
+\setcounter{tocdepth}{2}
+\hypersetup{colorlinks=true,linkcolor=navy,urlcolor=teal,citecolor=teal,
+ pdftitle={EAR：以反馈推进研究，以研究结果改进策略},
+ pdfauthor={Yingze Li, Dong Wang, Ben Wu, Xianglong Liu, Hongzhi Wang},
+ pdfsubject={EAR 中文技术报告 v10：系统设计、方法与历史评估},
+ pdfkeywords={EAR,科研自动化,人时,批判性树搜索,策略演化,评审回应},
+ bookmarksnumbered=true,bookmarksopen=true,pdfstartview=FitH}
+\urlstyle{same}
+\setlist[itemize]{leftmargin=1.5em,topsep=4pt,itemsep=3pt,parsep=0pt}
+\setlist[enumerate]{leftmargin=1.8em,topsep=4pt,itemsep=3pt,parsep=0pt}
+\renewcommand{\arraystretch}{1.30}
+\setlength{\heavyrulewidth}{.65pt}
+\setlength{\lightrulewidth}{.35pt}
+\arrayrulecolor{navy!35}
+\newcolumntype{Y}{>{\raggedright\arraybackslash}X}
+\newcolumntype{P}[1]{>{\raggedright\arraybackslash}p{#1}}
+\captionsetup{font=small,labelfont={bf,sf},textfont={small,color=ink},justification=raggedright,singlelinecheck=false,skip=7pt}
+\renewcommand{\topfraction}{.85}
+\renewcommand{\bottomfraction}{.75}
+\renewcommand{\textfraction}{.12}
+\renewcommand{\floatpagefraction}{.70}
+\setlength{\textfloatsep}{16pt}
+\setlength{\intextsep}{15pt}
+\pagestyle{fancy}\fancyhf{}
+\fancyhead[L]{\sffamily\footnotesize\textcolor{navy}{\bfseries EAR}\hspace{3mm}\textcolor{muted}{TECHNICAL REPORT}}
+\fancyhead[R]{\sffamily\footnotesize\textcolor{muted}{\leftmark}}
+\fancyfoot[L]{\sffamily\footnotesize\textcolor{muted}{\earfooter}}
+\fancyfoot[R]{\sffamily\footnotesize\textcolor{navy}{\thepage}\textcolor{muted}{\; / \;\pageref*{LastPage}}}
+\renewcommand{\headrulewidth}{0pt}
+\renewcommand{\headrule}{}
+\renewcommand{\footrulewidth}{0pt}
+\renewcommand{\sectionmark}[1]{\markboth{\thesection\quad #1}{}}
+\renewcommand{\cfttoctitlefont}{\sffamily\fontsize{24}{30}\selectfont\bfseries\color{navy}}
+\setlength{\cftbeforetoctitleskip}{0pt}
+\setlength{\cftaftertoctitleskip}{20pt}
+\renewcommand{\cftsecfont}{\sffamily\bfseries\color{navy}}
+\renewcommand{\cftsecpagefont}{\sffamily\bfseries\color{navy}}
+\renewcommand{\cftsubsecfont}{\small\color{ink}}
+\renewcommand{\cftsubsecpagefont}{\sffamily\small\color{muted}}
+\renewcommand{\cftsecleader}{\hfill}
+\renewcommand{\cftsubsecleader}{\hfill}
+\setlength{\cftbeforesecskip}{14pt}
+\setlength{\cftbeforesubsecskip}{4pt}
+\setlength{\cftsecnumwidth}{7mm}
+\setlength{\cftsubsecindent}{7mm}
+\setlength{\cftsubsecnumwidth}{11mm}
+\newcommand{\src}[1]{\textsuperscript{\textcolor{teal}{[#1]}}}
+\newcommand{\Lead}[1]{\par\noindent\textbf{#1}\par}
+\makeatletter
+\newcommand{\Sub}[1]{\par\Needspace{5\baselineskip}\vspace{6pt}\noindent{\sffamily\bfseries\color{navy}#1}\par\nobreak\vspace{3pt}\@afterindenttrue\@afterheading}
+\makeatother
+\newcommand{\Fig}[3]{\begin{figure}[H]\centering #1\caption{#2}\label{#3}\end{figure}}
+\newcommand{\DiagramFig}[3]{\begin{figure}[!htbp]\centering #1\caption{#2}\label{#3}\end{figure}}
+\newcommand{\earfigure}[1]{\includegraphics[width=.96\textwidth]{../../figures/cn/#1.pdf}}
+\newtcolorbox{insight}[1][]{enhanced,colback=warm,colframe=warm,frame hidden,borderline west={1.5pt}{0pt}{teal},sharp corners,left=10pt,right=10pt,top=9pt,bottom=9pt,fontupper=\small,before skip=12pt,after skip=12pt,#1}
+\newtcolorbox{scope}[1][]{enhanced,colback=warm,colframe=warm,frame hidden,borderline west={1.2pt}{0pt}{amber},sharp corners,left=10pt,right=10pt,top=8pt,bottom=8pt,fontupper=\small,before skip=10pt,after skip=10pt,#1}
+\newcommand{\ReportAuthors}{%
+ \noindent{\sffamily\normalsize\bfseries Yingze Li\quad Dong Wang\quad Ben Wu}\par
+ \noindent{\sffamily\normalsize\bfseries Xianglong Liu\quad Hongzhi Wang\textsuperscript{*}}\par
+ \vspace{2mm}\noindent{\sffamily\small Harbin Institute of Technology}\par
+ \noindent{\sffamily\footnotesize\textsuperscript{*}通讯作者}\par}
+
+\newcommand{\AuthorsCompact}{%
+ {\sffamily\small Yingze Li\quad Dong Wang\quad Ben Wu\quad Xianglong Liu\quad Hongzhi Wang\textsuperscript{*}}\par
+ \vspace{1mm}{\sffamily\footnotesize Harbin Institute of Technology\quad\textsuperscript{*}通讯作者}\par}

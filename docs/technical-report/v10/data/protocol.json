@@ -1,0 +1,134 @@
+{
+  "release_unit": "Fresh aggregate tables and anonymized process summaries; individual manuscripts and review text are not included.",
+  "objective": {
+    "primary_resource": "active human time H",
+    "quality_constraint": "Q >= Q_min",
+    "machine_budget_constraint": "C <= B",
+    "elapsed_time": "T recorded separately",
+    "active_human_time_measured": false,
+    "includes_in_H": [
+      "reading",
+      "orchestration",
+      "technical checking",
+      "repair",
+      "failed work",
+      "final responsible-researcher review"
+    ]
+  },
+  "math_cohort": {
+    "generations": [
+      0,
+      1,
+      2,
+      3
+    ],
+    "population_unit": "retained episode endpoint",
+    "episodes": 64,
+    "research_invocations": 630,
+    "written_manuscripts": 28,
+    "selected_best_assessor_passes": 15,
+    "fixed_inner_cohort": "All 28 written manuscripts from G0-G3 have rounds 0,1,2,3; failed or unwritten episodes are absent from score trajectories.",
+    "round_score_precision": "Source per-round scores are rounded to two decimals; aggregate sums preserve those recorded values.",
+    "final_vs_initial_score": {
+      "improved": 27,
+      "declined": 1,
+      "tied": 0
+    },
+    "last_round_below_own_best_score": 13,
+    "selected_best_pass_but_last_round_not_pass": 3
+  },
+  "historical_assessment": {
+    "assessor": "Three fresh Codex sessions with a SAC simulation rubric in each round",
+    "pass_rule": "At least one of three verdicts is Accept",
+    "version_selection": "Select the manuscript version with the highest mean score and retain its assessment label",
+    "rounds": "Initial scoring plus three refinement and reassessment rounds",
+    "current_round": "Version assessed in that round, before best-version retention",
+    "qualification_scope": "Automated historical manuscript assessment",
+    "protocol_version": "Historical campaign; different from the portable terminal gate",
+    "retained_vote_sensitivity": {
+      "comparison": "Selected strategy versus baseline in generation 3",
+      "episodes_per_role": 4,
+      "rule": "All three retained votes Accept AND each retained score at least 7",
+      "selected_satisfying": 1,
+      "baseline_satisfying": 1,
+      "new_review_executed": false
+    }
+  },
+  "strategy_comparison": {
+    "episodes_per_role_per_generation": 4,
+    "generation_3": "Retrospective selection batch",
+    "target_selection": "Strategies sought their own research targets; trials are not paired on a preselected theorem",
+    "generation_0_1": "Baseline and selected roles refer to the same batch and must not be summed as separate trials",
+    "historical_genome": "Executed phase prompts and strategy parameters",
+    "portable_genome_interface": "Also exposes worker code, skills, tool procedures and configuration",
+    "historical_fitness": {
+      "written_with_score": "best mean manuscript score",
+      "retreat": 0.5,
+      "screen_kill": 0,
+      "no_target_or_search_fail": -0.5,
+      "budget_exhaustion_or_trivial": -2,
+      "written_all_scoring_attempts_failed": 3,
+      "tournament": "Mean episode fitness",
+      "archive_metric": "((mean_fitness+2)/12 + written_rate + assessor_pass_rate)/3"
+    },
+    "portable_primary_fitness": "(clipped_mean_quality/10 + written_rate + final_review_accept_rate)/3",
+    "comparison_design": "Adaptive historical observation; no matched-target, equal-token/dollar/human-time budget or operator ablation is available."
+  },
+  "cost_proxy": {
+    "research_invocations": "Recorded research-phase CLI launches",
+    "review_roll_invocations": "Recorded assessor roll invocations",
+    "refinement_attempts": "One reconstructed outer refinement attempt per noninitial scored round",
+    "outer_proxy_formula": "research_invocations + review_roll_invocations + refinement_attempts_reconstructed",
+    "reviewer_requests": "A request comprises three assessor rolls; requests are not added again to the proxy",
+    "zero_pass_ratio": null,
+    "excludes": [
+      "strategy coaching and breeding",
+      "internal model and tool calls",
+      "unrecorded retries",
+      "complete token and dollar charges",
+      "active human time"
+    ],
+    "whole_population_research_per_pass": "630/15 for the G0-G3 reporting window, retained separately from the selected strategy comparison"
+  },
+  "rebuttal_evaluator": {
+    "source": "Public OpenReview review histories joined to ProReviewer initial ratings; reported repository aggregates",
+    "rating_change_label": "sign(final_rating-initial_rating)",
+    "balanced_36_gold_support": {
+      "raise": 18,
+      "same": 18,
+      "lower": 0
+    },
+    "full_57_lower_support": 6,
+    "full_57_lower_f1": 0,
+    "full_57_binary_framing": "The source reports raise+same framing on the 57-case source test; it does not specify a separately filtered effective sample denominator.",
+    "reported_metrics_not_reestimated_from_raw_predictions": true,
+    "generated_response_effect_measured_by_this_table": false
+  },
+  "process_cases": {
+    "idea": "A rescreen of an earlier staged judge-run; the current UCT-guided best-first search is a distinct implementation version.",
+    "rebuttal": "Two historical rounds with three candidate strategies each; legacy proxy stop, not a current-gate re-review or human score outcome.",
+    "search_interface": "Current expansion uses UCT-guided best-first selection; no simulated rollout stage is asserted."
+  },
+  "human_time_measurement_plan": {
+    "status": "Prospective protocol, not an observed result",
+    "design": "Matched tasks, consistent quality checking, separate active human-time and machine-cost ledgers",
+    "categories": [
+      "reading",
+      "orchestration",
+      "checking",
+      "repair",
+      "final review"
+    ]
+  },
+  "public_sources": [
+    "https://github.com/liyingze07-svg/EffectiveAutoResearch-EAR-",
+    "https://huggingface.co/datasets/UKPLab/ProReviewer-Dataset"
+  ],
+  "reporting_window": {
+    "label": "G0 initialization plus three evolution generations G1-G3",
+    "selection": "Retrospective reporting slice chosen for this edition after observing the archive, not a prespecified stopping rule.",
+    "scope": "Results describe this stage; the underlying archive also contains subsequent generations. Full original records are retained separately.",
+    "generation_success_denominator": "All research episodes in that generation, including failed and unwritten attempts",
+    "strategy_success_denominator": "Four research episodes in the selected strategy batch; separate from whole-population success"
+  }
+}

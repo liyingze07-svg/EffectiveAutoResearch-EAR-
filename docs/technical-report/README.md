@@ -1,48 +1,44 @@
 # EAR Technical Report
 
-**Version 6 · October 2026 · English and Chinese editions**
+**Version 10 · October 2026 · English and Chinese editions**
 
-EAR organizes idea discovery, autonomous mathematical research, and rebuttal around one objective: reduce active human time while meeting research quality and machine-budget requirements. The report explains the mechanisms, connects each claim to its evidence, and presents the evaluation results.
+**Advance research through feedback. Improve strategies through results.**
+The report explains EAR's three independently usable workflows, their mechanisms
+and the evidence supporting research revision and strategy evolution.
 
 | Edition | Report |
 | --- | --- |
-| English · 17 pages | [Read the English PDF](v6/reports/EAR_Technical_Report_EN.pdf) |
-| 中文 · 17 页 | [阅读中文技术报告](v6/reports/EAR_Technical_Report_CN.pdf) |
+| English | [Read the English PDF](v10/reports/EAR_Technical_Report_EN.pdf) |
+| 中文 | [阅读中文技术报告](v10/reports/EAR_Technical_Report_CN.pdf) |
 
-**[Download the complete bilingual package (ZIP)](EAR_Technical_Report_v6_Bilingual_Public.zip?raw=true)**
+**[Download the complete bilingual package (ZIP)](EAR_Technical_Report_v10_Bilingual_Public.zip?raw=true)**
 
-Authors: Yingze Li, Dong Wang, Ben Wu, Xianglong Liu, Hongzhi Wang*
-
-Harbin Institute of Technology
-
+Authors: Yingze Li, Dong Wang, Ben Wu, Xianglong Liu, Hongzhi Wang*<br>
+Harbin Institute of Technology<br>
 \* Corresponding author
 
-## Report and supporting materials
-
-Both editions share the same structure, results and evaluation definitions. The public package includes anonymized process examples and aggregate evaluation data.
+## Supporting materials
 
 | Directory | Contents |
 | --- | --- |
-| [reports](v6/reports/) | English and Chinese PDFs |
-| [source](v6/source/) | Editable LaTeX sources and shared visual template |
-| [figures](v6/figures/) | Figures in PDF, PNG and SVG formats |
-| [data](v6/data/) | Aggregate results, claim mapping and evaluation protocol |
-| [scripts](v6/scripts/) | Statistical recomputation, figure generation and PDF builds |
+| [reports](v10/reports/) | Final English and Chinese PDFs |
+| [source](v10/source/) | Editable LaTeX sources and mechanism diagrams |
+| [figures](v10/figures/) | Result plots in PDF, PNG and SVG formats |
+| [data](v10/data/) | Aggregate results, claim mapping and evaluation protocol |
+| [scripts](v10/scripts/) | Statistical recomputation, plotting and PDF builds |
 
-The mathematical strategy comparison covers G0 initialization and three evolution generations, G1–G3. Pass rates use the model-assessment protocol defined in [protocol.json](v6/data/protocol.json). Active human time is the primary optimization objective; direct human-time savings have not yet been measured.
+See the [v10 package guide](v10/README.md) for verification and build commands.
+The aggregate data remain identical to v6. Historical model assessments do not
+establish real conference acceptance or results under the current terminal gate;
+active human-time savings have not been measured.
 
-## Rebuild
+## Previous release
 
-From the repository root:
+[v6 report and original evidence](v6/README.md) ·
+[Original bilingual package](EAR_Technical_Report_v6_Bilingual_Public.zip?raw=true)
 
-```bash
-cd docs/technical-report/v6
-python3 -m pip install -r requirements.txt
-python3 scripts/recompute.py
-python3 scripts/draw_figures.py
-python3 scripts/build_reports.py
-```
+The original release and its manifest are preserved unchanged. v10 updates the
+explanation and presentation without introducing new evaluation trials.
 
-PDF compilation requires XeLaTeX and the fonts and TeX packages listed in the [package README](v6/README.txt).
-
-中文说明：两份报告采用相同的结构、图表与结果，以减少科研过程中的人时投入为核心，介绍批判性点子搜索、数学研究内外循环及 Rebuttal 优化。压缩包包含中英文 PDF、可编辑源码、图表、公开汇总数据和复算脚本。
+中文说明：最新版本为 v10，中英文成稿、源码、图表、公开汇总数据和复算脚本
+均已整理。v6 作为历史版本保留，原始证据文件未改动。

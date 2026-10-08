@@ -1,0 +1,24 @@
+{
+  "evidence_id": "E4-process",
+  "kind": "anonymized_historical_proxy_case",
+  "candidate_strategy_types": [
+    "evidence_locked",
+    "concern_focused_persuasion",
+    "supplementary_evidence_multistage"
+  ],
+  "rounds": [
+    {
+      "round": 1,
+      "candidates_present": 3,
+      "selected_strategy": "evidence_locked",
+      "historical_proxy_stop": false
+    },
+    {
+      "round": 2,
+      "candidates_present": 3,
+      "selected_strategy": "concern_focused_persuasion",
+      "historical_proxy_stop": true
+    }
+  ],
+  "interpretation": "Candidate comparison and diagnostic feedback preceded a changed selection and a historical proxy stop."
+}

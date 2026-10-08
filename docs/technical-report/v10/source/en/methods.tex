@@ -1,0 +1,167 @@
+\FloatBarrier
+\Needspace{12\baselineskip}
+\section{System design and methods}
+\label{sec:methods}
+This section explains EAR's architecture and three workflows. Section~\ref{sec:evaluation} examines manuscript revision, strategy comparisons, and rating-change prediction.
+
+EAR's three workflows advance from saved research state: existing materials enter the next round of execution, and new evidence changes what follows. Mathematical research adds strategy evolution, using complete research outcomes to revise the way tasks are carried out.
+
+\FloatBarrier
+\subsection{System architecture: preserve the state of research}
+\label{sec:architecture}
+An execution starts from a direction, resources, and delivery requirements. It uses tools for retrieval, assistance with derivation, implementation, and evaluation, and saves the research materials and feedback. The next round continues from that work. Figure~\ref{fig:overview} shows the relationship between proposals, manuscripts, and review materials. The three modules accept inputs independently; researchers organize handoffs between stages. The evidence in this report comes from separate module records. A complete cross-module workflow has not yet been evaluated separately.
+
+\DiagramFig{\resizebox{.97\textwidth}{!}{\SystemOverview}}{EAR's research tasks and artifact handoffs. Each workflow is independently usable; proposals, manuscripts, and review materials can supply later stages. People retain key judgments and responsibility for the research.}{fig:overview}
+
+\begin{table}[H]
+\centering\small
+\begin{tabularx}{\textwidth}{P{28mm}Y Y}
+\toprule
+\rowcolor{warm}
+\textbf{Workflow} & \textbf{Inputs and outputs} & \textbf{Human judgments}\\
+\midrule
+Idea discovery & Direction and constraints $\to$ literature comparison, candidates, and proposal & Problem value and execution route\\
+Mathematical research & Direction or proposal $\to$ arguments, code, manuscript, and assessment & Key technical conclusions and acceptance of the work\\
+Rebuttal & Paper, reviews, and evidence $\to$ response and evidence ledger & Scope of claims and final responsibility\\
+\bottomrule
+\end{tabularx}
+\caption{Inputs, deliverables, and human responsibilities. Researchers organize stage handoffs through proposals, manuscripts, and review materials.}
+\label{tab:interfaces}
+\end{table}
+
+\Sub{Hand over the judgments already made}
+When someone takes over research midway, the most useful handoff is a record of decisions: which assumptions were adopted, which papers are closest, how far the proof has progressed, and which routes have failed. EAR saves this state and the remaining validation plan so work can continue from existing results. Evaluation records also distinguish actual tool feedback from the host's self-review, allowing researchers to inspect important choices.\src{1}
+
+\FloatBarrier
+\subsection{Idea discovery: make each candidate more specific}
+\label{sec:idea}
+Idea discovery starts from a research direction and resource constraints, then develops candidates into specific questions, assumptions, methods, and validation plans. Each expansion introduces fresh retrieval and critique. Evidence updates node value and changes where effort goes next. Figure~\ref{fig:tree} shows candidate expansion and branch termination.
+
+\DiagramFig{\resizebox{.96\textwidth}{!}{\CriticalTree}}{Candidate expansion and critical search. Retrieval and evaluation update node value. Overlapping, infeasible, or duplicate branches can terminate, with their reasons preserved.}{fig:tree}
+
+\Needspace{6\baselineskip}
+\subsubsection{Retrieve and critique at every expansion}
+The current implementation uses UCT to guide best-first expansion. The model proposes child nodes; evaluation tools update visit counts and node values and backpropagate along the parent chain. Each new candidate is checked again for at least novelty and research fit. Node selection combines scores, verifiable literature overlap, validation rules, and structural signals. The search evaluates expanded candidates directly, without random rollouts to simulate terminal outcomes.\src{1,2}
+
+Table~\ref{tab:idea-scores} lists the four evaluation fields and their weights. Scores, reasons, and retrieval sources are saved together, making the decision to expand a branch traceable. Different agents perform generation, critique, and evaluation. The extent to which reviewer personas are used is determined by the actual prompts and execution records.
+
+\begin{table}[H]
+\centering\small
+\begin{tabularx}{\textwidth}{P{25mm}Y P{16mm}}
+\toprule
+\rowcolor{warm}
+\textbf{Field} & \textbf{Research question examined} & \textbf{Weight}\\
+\midrule
+Novelty & Does the core mechanism differ substantively from recent work? & .25\\
+Venue & Do the contribution and rigor meet the target requirements? & .35\\
+Strategic & Is the claim falsifiable, is evidence available, and does the plan fit the resources? & .20\\
+Feasibility & Are implementation complexity, computation, data, and timing feasible? & .20\\
+\bottomrule
+\end{tabularx}
+\caption{Current search evaluation fields and weights. Assessments guide the next expansion; sources and reasons support later checks.}
+\label{tab:idea-scores}
+\end{table}
+
+\Needspace{6\baselineskip}
+\subsubsection{From research intent to an executable proposal}
+The researcher supplies a direction, resource constraints, and key questions. Claude Code Harness organizes tasks and schedules tools; Codex MCP returns candidates, critique, scores, and suggestions. Figure~\ref{fig:harness} shows one interactive integration of the ideation module. Feedback returns to the current task, and screening and refinement outputs are saved as inputs to the next step.
+
+\DiagramFig{\resizebox{.96\textwidth}{!}{\HarnessAccess}}{Interactive integration of idea discovery. The researcher sets constraints and chooses the next step. The harness and evaluation tools exchange feedback and save candidates, literature, and refined proposals.}{fig:harness}
+\FloatBarrier
+
+Candidate screening and proposal refinement can be performed separately. During screening, the evaluator reads the candidate's central claim and closest literature, assesses novelty and substantive differences, and recommends continuing or abandoning it. Refinement develops retained candidates by specifying the research setting and validation plan. The early integration advances through staged interactions; the current tree search further organizes candidate expansion. Both preserve the materials needed to continue work.\src{1}
+
+\Needspace{6\baselineskip}
+\subsubsection{A rejected direction still leaves evidence}
+Search can terminate a branch when a candidate substantially overlaps existing work or is infeasible under the stated conditions. EAR retains the node, sources, difference analysis, and exit reason so later work can use that negative evidence. Retained candidates are refined around a specific problem, with explicit assumptions, main arguments, implementation interfaces, and a minimum validation plan, producing an executable proposal.
+
+\begin{insight}
+\textbf{Process case E1: close prior work changes the decision}\par
+In an early staged reassessment, additional retrieval found three closely related works across two candidates. Candidate A's novelty score fell from $8/10$ to $4/10$, and the recommendation changed from continuation to abandonment. Candidate B fell from $8/10$ to $5/10$. New literature drove the change: the system reassessed the core differences and revised the scores, reasons, and recommended investment.\src{10}
+\end{insight}
+
+The initial retrieval had not adequately covered close prior work, making the candidates appear more distinctive. Additional retrieval changed that judgment and the subsequent action. This record shows how rescreening can affect investment decisions. It comes from the early staged workflow, which differs from the current UCT search; performance comparisons between algorithms still require suitable controls.
+
+\FloatBarrier
+\subsection{Mathematical research: solve the task, improve the strategy}
+\label{sec:math}
+Mathematical and algorithmic research can turn technical concerns into specific propositions, counterexamples, constructions, and numerical checks. EAR follows these leads in the inner loop, then passes the outcome of a complete research episode to the outer loop to test the execution strategy. Figure~\ref{fig:dual-loop} shows the nesting of research revision and strategy evolution.
+
+\DiagramFig{\resizebox{.96\textwidth}{!}{\MathDualLoop}}{The mathematical research loops. The inner loop advances the current task; the outer loop compares and updates strategies using complete outcomes while retaining the initial strategy. Historical strategies could select their own specific targets.}{fig:dual-loop}
+
+\Needspace{6\baselineskip}
+\subsubsection{Save research state; revise the specific gaps}
+The inner loop carries out target selection, reasoning, proof or construction, implementation, checking, and writing toward a defined goal. Precise propositions, failed proof steps, counterexamples, numerical validation, and experimental controls all enter the research state. After an attempt, the next step can pursue an unresolved gap. The system completes a manuscript when delivery conditions are met and records an exit when it cannot continue.
+
+A proof gap sends revision back to derivation. Implementation or validation problems trigger further technical checks. An insufficient contribution requires reconsidering scope and claims; presentation problems call for rewriting. Historical runs performed three revisions and reassessments after the initial review, then restored the manuscript version with the highest mean score. Every revision and assessment change is retained. Current-round trajectories and final delivered versions are therefore reported separately, following Section~\ref{sec:protocol}.
+
+\Needspace{6\baselineskip}
+\subsubsection{Test every strategy through a complete research episode}
+An outer-loop genome represents a candidate research strategy. In the historical version, it consists of stage prompts and strategy parameters for target screening, proof organization, writing, and revision. The current portable version expands the mutable scope to task programs, prompts, skills, tool workflows, and configuration, while keeping base model weights fixed. Initial and candidate strategies are saved separately; lineage, research outcomes, and failure reasons inform later selection.\src{1,4}
+
+A strategy earns adoption through the results of the research it performs. Every candidate must attempt complete research. Target selection, technical progress, manuscripts, assessments, and failure exits all enter outer-loop selection. In the current portable version, the task list, final referee, and standards remain fixed outside the candidate's mutable scope. Historical experiments allowed strategies to choose specific research targets. Section~\ref{sec:protocol} interprets the results under that historical setting.
+
+Four operations update strategies. \textbf{Elitism} retains stronger strategies. \textbf{Directed mutation} changes a parent in response to exit reasons, technical gaps, or low-score comments. \textbf{Semantic crossover} combines complementary instructions from two parents. \textbf{Exploration} tries larger changes. Historical changes addressed target choice and argument development: shortening candidate lists, raising target and contribution requirements, and requesting core lemmas and feasible proof routes earlier. The updated strategies then execute research again and are judged by their results.
+
+\Needspace{6\baselineskip}
+\subsubsection{Success and exit both count toward fitness}
+Historical episode fitness is computed as
+\begin{equation}
+F(e)=\begin{cases}
+q_{\mathrm{best}}(e),&\text{completed manuscript with a valid score},\\
+0.5,&\text{research exit},\\
+0,&\text{screened out},\\
+-0.5,&\text{no target or search failure},\\
+-2,&\text{budget exhausted or contribution too trivial}.
+\end{cases}
+\label{eq:historical-fitness}
+\end{equation}
+Here $q_{\mathrm{best}}$ is the highest manuscript mean score retained across the initial assessment and revisions. If a manuscript is completed but all scoring attempts fail, the historical implementation uses a fallback of 3.0. Research exit, screening rejection, search failure, and budget exhaustion have distinct fitness values, so decisions and failures before successful writing also enter strategy evaluation.
+
+Strategies in a generation are ranked and selected by mean $F$. The historical elite archive separately records performance through
+\begin{equation}
+A_{\mathrm{hist}}=\frac{1}{3}\left(\frac{\overline F+2}{12}+w+a\right),
+\label{eq:archive-fitness}
+\end{equation}
+\Needspace{9\baselineskip}
+where $w$ is the manuscript completion rate and $a$ the historical model-assessment pass rate. The current portable version equally weights normalized quality, completion rate, and fixed final-referee pass rate:
+\begin{equation}
+A_{\mathrm{portable}}=\frac{1}{3}\left(\frac{\overline q_{\mathrm{clip}}}{10}+w+a_{\mathrm{final}}\right).
+\label{eq:portable-fitness}
+\end{equation}
+Current quality scores are clipped and normalized under the specified rules. When combined scores are comparable, invocation counts and rework are compared next. Mean $F$ serves historical within-generation selection, $A_{\mathrm{hist}}$ serves the historical archive, and $A_{\mathrm{portable}}$ serves the current version. Invocation efficiency is calculated separately from execution records.\src{1,10}
+
+\FloatBarrier
+\subsection{Rebuttal: resolve the concern before writing the response}
+\label{sec:rebuttal}
+Rebuttal starts from the paper, reviewer comments, available evidence, and deadline. It first checks whether the relevant proof or experiment already exists, then arranges necessary additional work, drafts a response, and retains its supporting evidence. Figure~\ref{fig:rebuttal-flow} follows the path from concern to evidence to answer.
+
+\DiagramFig{\resizebox{.96\textwidth}{!}{\RebuttalFlow}}{Locate concerns and evidence in the paper and reviews. Draft directly when evidence is sufficient; fill technical gaps first when it is missing. Model feedback guides revision, and authors check key content and the final response.}{fig:rebuttal-flow}
+
+\Needspace{6\baselineskip}
+\subsubsection{Find the evidence behind each answer}
+Several reviewers may raise the same concern from different angles. EAR groups related comments, locates the supporting argument in the paper, and distinguishes missing explanation from missing proof or experiment. It organizes existing evidence when the explanation is inadequate and schedules additional research when a technical gap remains. One proof or experiment can answer several related comments. An evidence ledger records claims and their sources.\src{1,5,9}
+
+Public community methods and author experience supply the initial strategies. Candidates differ in answer order, evidence choice, and organization, prioritizing concerns that affect the assessment of the paper. The objective under resource constraints is
+\Needspace{8\baselineskip}
+\begin{equation}
+\max_{\theta}\ \mathbb E[\Delta R\mid\mathrm{Context},\theta]
+\quad\text{subject to}\quad H\le H_B,\ C\le B,\ T\le D.
+\label{eq:rebuttal-objective}
+\end{equation}
+Here $\mathrm{Context}$ contains the paper, reviews, and available evidence; $\theta$ is the response strategy; $\Delta R$ is the desired rating improvement; $H_B$ is the human-time limit; and $D$ is the deadline. This equation states a design objective. The prediction tests examine the feedback component, while process records examine strategy adjustment. The effect of generated responses on real reviewer ratings has not been measured directly.
+
+\Needspace{6\baselineskip}
+\subsubsection{Keep the useful draft; track what remains unresolved}
+Candidate strategies may lead with existing evidence, organize arguments around decisive concerns, or fill missing validation first. They use the same paper and review materials and compare both the work plan and the response approach. Figure~\ref{fig:rebuttal-population} shows how drafts and feedback enter the next round.
+
+\DiagramFig{\resizebox{.96\textwidth}{!}{\RebuttalPopulation}}{Initialize response strategies from community methods and author experience. Candidates share the same materials. Model evaluation and fact checks provide feedback; the next round inherits useful drafts, evidence, unanswered questions, and revision advice.}{fig:rebuttal-population}
+
+Useful drafts are retained, along with unresolved concerns, evidence gaps, and revision advice. This is black-box optimization: the system compares candidate responses and adjusts strategies from diagnostic feedback, without computing a derivative of the rating with respect to the strategy. Evaluation checks concern coverage and evidential support and predicts whether ratings rise, remain unchanged, or fall. Section~\ref{sec:rebuttal-results} separately tests this prediction capability.
+
+\begin{insight}
+\textbf{Process case: two feedback rounds change the strategy}\par
+One anonymous historical record compares three strategies in each round: leading with existing evidence, organizing around decisive concerns, and adding evidence in stages. The evidence-first strategy selected in round one did not meet the historical internal proxy's stopping requirement. Round two inherited the draft and revision advice; selecting the concern-first strategy then triggered the stop condition. This record shows how feedback changed the approach. It has not been reassessed under current thresholds, and real reviewer rating changes were not measured.\src{10}
+\end{insight}
+
+The historical workflow stops trying the remaining strategies in a round once a draft passes content evaluation. It then checks fidelity to the paper and evidence and the accuracy of the wording. Problems return the draft to revision; the final response goes to the author for review. Authors confirm new technical conclusions, evidence validity, and the final response.

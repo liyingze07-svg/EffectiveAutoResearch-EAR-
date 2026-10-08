@@ -1,0 +1,13 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="265" viewBox="0 0 1200 265" role="img" aria-labelledby="title desc">
+  <title id="title">EAR — Effective Auto Research</title>
+  <desc id="desc">Evidence-driven research agents for idea discovery, mathematical research and reviewer responses.</desc>
+  <rect width="1200" height="265" rx="16" fill="#fff"/>
+  <g font-family="Arial, Helvetica, sans-serif">
+    <text x="52" y="202" font-size="200" font-weight="900" font-style="italic" letter-spacing="-14" fill="#5638a1">EAR<tspan fill="#9978ea">.</tspan></text>
+    <path d="M499 62v141" stroke="#643bb0" stroke-width="4"/>
+    <text x="549" y="107" font-size="42" font-weight="700" letter-spacing="-1" fill="#302936">Effective Auto Research</text>
+    <text x="552" y="157" font-size="25" fill="#625b6c">Research agents. Checkable results.</text>
+    <path d="M552 194h68" stroke="#643bb0" stroke-width="6" stroke-linecap="round"/>
+    <circle cx="633" cy="194" r="3" fill="#643bb0"/>
+  </g>
+</svg>

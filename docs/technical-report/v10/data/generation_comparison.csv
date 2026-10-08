@@ -1,0 +1,9 @@
+generation,role,episodes,research_invocations,written_manuscripts,selected_best_assessor_passes,mean_historical_fitness
+0,baseline,4,53,1,0,-0.2325
+0,selected,4,53,1,0,-0.2325
+1,baseline,4,40,2,0,2.7
+1,selected,4,40,2,0,2.7
+2,baseline,4,24,1,0,0.5825
+2,selected,4,45,3,2,4.9825
+3,baseline,4,41,3,2,4.6675
+3,selected,4,29,3,3,5.0675

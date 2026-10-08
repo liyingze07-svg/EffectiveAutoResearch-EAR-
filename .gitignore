@@ -63,3 +63,7 @@ DESIGN_RATIONALE.md
 
 # Workspaces created by the unified EAR launcher
 /runs/
+
+# Locally rendered demonstration artifacts (portable payloads live in index.html)
+/output/
+/tmp/

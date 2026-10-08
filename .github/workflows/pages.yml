@@ -1,0 +1,54 @@
+name: Project page
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: pages-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v6
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Verify the original evidence and latest report
+        run: |
+          python scripts/check_report.py
+          python scripts/check_report.py --report-root docs/technical-report/v10
+      - name: Check the shared launcher and downloadable artifacts
+        run: python -m unittest discover -s tests -v
+      - name: Export the self-contained project page
+        run: python -m ear demo studio --export workspaces/pages/index.html
+      - name: Upload the project page
+        if: github.event_name != 'pull_request' && github.ref == 'refs/heads/main'
+        uses: actions/upload-pages-artifact@v4
+        with:
+          path: workspaces/pages
+
+  deploy:
+    if: github.event_name != 'pull_request' && github.ref == 'refs/heads/main'
+    needs: build
+    runs-on: ubuntu-latest
+    permissions:
+      pages: write
+      id-token: write
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - uses: actions/configure-pages@v5
+      - name: Deploy the project page
+        id: deployment
+        uses: actions/deploy-pages@v4

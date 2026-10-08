@@ -1,0 +1,112 @@
+% EAR v10 English: modern research report, layout option B.
+\usepackage[a4paper,left=25mm,right=25mm,top=22mm,bottom=22mm,headheight=24pt,headsep=6mm]{geometry}
+\usepackage{fontspec}
+\setmainfont{texgyrepagella-regular.otf}[BoldFont=texgyrepagella-bold.otf,ItalicFont=texgyrepagella-italic.otf,BoldItalicFont=texgyrepagella-bolditalic.otf]
+\IfFontExistsTF{AvenirNext-Regular}{
+ \setsansfont{AvenirNext-Regular}[BoldFont=AvenirNext-DemiBold,ItalicFont=AvenirNext-Italic,BoldItalicFont=AvenirNext-DemiBoldItalic]
+ \newfontface\coverbrand{AvenirNext-Heavy}\typeout{EAR LATIN DISPLAY: Avenir Next}
+}{
+ \setsansfont{texgyreheros-regular.otf}[BoldFont=texgyreheros-bold.otf,ItalicFont=texgyreheros-italic.otf,BoldItalicFont=texgyreheros-bolditalic.otf]
+ \newfontface\coverbrand{texgyreheros-bold.otf}\typeout{EAR LATIN DISPLAY: TeX Gyre Heros}
+}
+\IfFontExistsTF{DejaVu Sans Mono}{\setmonofont{DejaVu Sans Mono}[Scale=.83]}{\setmonofont{lmmono10-regular.otf}[Scale=.88]}
+\usepackage{amsmath,amssymb,mathtools}
+\usepackage{graphicx,xcolor,tikz,booktabs,tabularx,array,colortbl}
+\usetikzlibrary{arrows.meta,positioning,calc,fit,backgrounds,shapes.geometric}
+\usepackage{enumitem,fancyhdr,hyperref,caption,tcolorbox,lastpage,needspace,float,placeins,tocloft}
+\tcbuselibrary{skins,breakable}
+\definecolor{navy}{HTML}{263C5C}
+\definecolor{teal}{HTML}{58739A}
+\definecolor{amber}{HTML}{A18563}
+\definecolor{muted}{HTML}{5C6674}
+\definecolor{ink}{HTML}{232A32}
+\definecolor{warm}{HTML}{F4F5F7}
+\definecolor{paper}{HTML}{FFFFFF}
+\definecolor{coverink}{HTML}{FFFFFF}
+\definecolor{coverpaper}{HTML}{263C5C}
+\definecolor{coversage}{HTML}{58739A}
+\definecolor{covermuted}{HTML}{5C6674}
+\newcommand{\earlang}{en}
+\newcommand{\earfooter}{Effective Auto Research}
+\pagecolor{white}
+\linespread{1.20}
+\setlength{\parindent}{1.5em}
+\setlength{\parskip}{4pt}
+\setlength{\emergencystretch}{2em}
+\raggedbottom
+\widowpenalty=10000
+\clubpenalty=10000
+\color{ink}
+\usepackage{titlesec}
+\titleformat{\section}{\sffamily\fontsize{20}{26}\selectfont\bfseries\color{ink}\raggedright\hyphenpenalty=10000\relax}{\thesection}{1em}{}
+\titleformat{\subsection}{\sffamily\fontsize{14}{19}\selectfont\bfseries\color{ink}\raggedright\hyphenpenalty=10000\relax}{\thesubsection}{1em}{}
+\titleformat{\subsubsection}{\sffamily\normalsize\bfseries\color{navy}\raggedright\hyphenpenalty=10000\relax}{\thesubsubsection}{1em}{}
+\titlespacing*{\section}{0pt}{20pt}{10pt}
+\titlespacing*{\subsection}{0pt}{15pt}{7pt}
+\titlespacing*{\subsubsection}{0pt}{12pt}{6pt}
+\setcounter{secnumdepth}{3}
+\setcounter{tocdepth}{2}
+\hypersetup{colorlinks=true,linkcolor=navy,urlcolor=teal,citecolor=teal,
+ pdftitle={EAR: Advance research through feedback. Improve strategies through results.},
+ pdfauthor={Yingze Li, Dong Wang, Ben Wu, Xianglong Liu, Hongzhi Wang},
+ pdfsubject={EAR English Technical Report v10: System design, methods and historical evaluation},
+ pdfkeywords={EAR,research automation,active human time,critical tree search,strategy evolution,rebuttal},
+ bookmarksnumbered=true,bookmarksopen=true,pdfstartview=FitH}
+\urlstyle{same}
+\setlist[itemize]{leftmargin=1.5em,topsep=4pt,itemsep=3pt,parsep=0pt}
+\setlist[enumerate]{leftmargin=1.8em,topsep=4pt,itemsep=3pt,parsep=0pt}
+\renewcommand{\arraystretch}{1.30}
+\setlength{\heavyrulewidth}{.65pt}
+\setlength{\lightrulewidth}{.35pt}
+\arrayrulecolor{navy!35}
+\newcolumntype{Y}{>{\raggedright\arraybackslash}X}
+\newcolumntype{P}[1]{>{\raggedright\arraybackslash}p{#1}}
+\captionsetup{font=small,labelfont={bf,sf},textfont={small,color=ink},justification=raggedright,singlelinecheck=false,skip=7pt}
+\renewcommand{\topfraction}{.85}
+\renewcommand{\bottomfraction}{.75}
+\renewcommand{\textfraction}{.12}
+\renewcommand{\floatpagefraction}{.70}
+\setlength{\textfloatsep}{16pt}
+\setlength{\intextsep}{15pt}
+\pagestyle{fancy}\fancyhf{}
+\fancyhead[L]{\sffamily\footnotesize\textcolor{navy}{\bfseries EAR}\hspace{3mm}\textcolor{muted}{TECHNICAL REPORT}}
+\fancyhead[R]{\sffamily\footnotesize\textcolor{muted}{\leftmark}}
+\fancyfoot[L]{\sffamily\footnotesize\textcolor{muted}{\earfooter}}
+\fancyfoot[R]{\sffamily\footnotesize\textcolor{navy}{\thepage}\textcolor{muted}{\; / \;\pageref*{LastPage}}}
+\renewcommand{\headrulewidth}{0pt}
+\renewcommand{\headrule}{}
+\renewcommand{\footrulewidth}{0pt}
+\renewcommand{\sectionmark}[1]{\markboth{\thesection\quad #1}{}}
+\renewcommand{\cfttoctitlefont}{\sffamily\fontsize{24}{30}\selectfont\bfseries\color{navy}}
+\setlength{\cftbeforetoctitleskip}{0pt}
+\setlength{\cftaftertoctitleskip}{20pt}
+\renewcommand{\cftsecfont}{\sffamily\bfseries\color{navy}}
+\renewcommand{\cftsecpagefont}{\sffamily\bfseries\color{navy}}
+\renewcommand{\cftsubsecfont}{\small\color{ink}}
+\renewcommand{\cftsubsecpagefont}{\sffamily\small\color{muted}}
+\renewcommand{\cftsecleader}{\hfill}
+\renewcommand{\cftsubsecleader}{\hfill}
+\setlength{\cftbeforesecskip}{14pt}
+\setlength{\cftbeforesubsecskip}{4pt}
+\setlength{\cftsecnumwidth}{7mm}
+\setlength{\cftsubsecindent}{7mm}
+\setlength{\cftsubsecnumwidth}{11mm}
+\newcommand{\src}[1]{\textsuperscript{\textcolor{teal}{[#1]}}}
+\newcommand{\Lead}[1]{\par\noindent\textbf{#1}\par}
+\makeatletter
+\newcommand{\Sub}[1]{\par\Needspace{5\baselineskip}\vspace{6pt}\noindent{\sffamily\bfseries\color{navy}#1}\par\nobreak\vspace{3pt}\@afterindenttrue\@afterheading}
+\makeatother
+\newcommand{\Fig}[3]{\begin{figure}[H]\centering #1\caption{#2}\label{#3}\end{figure}}
+\newcommand{\DiagramFig}[3]{\begin{figure}[!htbp]\centering #1\caption{#2}\label{#3}\end{figure}}
+\newcommand{\earfigure}[1]{\includegraphics[width=.96\textwidth]{../../figures/en/#1.pdf}}
+\newtcolorbox{insight}[1][]{enhanced,colback=warm,colframe=warm,frame hidden,borderline west={1.5pt}{0pt}{teal},sharp corners,left=10pt,right=10pt,top=9pt,bottom=9pt,fontupper=\small,before skip=12pt,after skip=12pt,#1}
+\newtcolorbox{scope}[1][]{enhanced,colback=warm,colframe=warm,frame hidden,borderline west={1.2pt}{0pt}{amber},sharp corners,left=10pt,right=10pt,top=8pt,bottom=8pt,fontupper=\small,before skip=10pt,after skip=10pt,#1}
+\newcommand{\ReportAuthors}{%
+ \noindent{\sffamily\normalsize\bfseries Yingze Li\quad Dong Wang\quad Ben Wu}\par
+ \noindent{\sffamily\normalsize\bfseries Xianglong Liu\quad Hongzhi Wang\textsuperscript{*}}\par
+ \vspace{2mm}\noindent{\sffamily\small Harbin Institute of Technology}\par
+ \noindent{\sffamily\footnotesize\textsuperscript{*}Corresponding author}\par}
+
+\newcommand{\AuthorsCompact}{%
+ {\sffamily\small Yingze Li\quad Dong Wang\quad Ben Wu\quad Xianglong Liu\quad Hongzhi Wang\textsuperscript{*}}\par
+ \vspace{1mm}{\sffamily\footnotesize Harbin Institute of Technology\quad\textsuperscript{*}Corresponding author}\par}

@@ -1,0 +1,48 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="370" viewBox="0 0 1200 370" role="img" aria-labelledby="title desc">
+  <title id="title">Three independent EAR workflows</title>
+  <desc id="desc">A direction enters AutoVibeIdea and returns a proposal. A problem enters AutonomousMath and returns a paper and proof. A paper and reviews enter AutoRebuttal and return responses and evidence.</desc>
+  <rect width="1200" height="370" rx="16" fill="#fff"/>
+  <g font-family="Arial, Helvetica, sans-serif" font-size="24" font-weight="600">
+    <text x="157" y="39" text-anchor="middle" fill="#625b6c" font-size="19">INPUT</text>
+    <text x="603" y="39" text-anchor="middle" fill="#5638a1" font-size="19">EAR</text>
+    <text x="1040" y="39" text-anchor="middle" fill="#625b6c" font-size="19">OUTPUT</text>
+    <rect x="411" y="56" width="384" height="292" rx="16" fill="none" stroke="#71667f" stroke-width="2.5" stroke-dasharray="8 6"/>
+    <g>
+      <rect x="26" y="74" width="270" height="70" rx="10" fill="#fff" stroke="#716b7c" stroke-width="2.5"/>
+      <text x="161" y="119" text-anchor="middle" fill="#302936">Research direction</text>
+      <path d="M324 102h40v-10l26 17-26 17v-10h-40Z" fill="#7352b6"/>
+      <rect x="433" y="74" width="340" height="70" rx="10" fill="#7352b6"/>
+      <text x="603" y="119" text-anchor="middle" fill="#fff">AutoVibeIdea</text>
+      <path d="M823 102h40v-10l26 17-26 17v-10h-40Z" fill="#7352b6"/>
+      <g transform="translate(915 77)" fill="none" stroke="#7352b6" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+        <path d="M3 1h40v62H3ZM12 12h20M23 24v9M13 33h20M13 33v9M33 33v9"/><circle cx="13" cy="46" r="4"/><circle cx="33" cy="46" r="4"/>
+      </g>
+      <text x="985" y="119" fill="#302936">Proposal</text>
+    </g>
+    <g>
+      <rect x="26" y="170" width="270" height="70" rx="10" fill="#fff" stroke="#716b7c" stroke-width="2.5"/>
+      <text x="161" y="215" text-anchor="middle" fill="#302936">Research problem</text>
+      <path d="M324 198h40v-10l26 17-26 17v-10h-40Z" fill="#416fa3"/>
+      <rect x="433" y="170" width="340" height="70" rx="10" fill="#416fa3"/>
+      <text x="603" y="215" text-anchor="middle" fill="#fff">AutonomousMath</text>
+      <path d="M823 198h40v-10l26 17-26 17v-10h-40Z" fill="#416fa3"/>
+      <g transform="translate(915 173)" fill="none" stroke="#416fa3" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+        <path d="M3 1h40v62H3ZM12 12h20M32 23H15l9 9-9 9h17M12 52h22"/>
+      </g>
+      <text x="985" y="215" fill="#302936">Paper + proof</text>
+    </g>
+    <g>
+      <rect x="26" y="266" width="270" height="70" rx="10" fill="#fff" stroke="#716b7c" stroke-width="2.5"/>
+      <text x="161" y="311" text-anchor="middle" fill="#302936">Paper + reviews</text>
+      <path d="M324 294h40v-10l26 17-26 17v-10h-40Z" fill="#28746f"/>
+      <rect x="433" y="266" width="340" height="70" rx="10" fill="#28746f"/>
+      <text x="603" y="311" text-anchor="middle" fill="#fff">AutoRebuttal</text>
+      <path d="M823 294h40v-10l26 17-26 17v-10h-40Z" fill="#28746f"/>
+      <g transform="translate(915 269)" fill="none" stroke="#28746f" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+        <path d="M3 1h40v62H3ZM12 12h20m-19 20 6 6 13-14M12 49h22M12 55h17"/>
+      </g>
+      <text x="985" y="299" fill="#302936" font-size="22">Responses</text>
+      <text x="985" y="325" fill="#302936" font-size="22">+ evidence</text>
+    </g>
+  </g>
+</svg>

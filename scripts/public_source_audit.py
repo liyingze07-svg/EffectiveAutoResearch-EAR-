@@ -14,11 +14,13 @@ import re
 import subprocess
 
 
-# Published release from e287d39; its 48 members match the unpacked v6 report.
-# Pin the exact archive, not an extension: other ZIP files remain disallowed.
+# Versioned report packages only; v6 is the original release from e287d39.
+# Pin exact archive hashes, not an extension: other ZIP files remain disallowed.
 RELEASE_ARCHIVES = {
     "docs/technical-report/EAR_Technical_Report_v6_Bilingual_Public.zip":
         "e4244a835f96eeab507d563d387803c1a2f5cc22e9f9b5639c31d9bebe8dd31c",
+    "docs/technical-report/EAR_Technical_Report_v10_Bilingual_Public.zip":
+        "13937b7dce65db48a71ca9394d84b7fd4189e469bf5e20c2860981c34a360ec7",
 }
 
 

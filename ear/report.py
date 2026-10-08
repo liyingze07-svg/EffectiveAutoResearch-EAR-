@@ -7,7 +7,7 @@ ROOT = Path(__file__).resolve().parents[1]
 
 
 def show_report(as_json: bool = False) -> int:
-    bundle = ROOT / "docs/technical-report/v6"
+    bundle = ROOT / "docs/technical-report/v10"
     spec = importlib.util.spec_from_file_location("ear_report_check", ROOT / "scripts/check_report.py")
     checker = importlib.util.module_from_spec(spec)
     spec.loader.exec_module(checker)
@@ -22,7 +22,7 @@ def show_report(as_json: bool = False) -> int:
     baseline = comparison["baseline"]["research_invocations_per_pass"]
     selected = comparison["selected"]["research_invocations_per_pass"]
     reduction = generation["research_invocations_per_pass_reduction_percent"]
-    print("EAR technical report v6 — reproduced aggregate results")
+    print("EAR technical report v10 — reproduced aggregate results")
     print(f"Revision cohort: {last['manuscripts']} completed manuscripts; current-version historical")
     print(f"  assessor passes: {first['current_passes']} -> {last['current_passes']} (initial -> final round).")
     print(f"G3 selected strategy: {baseline:.2f} -> {selected:.2f} research invocations per pass")

@@ -4,6 +4,11 @@ EAR runs from a complete source checkout. The shared command is `python3 -m ear`
 
 ## Start with an observable result
 
+For an interactive introduction, run `python3 -m ear demo studio` from a complete
+checkout. The bilingual local browser demo uses no model account or extra
+dependencies. See [Research Studio](demo-studio.md) for offline execution,
+downloads, portable export and a walkthrough.
+
 ```bash
 git clone https://github.com/liyingze07-svg/EffectiveAutoResearch-EAR-.git EAR
 cd EAR
@@ -26,7 +31,7 @@ The output path must not already exist. Inspect `SUMMARY.json` and the rebuttal 
 
 | Workflow | Environment | Inputs to prepare |
 | --- | --- | --- |
-| AutoVibeIdea | Linux/WSL2, Bash, authenticated Codex CLI; background mode also needs Linux process-control support | A direction and target venue |
+| AutoVibeIdea | Linux/WSL2, Bash, authenticated Codex CLI; background mode also needs Linux process-control support | A research direction and screening configuration; see the original workflow options |
 | AutonomousMath | Authenticated Codex or Claude CLI, `pdflatex`, `bibtex`, `pdfinfo`, `pdftotext`; terminal reviewer prerequisites depend on the backend | A research question and a new workspace |
 | AutoRebuttal | Linux/WSL2, Bash, authenticated Codex CLI, Python dependencies and DeepSeek for cross-family mode | Paper source, reviews and an edited task card |
 

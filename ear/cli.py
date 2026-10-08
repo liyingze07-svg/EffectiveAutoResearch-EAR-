@@ -102,7 +102,7 @@ def _control(command: str, args: list[str]) -> int:
 def main(argv: list[str] | None = None) -> int:
     parser = argparse.ArgumentParser(prog="ear", description="EAR: idea discovery, mathematical research and evidence-grounded rebuttals.",
         epilog="Source checkout: python3 -m ear <command> --help. Offline demos need Python 3.10+ only.")
-    commands = {"demo": "View report results or run the offline wiring check", "doctor": "Check local prerequisites",
+    commands = {"demo": "Open Research Studio, view report results or run offline checks", "doctor": "Check local prerequisites",
         "idea": "Run AutoVibeIdea; optionally isolate a workspace", "math": "Forward to AutonomousMath (run/doctor/status/stop)",
         "rebuttal": "Initialize, run or inspect a rebuttal workspace", "status": "Read workflow state or artifacts",
         "stop": "Request the workflow's existing stop operation (math/idea)"}
@@ -117,6 +117,11 @@ def main(argv: list[str] | None = None) -> int:
             report.add_argument("--json", action="store_true")
             check = modes.add_parser("check", help="Validate offline workflow wiring; no model calls")
             check.add_argument("--output", type=_workspace, help="new directory only")
+            studio = modes.add_parser("studio", help="Interactive browser demo; no model calls", add_help=False)
+            studio.add_argument("options", nargs=argparse.REMAINDER)
+            if options.args and options.args[0] == "studio":
+                from .studio import main as studio_main
+                return studio_main(options.args[1:])
             demo = sub.parse_args(options.args)
             if demo.mode == "report":
                 return show_report(demo.json)

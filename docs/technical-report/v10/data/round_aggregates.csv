@@ -1,0 +1,5 @@
+round,manuscripts,current_passes,current_score_sum,selected_best_passes_at_cutoff,selected_best_score_sum_at_cutoff
+0,28,3,130.13,3,130.13
+1,28,10,146.92,10,147.57
+2,28,10,153.94,12,155.91
+3,28,12,158.89,15,162.13

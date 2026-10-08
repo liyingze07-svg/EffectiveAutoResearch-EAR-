@@ -14,7 +14,7 @@ url: "https://github.com/liyingze07-svg/EffectiveAutoResearch-EAR-"
 license: MIT
 preferred-citation:
   type: report
-  title: "EAR: Accelerating the Research Lifecycle with Human Time as the Primary Resource"
+  title: "EAR: Advance research through feedback. Improve strategies through results."
   authors:
     - family-names: Li
       given-names: Yingze
@@ -28,7 +28,7 @@ preferred-citation:
       given-names: Hongzhi
   year: 2026
   month: 10
-  version: "6"
+  version: "10"
   institution:
     name: "Harbin Institute of Technology"
   url: "https://github.com/liyingze07-svg/EffectiveAutoResearch-EAR-"

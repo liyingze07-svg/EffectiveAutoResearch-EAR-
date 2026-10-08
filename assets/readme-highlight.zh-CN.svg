@@ -1,0 +1,31 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="250" height="55" viewBox="0 0 250 55" role="img" aria-labelledby="title desc">
+  <title id="title">EAR 设计理念 · #1 优先级：人的时间</title>
+  <desc id="desc">人的时间是 EAR 的第一设计优先级。</desc>
+  <defs>
+    <path id="leaf" d="M0 0C-7 0-10-5-9-10C-3-10 1-5 0 0Z"/>
+    <g id="laurel-half">
+      <path d="M40 58C19 61 5 44 9 25" fill="none" stroke="#49278e" stroke-width="1.8" stroke-linecap="round"/>
+      <use href="#leaf" transform="translate(9 28) rotate(35)"/>
+      <use href="#leaf" transform="translate(9 34) rotate(15)"/>
+      <use href="#leaf" transform="translate(11 40) rotate(-10)"/>
+      <use href="#leaf" transform="translate(15 46) rotate(-30)"/>
+      <use href="#leaf" transform="translate(21 51) rotate(-50)"/>
+      <use href="#leaf" transform="translate(28 55) rotate(-70)"/>
+      <use href="#leaf" transform="translate(35 58) rotate(-85)"/>
+      <use href="#leaf" transform="translate(10 32) scale(-.8 .8) rotate(35)"/>
+      <use href="#leaf" transform="translate(12 40) scale(-.8 .8) rotate(15)"/>
+      <use href="#leaf" transform="translate(19 49) scale(-.8 .8) rotate(-20)"/>
+      <use href="#leaf" transform="translate(29 55) scale(-.8 .8) rotate(-50)"/>
+    </g>
+  </defs>
+  <rect x=".5" y=".5" width="249" height="54" rx="10" fill="#fff" stroke="#4a0e99"/>
+  <g transform="translate(12 5) scale(.55)" fill="#49278e">
+    <use href="#laurel-half"/>
+    <use href="#laurel-half" transform="translate(80 0) scale(-1 1)"/>
+  </g>
+  <g font-family="PingFang SC, Microsoft YaHei, Arial, sans-serif" fill="#432787">
+    <text x="64" y="18" font-size="9">EAR 设计理念</text>
+    <text x="34" y="31" text-anchor="middle" font-family="Arial, Helvetica, sans-serif" font-size="18" fill="#4a0e99">1</text>
+    <text x="64" y="39" font-size="14" font-weight="700">#1 优先级：人的时间</text>
+  </g>
+</svg>

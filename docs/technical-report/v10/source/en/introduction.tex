@@ -1,0 +1,64 @@
+\section{Introduction}
+\label{sec:introduction}
+\subsection{EAR: keep research moving}
+\label{sec:position}
+Many research decisions arise when a plan changes. A newly discovered paper can remove the reason to pursue a promising idea. A counterexample can force a proof onto a different route. A gap identified in review can send a nearly finished manuscript back to derivation or experiment. Research advances through these specific turns. An automation system needs to follow them: preserve the work already done, understand what the new evidence changes, and continue.
+
+EAR (Effective Auto Research) is an open-source research automation system for idea discovery, autonomous mathematical research, and author responses to peer review. Once a researcher supplies a direction and constraints, retrieval, investigation, and revision should be able to continue. When the researcher returns, there should be new work to inspect and clear reasons for deciding which directions merit further effort.
+
+EAR offers three independently usable workflows. Idea discovery starts from a direction and resource constraints, compares literature and candidates, and develops a research proposal. Mathematical research pursues a specific target and delivers arguments, implementations, and manuscripts. Rebuttal uses the paper, reviews, and available evidence to organize responses and retain their supporting sources. Researchers can use these materials to connect work across stages.\src{1}
+
+Sustained work also needs better ways of doing research. In the mathematics module, EAR puts both aims into a pair of loops: the inner loop carries out the current research; the outer loop tests execution strategies against complete research outcomes. Target selection, proof organization, and revision instructions can therefore improve with experience. \textbf{Research outcomes and the strategies that produce them are the two objects EAR seeks to improve.} The system works on the present task and uses success, failure, and review to inform its next attempt.
+
+\Sub{Reserve limited human time for the key judgments}
+Active involvement in research is spread across reading, coordination, checking, and rework. Reconstructing context after an interruption adds another cost.\src{6,7} EAR therefore places active human time at the center of its design objective:
+\begin{equation}
+\min H\qquad \text{subject to}\qquad Q\ge Q_{\min},\quad C\le B.
+\label{eq:human-objective}
+\end{equation}
+Here $H$ is active human time, $Q_{\min}$ is the required research quality, $C$ is the cost of models, tools, and computation, and $B$ is the machine budget. Calendar duration $T$ is recorded separately and may impose a deadline constraint. For collaborative work, $H$ sums the actual time contributed by all participants.
+
+This objective requires accounting for the full workload. Literature search and reading, task coordination, technical checks, repairs to model errors, rework on failed approaches, and final review all count toward human time. Additional oversight must count too. Unattended waiting belongs to calendar duration; the time spent waiting without active work does not enter $H$. This report presents process records, model assessments, and invocation counts. Actual savings in active human time remain to be measured directly.
+
+\subsection{The challenge: turn feedback into the next research step}
+\label{sec:related}
+Existing work has introduced automation into several parts of research. ResearchAgent develops ideas from the literature and iterates on them through review feedback. The AI Scientist connects ideas, experiments, result analysis, and writing. Paper2Rebuttal organizes evidence and response plans around reviewer concerns. GEPA uses execution traces and textual feedback to evolve prompts. These systems provide useful foundations for sustained research.\src{2,3,4,5}
+
+In practice, researchers first face the problem of carrying materials forward. A proposal's assumptions, closest related work, and validation plan remain useful when derivation begins. A failed proof should leave behind its counterexample and the point of failure. When these judgments are scattered across interactions, the next person must reread and reorganize them. What research state is saved, how it is handed over, and when human intervention is required all affect the burden of continued use.
+
+Carrying feedback forward requires another step. A low score does not specify the next action: the gap may concern the proof, the contribution, or its presentation. The system needs to translate review comments into the appropriate research work, repairing a derivation, supplying missing evidence, or bringing the manuscript's claims back into line with the established results.
+
+Finally, experience needs to inform the next research episode. A plausible new instruction still has to survive target selection, technical work, writing, and evaluation before its value is known. Changes to research strategy should be judged by complete task outcomes. Table~\ref{tab:position} summarizes the objects addressed by related work.
+
+\begin{table}[!htbp]
+\centering\small
+\begin{tabularx}{\textwidth}{P{31mm}Y Y}
+\toprule
+\rowcolor{warm}
+\textbf{System} & \textbf{Research or optimization object} & \textbf{Role of feedback}\\
+\midrule
+ResearchAgent\src{2} & Literature-based questions, methods, and experimental ideas & Review comments guide idea revision\\
+The AI Scientist\src{3} & Machine learning ideas, experiments, results, and papers & Experimental results support iteration; automated review informs manuscript evaluation and the knowledge archive\\
+GEPA\src{4} & Prompts in language model systems & Execution traces and reflection guide prompt mutation and combination\\
+Paper2Rebuttal\src{5} & Reviewer concerns, evidence, and response plans & Produces an inspectable plan before organizing the response\\
+EAR\src{1,10} & Research tasks and their execution strategies & Feedback advances the current task; the mathematical outer loop tests strategies through complete research\\
+\bottomrule
+\end{tabularx}
+\caption{Research objects and feedback mechanisms. This is a comparison of design scope; performance on shared tasks has not been tested. The AI Scientist refers to the original 2024 system and excludes the later AI Scientist-v2.}
+\label{tab:position}
+\end{table}
+
+EAR brings these three forms of continuity under one objective: saved research materials support further execution, feedback leads to specific changes, and complete outcomes determine subsequent strategies. For researchers repeatedly screening directions, pursuing mathematical or algorithmic tasks, or addressing reviewer concerns, this organization provides a basis for continuing work and inspecting consequential decisions.
+
+\FloatBarrier
+\subsection{EAR's principle: feedback for research, results for strategy}
+\label{sec:contributions}
+In the mathematics module, EAR uses a complete research episode as the unit for evaluating strategy evolution. The inner loop retrieves, derives, validates, and revises toward the current target. The outer loop runs each candidate strategy through research, then uses manuscripts, assessments, and failure reasons to decide what to retain or change. Problems exposed by one episode can inform the next episode's target requirements, proof organization, and revision instructions. \textbf{Each research episode should leave a better starting point for the next.}
+
+The same principle informs the other two workflows. Idea discovery uses new literature to reassess candidate value: supported proposals receive further refinement, while overlapping or infeasible directions retain their exit reasons. Rebuttal locates the evidence relevant to a concern, fills the gaps, and organizes the answer. Feedback can thus redirect effort and lead to concrete technical work.
+
+Human judgment runs through all three workflows. Researchers set direction and quality standards, check key technical conclusions, and take responsibility for final manuscripts and responses. EAR continues retrieval, investigation, and revision, preserving the reasons behind candidate selection, version changes, and strategy updates. Researchers should be able to resume from work that has advanced, with the evidence for their next judgment.
+
+\begin{insight}
+\textbf{From a design principle to an observable result}\quad Among the same 28 completed manuscripts from G0--G3, current-version model-assessment passes rose from 3 to 12 after three revisions. Section~\ref{sec:inner-results} reports the round-by-round trajectory and retained-version results. Passes here follow the historical model-assessment rule.\src{10}
+\end{insight}

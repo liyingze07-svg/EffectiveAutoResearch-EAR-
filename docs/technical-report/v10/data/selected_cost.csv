@@ -1,0 +1,3 @@
+generation,role,episodes,selected_best_assessor_passes,research_invocations,reviewer_requests,review_roll_invocations,refinement_attempts_reconstructed
+3,baseline,4,2,41,12,36,9
+3,selected,4,3,29,12,36,9
